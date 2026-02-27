@@ -1,0 +1,1 @@
+UPDATE modules SET display_name = 'Quadro de vendas' WHERE name = 'dashboard';

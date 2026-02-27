@@ -1,0 +1,47 @@
+project_id = "yoauzllgwcsrmvkwdcoa"
+
+[functions.test-anthropic]
+verify_jwt = true
+
+[functions.generate-copy-ai]
+verify_jwt = true
+
+[functions.create-user]
+verify_jwt = true
+
+[functions.anthropic-copias]
+verify_jwt = true
+
+[functions.apply-auto-tags]
+verify_jwt = true
+
+[functions.generate-csm-alerts]
+verify_jwt = true
+
+[functions.generate-analise-bench]
+verify_jwt = true
+
+[functions.create-crm-lead]
+verify_jwt = true
+
+[functions.generate-case-copy]
+verify_jwt = true
+
+[functions.insert-success-case]
+verify_jwt = true
+
+[functions.auto-move-cards]
+verify_jwt = true
+
+[functions.validate-handoff-token]
+verify_jwt = false
+
+[functions.update-user-role]
+verify_jwt = false
+
+[functions.query-churn-report]
+verify_jwt = false
+
+[functions.update-churn-dates]
+verify_jwt = false
+

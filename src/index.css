@@ -1,0 +1,682 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Container and spacing system */
+    --container-max-width: 1240px;
+    --container-padding-mobile: 1rem;
+    --container-padding-desktop: 1.5rem;
+    
+    /* Fluid spacing scale (rem) */
+    --space-1: 0.25rem;   /* 4px */
+    --space-2: 0.5rem;    /* 8px */
+    --space-3: 0.75rem;   /* 12px */
+    --space-4: 1rem;      /* 16px */
+    --space-6: 1.5rem;    /* 24px */
+    --space-8: 2rem;      /* 32px */
+    --space-12: 3rem;     /* 48px */
+    
+    /* Safe area insets for mobile */
+    --safe-area-inset-top: env(safe-area-inset-top);
+    --safe-area-inset-right: env(safe-area-inset-right);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom);
+    --safe-area-inset-left: env(safe-area-inset-left);
+    
+    /* Fluid typography scale */
+    --text-xs: clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem);
+    --text-sm: clamp(0.875rem, 0.8rem + 0.4vw, 1rem);
+    --text-base: clamp(0.875rem, 0.8rem + 0.4vw, 1rem);
+    --text-lg: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+    --text-xl: clamp(1.125rem, 1rem + 0.625vw, 1.25rem);
+    --text-2xl: clamp(1.25rem, 1rem + 1.2vw, 1.75rem);
+    --text-3xl: clamp(1.5rem, 1.2rem + 1.5vw, 2rem);
+    --text-4xl: clamp(1.875rem, 1.5rem + 1.875vw, 2.5rem);
+
+    --background: 0 0% 100%;
+    --foreground: 225 15% 20%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 225 15% 20%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 225 15% 20%;
+
+    /* DOT Brand Colors */
+    --primary: 0 75% 55%; /* Vermelho DOT RGB(220, 55, 55) */
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 0 75% 70%;
+
+    --secondary: 221 54% 14%; /* Azul Escuro DOT #111c36 */
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 220 13% 96%;
+    --muted-foreground: 215 25% 50%;
+
+    --accent: 220 13% 96%;
+    --accent-foreground: 225 15% 20%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 225 15% 20%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 0 75% 55%;
+
+    /* Custom DOT Design Tokens */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--primary)));
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+    --shadow-elegant: 0 10px 30px -10px hsl(var(--primary) / 0.2);
+    --shadow-card: 0 4px 20px -4px hsl(220 13% 80% / 0.4);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --radius: 0.5rem;
+
+    /* Sidebar tema claro */
+    --sidebar-background: 227 22% 8%; /* #101219 */
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 0 75% 55%; /* Vermelho DOT */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 221 54% 18%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 221 54% 18%;
+    --sidebar-ring: 0 75% 55%;
+  }
+
+  .dark {
+    --background: 225 25% 8%;
+    --foreground: 0 0% 98%;
+
+    --card: 225 25% 10%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 225 25% 10%;
+    --popover-foreground: 0 0% 98%;
+
+    /* DOT Brand Colors - Dark Mode */
+    --primary: 0 75% 55%; /* Vermelho DOT RGB(220, 55, 55) */
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 0 75% 70%;
+
+    --secondary: 221 54% 18%; /* Azul Escuro DOT mais claro para dark mode */
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 225 25% 15%;
+    --muted-foreground: 215 15% 65%;
+
+    --accent: 225 25% 15%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 76% 46%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 98%;
+
+    --border: 225 25% 18%;
+    --input: 225 25% 18%;
+    --ring: 0 75% 55%;
+
+    /* Dark Mode Shadows */
+    --shadow-elegant: 0 10px 30px -10px hsl(var(--primary) / 0.3);
+    --shadow-card: 0 4px 20px -4px hsl(0 0% 0% / 0.4);
+    
+    /* Sidebar tema escuro */
+    --sidebar-background: 227 22% 8%; /* #101219 */
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 0 75% 55%; /* Vermelho DOT */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 227 22% 12%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 227 22% 15%;
+    --sidebar-ring: 0 75% 55%;
+  }
+}
+
+@layer base {
+  html {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+    font-size: var(--text-base);
+    /* Safe area padding for mobile devices */
+    padding-left: max(var(--container-padding-mobile), var(--safe-area-inset-left));
+    padding-right: max(var(--container-padding-mobile), var(--safe-area-inset-right));
+    padding-top: max(0px, var(--safe-area-inset-top));
+    padding-bottom: max(0px, var(--safe-area-inset-bottom));
+  }
+
+  @media (min-width: 768px) {
+    body {
+      padding-left: max(var(--container-padding-desktop), var(--safe-area-inset-left));
+      padding-right: max(var(--container-padding-desktop), var(--safe-area-inset-right));
+    }
+  }
+
+  /* Container utility classes */
+  .container {
+    width: 100%;
+    max-width: var(--container-max-width);
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--container-padding-mobile);
+    padding-right: var(--container-padding-mobile);
+  }
+
+  @media (min-width: 768px) {
+    .container {
+      padding-left: var(--container-padding-desktop);
+      padding-right: var(--container-padding-desktop);
+    }
+  }
+
+  /* Fluid typography classes */
+  .text-fluid-xs { font-size: var(--text-xs); }
+  .text-fluid-sm { font-size: var(--text-sm); }
+  .text-fluid-base { font-size: var(--text-base); }
+  .text-fluid-lg { font-size: var(--text-lg); }
+  .text-fluid-xl { font-size: var(--text-xl); }
+  .text-fluid-2xl { font-size: var(--text-2xl); }
+  .text-fluid-3xl { font-size: var(--text-3xl); }
+  .text-fluid-4xl { font-size: var(--text-4xl); }
+
+  /* Responsive touch targets */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  @media (min-width: 768px) {
+    .touch-target {
+      min-height: 40px;
+      min-width: 40px;
+    }
+  }
+
+  /* Spacing utilities */
+  .space-safe {
+    padding-left: max(var(--space-4), var(--safe-area-inset-left));
+    padding-right: max(var(--space-4), var(--safe-area-inset-right));
+  }
+
+
+  /* Focus styles for accessibility */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  button:focus-visible,
+  a:focus-visible,
+  [role="button"]:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  /* Custom scrollbar styles */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--muted) / 0.3);
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--secondary) / 0.6);
+    border-radius: 10px;
+    transition: var(--transition-smooth);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--secondary) / 0.8);
+  }
+
+  /* Firefox scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--secondary) / 0.6) hsl(var(--muted) / 0.3);
+  }
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-100vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* Status Badge Styles - Quase transparentes */
+.status-assinado {
+  @apply bg-green-500/20 text-green-700 border border-green-500/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-green-300;
+}
+
+.status-a-assinar {
+  @apply bg-yellow-500/20 text-yellow-700 border border-yellow-500/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-yellow-300;
+}
+
+.status-perdido {
+  @apply bg-red-500/20 text-red-700 border border-red-500/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-red-300;
+}
+
+/* Closer Badge Styles */
+.closer-badge {
+  @apply bg-blue-500/20 text-blue-700 border border-blue-500/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-blue-300;
+}
+
+/* Plano Badge Styles - Quase transparentes */
+.plano-pro {
+  @apply bg-green-500/20 text-green-700 border border-green-500/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-green-300;
+}
+
+.plano-business {
+  @apply bg-blue-500/20 text-blue-700 border border-blue-500/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-blue-300;
+}
+
+.plano-ia {
+  @apply bg-purple-500/20 text-purple-700 border border-purple-500/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-purple-300;
+}
+
+.plano-idv {
+  @apply bg-red-500/20 text-red-700 border border-red-500/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-red-300;
+}
+
+.plano-social {
+  @apply bg-orange-400/20 text-orange-600 border border-orange-400/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-orange-400;
+}
+
+.plano-crm {
+  @apply bg-teal-500/20 text-teal-700 border border-teal-500/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-teal-300;
+}
+
+.plano-site {
+  @apply bg-indigo-500/20 text-indigo-700 border border-indigo-500/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-indigo-300;
+}
+
+.plano-lp {
+  @apply bg-pink-500/20 text-pink-700 border border-pink-500/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-pink-300;
+}
+
+.plano-personalizado {
+  @apply px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap;
+  background-color: rgba(255, 215, 0, 0.2);
+  color: #FFD700;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+/* Origem Badge Styles */
+.origem-badge {
+  @apply border border-gray-400/70 text-gray-700 px-3 py-1 rounded-full text-sm font-medium bg-transparent whitespace-nowrap dark:text-gray-300 dark:border-gray-500/70;
+}
+
+/* Gestão Projetos - Squad Styles */
+.squad-ares {
+  @apply bg-gray-500/20 text-gray-700 border border-gray-500/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-gray-300;
+}
+
+.squad-atlas {
+  @apply bg-gray-500/20 text-gray-700 border border-gray-500/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-gray-300;
+}
+
+.squad-athena {
+  @apply bg-gray-500/20 text-gray-700 border border-gray-500/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-gray-300;
+}
+
+.squad-artemis {
+  @apply bg-purple-500/20 text-purple-700 border border-purple-500/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-purple-300;
+}
+
+/* Gestão Projetos - Status Styles */
+.projeto-status-ativo {
+  @apply bg-green-500/20 text-green-700 border border-green-500/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-green-300;
+}
+
+.projeto-status-churn {
+  @apply bg-red-500/20 text-red-700 border border-red-500/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-red-300;
+}
+
+.projeto-status-aviso-previo {
+  @apply bg-yellow-500/20 text-yellow-700 border border-yellow-500/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-yellow-300;
+}
+
+.projeto-status-possivel-churn {
+  @apply bg-orange-500/20 text-orange-700 border border-orange-500/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-orange-300;
+}
+
+.projeto-status-inativo {
+  @apply bg-gray-500/20 text-gray-700 border border-gray-500/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-gray-300;
+}
+
+.projeto-status-pre-churn {
+  @apply bg-blue-500/20 text-blue-700 border border-blue-500/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-blue-300;
+}
+
+/* Gestão Projetos - Plano Styles */
+.projeto-plano-starter {
+  @apply bg-green-500/20 text-green-700 border border-green-500/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-green-300;
+}
+
+.projeto-plano-business {
+  @apply bg-blue-500/20 text-blue-700 border border-blue-500/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-blue-300;
+}
+
+.projeto-plano-pro {
+  @apply bg-green-500/20 text-green-700 border border-green-500/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-green-300;
+}
+
+.projeto-plano-conceito {
+  @apply px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap;
+  background-color: rgba(255, 215, 0, 0.2);
+  color: #FFD700;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.projeto-plano-social {
+  @apply bg-orange-400/20 text-orange-600 border border-orange-400/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-orange-400;
+}
+
+/* Markdown table styles for better formatting */
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.prose th {
+  background-color: hsl(var(--muted));
+  font-weight: 600;
+  text-align: left;
+  padding: 0.75rem;
+  border: 1px solid hsl(var(--border));
+}
+
+.prose td {
+  padding: 0.75rem;
+  border: 1px solid hsl(var(--border));
+  vertical-align: top;
+}
+
+.prose tbody tr:nth-child(even) {
+  background-color: hsl(var(--muted) / 0.3);
+}
+
+.prose tbody tr:hover {
+  background-color: hsl(var(--muted) / 0.5);
+}
+
+/* Custom Scrollbar Styles */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--border));
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--muted-foreground) / 0.5);
+}
+
+.scrollbar-thumb-border {
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+
+.scrollbar-track-transparent {
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Force trackpad/mousepad scroll on overflow elements */
+.overflow-y-auto,
+.overflow-x-auto,
+[style*="overflow"] {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Ensure scroll works with trackpad gestures */
+.max-h-64.overflow-y-auto {
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+}
+
+/* ============================================
+   MOBILE-FIRST UTILITIES
+   ============================================ */
+
+/* Touch-friendly tap targets (minimum 44px) */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Mobile-optimized button sizes */
+@media (max-width: 767px) {
+  .btn-mobile {
+    min-height: 44px;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+  }
+  
+  /* Mobile header stacking */
+  .mobile-header-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  /* Mobile search full width */
+  .mobile-search-full {
+    width: 100%;
+  }
+  
+  /* Mobile filters as horizontal scroll */
+  .mobile-filters-scroll {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  
+  .mobile-filters-scroll::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Mobile card optimization */
+  .mobile-card {
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+  }
+  
+  /* Mobile text truncation */
+  .mobile-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+  
+  /* Mobile dialog fullscreen */
+  .mobile-dialog-fullscreen {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+  }
+  
+  /* Hide on mobile */
+  .hide-mobile {
+    display: none !important;
+  }
+  
+  /* Mobile grid single column */
+  .mobile-single-col {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Mobile padding adjustments */
+  .mobile-px {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .mobile-py {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+  
+  /* Mobile gap adjustments */
+  .mobile-gap-sm {
+    gap: 0.5rem;
+  }
+  
+  /* Mobile font sizes */
+  .mobile-text-sm {
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+  
+  .mobile-text-base {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+}
+
+/* Show only on mobile */
+@media (min-width: 768px) {
+  .show-mobile-only {
+    display: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .show-mobile-only {
+    display: flex !important;
+  }
+}
+
+/* Kanban horizontal scroll on mobile */
+@media (max-width: 767px) {
+  .kanban-mobile-scroll {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 0.5rem;
+    padding: 0 1rem 1rem 1rem;
+  }
+  
+  .kanban-mobile-scroll > * {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+    width: 85vw;
+    max-width: 320px;
+  }
+}
+
+/* Action bar mobile optimization */
+@media (max-width: 767px) {
+  .action-bar-mobile {
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+  }
+  
+  .action-bar-mobile > * {
+    width: 100%;
+  }
+  
+  .action-bar-mobile .search-wrapper {
+    order: -1;
+  }
+}
+
+/* Safe area padding for notched devices */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Bottom action bar for mobile */
+@media (max-width: 767px) {
+  .mobile-bottom-action {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1rem;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    background: hsl(var(--background));
+    border-top: 1px solid hsl(var(--border));
+    z-index: 50;
+  }
+}
