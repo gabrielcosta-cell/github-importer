@@ -20,13 +20,13 @@ import {
 import { Building2, DollarSign, User, Mail, Phone, ChevronRight, ChevronDown, Globe, Instagram } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { CRMStage } from '@/types/kanban';
+import { CSMStage } from '@/types/kanban';
 import { createCardTasksForStage } from '@/hooks/useCardTasks';
 import { normalizeText } from '@/utils/normalizeText';
 interface CardFormProps {
   pipelineId: string;
   stageId: string;
-  stages: CRMStage[];
+  stages: CSMStage[];
   open: boolean;
   onClose: () => void;
   onRefresh: () => void;
@@ -111,12 +111,12 @@ export const CardForm: React.FC<CardFormProps> = ({
 
       // Contar cards existentes no estágio para definir posição
       const { count } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .select('*', { count: 'exact', head: true })
         .eq('stage_id', formData.stage_id);
 
       const { data: newCard, error } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .insert({
           pipeline_id: pipelineId,
           stage_id: formData.stage_id,

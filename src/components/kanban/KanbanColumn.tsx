@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus } from 'lucide-react';
 import { KanbanCard } from './KanbanCard';
-import { CRMStage, CRMCard } from '@/types/kanban';
+import { CSMStage, CSMCard } from '@/types/kanban';
 
 interface KanbanColumnProps {
-  stage: CRMStage;
-  cards: CRMCard[];
-  onCardClick: (card: CRMCard) => void;
+  stage: CSMStage;
+  cards: CSMCard[];
+  onCardClick: (card: CSMCard) => void;
   isOver?: boolean;
   displayName?: string;
 }

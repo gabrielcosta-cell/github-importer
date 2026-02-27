@@ -3,7 +3,7 @@ import { useDraggable } from '@dnd-kit/core';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Users, User, Flag, DollarSign, CheckCircle2 } from 'lucide-react';
-import { CRMCard } from '@/types/kanban';
+import { CSMCard } from '@/types/kanban';
 import { supabase } from '@/integrations/supabase/client';
 import * as LucideIcons from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -22,7 +22,7 @@ interface CardTask {
 }
 
 interface KanbanCardProps {
-  card: CRMCard;
+  card: CSMCard;
   onClick?: () => void;
 }
 
@@ -72,10 +72,10 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ card, onClick }) => {
   useEffect(() => {
     const fetchCardTags = async () => {
       const { data, error } = await supabase
-        .from('crm_card_tags')
+        .from('csm_card_tags')
         .select(`
           tag_id,
-          crm_tags (
+          csm_tags (
             id,
             name,
             color
@@ -85,7 +85,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ card, onClick }) => {
 
       if (data && !error) {
         const tags = data
-          .map((ct: any) => ct.crm_tags)
+          .map((ct: any) => ct.csm_tags)
           .filter((tag): tag is Tag => tag !== null);
         setCardTags(tags);
       }
@@ -98,7 +98,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ card, onClick }) => {
   useEffect(() => {
     const fetchCardTasks = async () => {
       const { data, error } = await supabase
-        .from('crm_card_tasks')
+        .from('csm_card_tasks')
         .select('id, is_completed, deadline_date')
         .eq('card_id', card.id);
 

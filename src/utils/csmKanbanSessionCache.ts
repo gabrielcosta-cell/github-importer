@@ -1,12 +1,12 @@
-import type { CRMCard, CRMPipeline, CRMStage } from "@/types/kanban";
+import type { CSMCard, CSMPipeline, CSMStage } from "@/types/kanban";
 
 const CACHE_KEY = "dot:csm_kanban_cache:v1";
 
 export interface CSMKanbanCacheData {
-  pipelines: CRMPipeline[];
+  pipelines: CSMPipeline[];
   selectedPipeline: string;
-  stages: CRMStage[];
-  cards: CRMCard[];
+  stages: CSMStage[];
+  cards: CSMCard[];
   cardTagsMap: Record<string, string[]>;
   availableTags: Array<{ id: string; name: string; color: string }>;
 }

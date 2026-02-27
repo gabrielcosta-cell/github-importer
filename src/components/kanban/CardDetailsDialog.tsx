@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 import { PerformanceManager } from './PerformanceManager';
 import { UpsellManager } from './UpsellManager';
 import { VariableManager } from './VariableManager';
-import { CRMCard, CRMStage } from '@/types/kanban';
+import { CSMCard, CSMStage } from '@/types/kanban';
 import { EditableField } from '../crm/EditableField';
 import { UTMSection } from '../crm/UTMSection';
 import { QualificationScoreSection } from '../crm/QualificationScoreSection';
@@ -39,11 +39,11 @@ import { toast } from 'sonner';
 import { sortTags } from '@/utils/tagSorting';
 
 interface CardDetailsDialogProps {
-  card: CRMCard | null;
+  card: CSMCard | null;
   open: boolean;
   onClose: () => void;
   onUpdate?: () => void;
-  stages: CRMStage[];
+  stages: CSMStage[];
   pipelineName?: string;
   moduleType?: 'crm' | 'csm';
 }
@@ -265,7 +265,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
     const fetchPipelineInfo = async () => {
       // Buscar informações do pipeline atual
       const { data: currentPipeline, error: currentError } = await supabase
-        .from('crm_pipelines')
+        .from('csm_pipelines')
         .select('id, name')
         .eq('id', card.pipeline_id)
         .single();
@@ -284,7 +284,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
       
       if (isCloserPipeline || isSDRPipeline) {
         const { data: sdrPipelines, error: sdrError } = await supabase
-          .from('crm_pipelines')
+          .from('csm_pipelines')
           .select('id, name')
           .eq('is_active', true)
           .or('name.ilike.%SDR | Principal%,name.ilike.%SDR | Refugo%')
@@ -303,7 +303,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
       // Se estiver no funil "Clientes ativos", buscar outros pipelines CSM (exceto Clientes Perdidos)
       if (isClientesAtivosPipeline) {
         const { data: allCsmPipelines, error: csmError } = await supabase
-          .from('crm_pipelines')
+          .from('csm_pipelines')
           .select('id, name')
           .eq('is_active', true)
           .order('position');
@@ -346,7 +346,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
     
     const fetchCsmStages = async () => {
       const { data: stagesData, error } = await supabase
-        .from('crm_stages')
+        .from('csm_stages')
         .select('id, name')
         .eq('pipeline_id', selectedCsmPipeline)
         .eq('is_active', true)
@@ -369,7 +369,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
 
     const fetchUpsellHistory = async () => {
       const { data, error } = await supabase
-        .from('crm_card_upsell_history')
+        .from('csm_card_upsell_history')
         .select('*')
         .eq('card_id', card.id)
         .order('upsell_year', { ascending: false })
@@ -392,7 +392,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
 
     const fetchVariableHistory = async () => {
       const { data, error } = await supabase
-        .from('crm_card_variable_history')
+        .from('csm_card_variable_history')
         .select('*')
         .eq('card_id', card.id)
         .order('variable_year', { ascending: false })
@@ -433,7 +433,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
 
     const fetchPerformanceHistory = async () => {
       const { data, error } = await supabase
-        .from('crm_card_performance_history')
+        .from('csm_card_performance_history')
         .select('*')
         .eq('card_id', card.id)
         .order('performance_year', { ascending: false })
@@ -460,7 +460,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
     const fetchStageHistory = async () => {
       setIsLoadingHistory(true);
       const { data, error } = await supabase
-        .from('crm_card_stage_history')
+        .from('csm_card_stage_history')
         .select('stage_id, entered_at, exited_at, event_type')
         .eq('card_id', card.id)
         .or('event_type.is.null,event_type.eq.stage_change,event_type.eq.churn,event_type.eq.lost');
@@ -481,7 +481,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
           // Buscar nomes das etapas referenciadas no histórico
           const stageIds = [...new Set(data.map(h => h.stage_id))];
           const { data: historyStages } = await supabase
-            .from('crm_stages')
+            .from('csm_stages')
             .select('id, name')
             .in('id', stageIds);
 
@@ -564,7 +564,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
   const fetchAvailableTags = async () => {
     try {
       const { data, error } = await supabase
-        .from('crm_tags')
+        .from('csm_tags')
         .select('id, name, color')
         .eq('is_active', true)
         .or(`module_scope.eq.${moduleType},module_scope.eq.both`);
@@ -582,10 +582,10 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
 
     try {
       const { data, error } = await supabase
-        .from('crm_card_tags')
+        .from('csm_card_tags')
         .select(`
           tag_id,
-          crm_tags (
+          csm_tags (
             id,
             name,
             color
@@ -596,7 +596,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
       if (error) throw error;
 
       const tags = data
-        ?.map((ct: any) => ct.crm_tags)
+        ?.map((ct: any) => ct.csm_tags)
         .filter((tag): tag is { id: string; name: string; color: string } => tag !== null) || [];
       
       setCardTags(tags);
@@ -618,7 +618,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
       if (hasTag) {
         // Remover etiqueta
         const { error } = await supabase
-          .from('crm_card_tags')
+          .from('csm_card_tags')
           .delete()
           .eq('card_id', card.id)
           .eq('tag_id', tagId);
@@ -627,7 +627,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
         
         // Registrar no histórico
         await supabase
-          .from('crm_card_stage_history')
+          .from('csm_card_stage_history')
           .insert({
             card_id: card.id,
             stage_id: card.stage_id,
@@ -641,7 +641,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
       } else {
         // Adicionar etiqueta
         const { error } = await supabase
-          .from('crm_card_tags')
+          .from('csm_card_tags')
           .insert({
             card_id: card.id,
             tag_id: tagId,
@@ -651,7 +651,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
         
         // Registrar no histórico
         await supabase
-          .from('crm_card_stage_history')
+          .from('csm_card_stage_history')
           .insert({
             card_id: card.id,
             stage_id: card.stage_id,
@@ -781,7 +781,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
     try {
       // Buscar as respostas do card primeiro
       const { data: cardData, error: cardError } = await supabase
-        .from("crm_cards")
+        .from("csm_cards")
         .select("briefing_answers")
         .eq("id", card.id)
         .single();
@@ -862,7 +862,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
 
     try {
       const { error } = await supabase
-        .from("crm_cards")
+        .from("csm_cards")
         .update({ briefing_answers: newAnswers } as any)
         .eq("id", card.id);
 
@@ -874,7 +874,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
         const questionText = question?.question || 'Pergunta do briefing';
         
         await supabase
-          .from('crm_card_stage_history')
+          .from('csm_card_stage_history')
           .insert({
             card_id: card.id,
             stage_id: card.stage_id,
@@ -953,7 +953,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
       }
 
       const { error } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .update(updates)
         .eq('id', card.id);
 
@@ -979,7 +979,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
         
         try {
           const { error: historyError } = await supabase
-            .from('crm_card_stage_history')
+            .from('csm_card_stage_history')
             .insert({
               card_id: card.id,
               stage_id: card.stage_id,
@@ -1091,7 +1091,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
       
       // Atualizar os campos no card
       const { error } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .update({
           receita_gerada_cliente: data.receita_gerada_cliente,
           investimento_midia: data.investimento_midia,
@@ -1129,7 +1129,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
       
       if (changes.length > 0) {
         await supabase
-          .from('crm_card_stage_history')
+          .from('csm_card_stage_history')
           .insert({
             card_id: card.id,
             stage_id: card.stage_id,
@@ -1164,7 +1164,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
       const lostPipelineName = isCSMPipeline ? 'Clientes Perdidos' : 'Leads Perdidos';
       
       const { data: pipelines, error: pipelineError } = await supabase
-        .from('crm_pipelines')
+        .from('csm_pipelines')
         .select('id, name')
         .ilike('name', lostPipelineName)
         .limit(1);
@@ -1206,7 +1206,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
 
       // Atualizar o card com motivo, comentários, data de perda e mover para pipeline perdidos
       const { error: updateError } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .update({
           motivo_perda: motivo,
           comentarios_perda: comentarios,
@@ -1223,7 +1223,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
 
       // Registrar no histórico de etapas
       await supabase
-        .from('crm_card_stage_history')
+        .from('csm_card_stage_history')
         .insert({
           card_id: card.id,
           stage_id: lostStage.id,
@@ -1235,7 +1235,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
 
       // Criar atividade no histórico com o comentário da perda
       const { error: activityError } = await supabase
-        .from('crm_activities')
+        .from('csm_activities')
         .insert({
           card_id: card.id,
           activity_type: 'comment',
@@ -1283,7 +1283,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
       
       // Criar novo card com os mesmos dados
       const { data: newCard, error } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .insert({
           ...cardData,
           title: `${card.title} (Cópia)`,
@@ -1297,7 +1297,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
 
       // Criar histórico de etapa para o novo card
       await supabase
-        .from('crm_card_stage_history')
+        .from('csm_card_stage_history')
         .insert({
           card_id: newCard.id,
           stage_id: card.stage_id,
@@ -1308,7 +1308,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
 
       // Registrar atividade no card original
       await supabase
-        .from('crm_activities')
+        .from('csm_activities')
         .insert({
           card_id: card.id,
           activity_type: 'comment',
@@ -1345,7 +1345,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
     try {
       // Buscar o pipeline "Leads Excluídos" apropriado
       const { data: deletedPipeline, error: pipelineError } = await supabase
-        .from('crm_pipelines')
+        .from('csm_pipelines')
         .select('id')
         .eq('name', deletedPipelineName)
         .single();
@@ -1356,7 +1356,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
 
       // Buscar o primeiro estágio do funil
       const { data: deletedStage, error: stageError } = await supabase
-        .from('crm_stages')
+        .from('csm_stages')
         .select('id')
         .eq('pipeline_id', deletedPipeline.id)
         .order('position', { ascending: true })
@@ -1369,7 +1369,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
 
       // Mover o card para o funil de leads excluídos
       const { error: updateError } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .update({ 
           pipeline_id: deletedPipeline.id,
           stage_id: deletedStage.id,
@@ -1381,7 +1381,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
 
       // Registrar no histórico
       await supabase
-        .from('crm_card_stage_history')
+        .from('csm_card_stage_history')
         .insert({
           card_id: cardIdToMove,
           stage_id: deletedStage.id,
@@ -1411,7 +1411,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
   const fetchAvailableCards = async () => {
     try {
       const { data, error } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .select('id, title, company_name, pipeline_id')
         .neq('id', card.id) // Excluir o card atual
         .order('title');
@@ -1444,7 +1444,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
       if (!user.user) throw new Error('Usuário não autenticado');
 
       const { error } = await supabase
-        .from('crm_card_upsell_history')
+        .from('csm_card_upsell_history')
         .insert({
           card_id: card.id,
           upsell_value: newUpsellValue,
@@ -1468,7 +1468,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                           'Pagamento Único';
       
       await supabase
-        .from('crm_activities')
+        .from('csm_activities')
         .insert({
           card_id: card.id,
           activity_type: 'comment',
@@ -1482,7 +1482,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
       
       // Recarregar histórico
       const { data: updatedHistory } = await supabase
-        .from('crm_card_upsell_history')
+        .from('csm_card_upsell_history')
         .select('*')
         .eq('card_id', card.id)
         .order('upsell_year', { ascending: false })
@@ -1519,7 +1519,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
       if (!user.user) throw new Error('Usuário não autenticado');
 
       const { error } = await supabase
-        .from('crm_card_variable_history')
+        .from('csm_card_variable_history')
         .insert({
           card_id: card.id,
           variable_type: newVariableType,
@@ -1536,7 +1536,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
       const typeLabel = newVariableType === 'investimento' ? 'Investimento' : 'Venda';
       
       await supabase
-        .from('crm_activities')
+        .from('csm_activities')
         .insert({
           card_id: card.id,
           activity_type: 'comment',
@@ -1550,7 +1550,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
       
       // Recarregar histórico
       const { data: updatedHistory } = await supabase
-        .from('crm_card_variable_history')
+        .from('csm_card_variable_history')
         .select('*')
         .eq('card_id', card.id)
         .order('variable_year', { ascending: false })

@@ -13,16 +13,16 @@ import {
 import { arrayMove, SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { KanbanColumn } from './KanbanColumn';
 import { KanbanCard } from './KanbanCard';
-import { CRMStage, CRMCard } from '@/types/kanban';
+import { CSMStage, CSMCard } from '@/types/kanban';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface KanbanBoardProps {
-  stages: CRMStage[];
-  cards: CRMCard[];
+  stages: CSMStage[];
+  cards: CSMCard[];
   selectedTags?: string[];
   onRefreshCards: () => void;
-  onCardClick: (card: CRMCard) => void;
+  onCardClick: (card: CSMCard) => void;
 }
 
 interface TagInfo {
@@ -118,8 +118,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   onRefreshCards,
   onCardClick
 }) => {
-  const [activeCard, setActiveCard] = React.useState<CRMCard | null>(null);
-  const [localCards, setLocalCards] = React.useState<CRMCard[]>(cards);
+  const [activeCard, setActiveCard] = React.useState<CSMCard | null>(null);
+  const [localCards, setLocalCards] = React.useState<CSMCard[]>(cards);
   const [overId, setOverId] = React.useState<string | null>(null);
   const [cardTagsMap, setCardTagsMap] = React.useState<Record<string, string[]>>({});
   const [tagsInfoMap, setTagsInfoMap] = React.useState<Record<string, TagInfo>>({});
@@ -142,11 +142,11 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
       
       // Fetch card-tag relationships with tag info
       const { data, error } = await supabase
-        .from('crm_card_tags')
+        .from('csm_card_tags')
         .select(`
           card_id, 
           tag_id,
-          crm_tags (
+          csm_tags (
             id,
             name,
             color
@@ -165,11 +165,11 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
           tagsMap[ct.card_id].push(ct.tag_id);
           
           // Store tag info
-          if (ct.crm_tags) {
+          if (ct.csm_tags) {
             infoMap[ct.tag_id] = {
-              id: ct.crm_tags.id,
-              name: ct.crm_tags.name,
-              color: ct.crm_tags.color
+              id: ct.csm_tags.id,
+              name: ct.csm_tags.name,
+              color: ct.csm_tags.color
             };
           }
         });

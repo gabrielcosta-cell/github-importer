@@ -2,10 +2,10 @@ import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ClipboardCheck } from 'lucide-react';
-import { CRMCard } from '@/types/kanban';
+import { CSMCard } from '@/types/kanban';
 
 interface QualificationScoreSectionProps {
-  card: CRMCard;
+  card: CSMCard;
   onUpdate: (field: string, value: number) => Promise<void>;
 }
 

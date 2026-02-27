@@ -18,12 +18,12 @@ import {
 import { User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { CRMStage } from '@/types/kanban';
+import { CSMStage } from '@/types/kanban';
 
 interface CSMSimpleCardFormProps {
   pipelineId: string;
   stageId: string;
-  stages: CRMStage[];
+  stages: CSMStage[];
   open: boolean;
   onClose: () => void;
   onRefresh: () => void;
@@ -61,12 +61,12 @@ export const CSMSimpleCardForm: React.FC<CSMSimpleCardFormProps> = ({
 
       // Contar cards existentes no estágio para definir posição
       const { count } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .select('*', { count: 'exact', head: true })
         .eq('stage_id', selectedStage);
 
       const { error } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .insert({
           pipeline_id: pipelineId,
           stage_id: selectedStage,

@@ -1,10 +1,10 @@
 import React from 'react';
 import { BarChart3 } from 'lucide-react';
 import { EditableField } from './EditableField';
-import { CRMCard } from '@/types/kanban';
+import { CSMCard } from '@/types/kanban';
 
 interface UTMSectionProps {
-  card: CRMCard;
+  card: CSMCard;
   onUpdate: (field: string, value: string | number) => Promise<void>;
   loading: boolean;
 }

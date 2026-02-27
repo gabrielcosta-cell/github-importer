@@ -1,12 +1,12 @@
-// Configuração do SSO centralizado via SKALA CRM
+// Configuração do SSO centralizado via DOT Operação
 export const SSO_CONFIG = {
-  CRM_URL: 'https://skala.dotconceito.com',
-  CRM_LOGIN_PATH: '/auth',
-  CRM_MODULE_SELECT_PATH: '/selecionar-modulo',
+  APP_URL: 'https://dot.dotconceito.com',
+  LOGIN_PATH: '/auth',
+  MODULE_SELECT_PATH: '/selecionar-modulo',
 } as const;
 
-export const getCRMLoginUrl = () => `${SSO_CONFIG.CRM_URL}${SSO_CONFIG.CRM_LOGIN_PATH}`;
+export const getLoginUrl = () => `${SSO_CONFIG.APP_URL}${SSO_CONFIG.LOGIN_PATH}`;
 
 // URL para tela de seleção de módulos
-export const getCRMModuleSelectUrl = () => 
-  `${SSO_CONFIG.CRM_URL}${SSO_CONFIG.CRM_MODULE_SELECT_PATH}`;
+export const getModuleSelectUrl = () => 
+  `${SSO_CONFIG.APP_URL}${SSO_CONFIG.MODULE_SELECT_PATH}`;
