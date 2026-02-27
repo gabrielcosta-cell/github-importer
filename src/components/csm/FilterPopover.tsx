@@ -7,7 +7,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Filter, X, Rocket, Moon, Shield, Flame, Sunrise, ChevronDown, Flag } from 'lucide-react';
+import { Filter, X, Rocket, Moon, Shield, Flame, ChevronDown, Flag } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { sortTags } from '@/utils/tagSorting';
 
@@ -36,7 +36,6 @@ const squads = [
   { value: 'Artemis', label: 'Artemis', icon: Moon },
   { value: 'Athena', label: 'Athena', icon: Shield },
   { value: 'Ares', label: 'Ares', icon: Flame },
-  { value: 'Aurora', label: 'Aurora', icon: Sunrise },
 ];
 
 const planos = ['Starter', 'Business', 'Pro', 'Conceito', 'Social'];
