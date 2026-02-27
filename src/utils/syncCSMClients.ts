@@ -71,7 +71,7 @@ export async function syncCSMClients() {
     
     // 1. Buscar todos os clientes atuais do pipeline
     const { data: clientesExistentes, error: fetchError } = await supabase
-      .from('crm_cards')
+      .from('csm_cards')
       .select('id, company_name, title, plano, categoria, monthly_revenue')
       .eq('pipeline_id', PIPELINE_CLIENTES_ATIVOS);
 
@@ -111,7 +111,7 @@ export async function syncCSMClients() {
 
         if (precisaAtualizar) {
           const { error: updateError } = await supabase
-            .from('crm_cards')
+            .from('csm_cards')
             .update({
               plano: clienteAtualizado.plano,
               categoria: clienteAtualizado.categoria,
@@ -141,7 +141,7 @@ export async function syncCSMClients() {
         }
 
         const { error: insertError } = await supabase
-          .from('crm_cards')
+          .from('csm_cards')
           .insert({
             title: clienteAtualizado.nome,
             company_name: clienteAtualizado.nome,
@@ -183,7 +183,7 @@ export async function syncCSMClients() {
 
     for (const cliente of clientesParaRemover) {
       const { error: deleteError } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .delete()
         .eq('id', cliente.id);
 

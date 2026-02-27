@@ -225,7 +225,7 @@ export default function CasesSuccesso() {
     const loadCSMClients = async () => {
       try {
         const { data: pipelines } = await supabase
-          .from('crm_pipelines')
+          .from('csm_pipelines')
           .select('id')
           .or('name.ilike.Clientes ativos,name.ilike.Clientes antigos');
 
@@ -237,7 +237,7 @@ export default function CasesSuccesso() {
         const pipelineIds = pipelines.map(p => p.id);
 
         const { data: cards, error } = await supabase
-          .from('crm_cards')
+          .from('csm_cards')
           .select('id, company_name, title, squad, assigned_to')
           .in('pipeline_id', pipelineIds)
           .eq('churn', false)

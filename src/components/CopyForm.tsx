@@ -375,7 +375,7 @@ export function CopyForm({ onBack }: CopyFormProps = {}) {
   const fetchCRMClients = async () => {
     try {
       const { data, error } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .select('id, company_name, title')
         .order('company_name', { ascending: true })
       

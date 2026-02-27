@@ -36,7 +36,7 @@ export const CardTasksList: React.FC<CardTasksListProps> = ({ cardId, stageId, o
   const fetchTasks = async () => {
     try {
       const { data, error } = await supabase
-        .from('crm_card_tasks')
+        .from('csm_card_tasks')
         .select('*')
         .eq('card_id', cardId)
         .order('deadline_date');
@@ -48,7 +48,7 @@ export const CardTasksList: React.FC<CardTasksListProps> = ({ cardId, stageId, o
         await createCardTasksForStage(cardId, stageId);
         // Buscar novamente após criar
         const { data: newData, error: newError } = await supabase
-          .from('crm_card_tasks')
+          .from('csm_card_tasks')
           .select('*')
           .eq('card_id', cardId)
           .order('deadline_date');
@@ -78,7 +78,7 @@ export const CardTasksList: React.FC<CardTasksListProps> = ({ cardId, stageId, o
       const newCompleted = !task.is_completed;
       
       const { error } = await supabase
-        .from('crm_card_tasks')
+        .from('csm_card_tasks')
         .update({
           is_completed: newCompleted,
           completed_at: newCompleted ? new Date().toISOString() : null,
