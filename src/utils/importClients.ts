@@ -127,7 +127,7 @@ export async function importClientsFromFile(file: File) {
     
     // Find "Onboarding" stage in "Clientes ativos" pipeline
     const { data: pipeline } = await supabase
-      .from('crm_pipelines')
+      .from('csm_pipelines')
       .select('id')
       .eq('name', 'Clientes ativos')
       .single();
@@ -135,7 +135,7 @@ export async function importClientsFromFile(file: File) {
     if (!pipeline) throw new Error('Pipeline "Clientes ativos" não encontrado');
     
     const { data: stage } = await supabase
-      .from('crm_stages')
+      .from('csm_stages')
       .select('id, name')
       .eq('pipeline_id', pipeline.id)
       .ilike('name', '%onboarding%')
@@ -175,7 +175,7 @@ export async function importClientsFromFile(file: File) {
         
         // Check if client already exists in CRM
         const { data: existingCard } = await supabase
-          .from('crm_cards')
+          .from('csm_cards')
           .select('id')
           .eq('company_name', clientData.empresa)
           .eq('pipeline_id', pipeline.id)
@@ -186,7 +186,7 @@ export async function importClientsFromFile(file: File) {
         if (existingCard) {
           // Update existing card
           const { error } = await supabase
-            .from('crm_cards')
+            .from('csm_cards')
             .update({
               monthly_revenue: clientData.mrr,
               plano: clientData.plano,
@@ -204,12 +204,12 @@ export async function importClientsFromFile(file: File) {
           crmError = error;
           if (!error) {
             results.updated++;
-            results.details.push(`🔄 ${clientData.empresa}: atualizado no CRM`);
+            results.details.push(`🔄 ${clientData.empresa}: atualizado no CSM`);
           }
         } else {
           // Insert new card into CRM
           const { error } = await supabase
-            .from('crm_cards')
+            .from('csm_cards')
             .insert({
               title: clientData.empresa,
               company_name: clientData.empresa,

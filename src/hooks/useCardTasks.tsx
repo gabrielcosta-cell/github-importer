@@ -36,7 +36,7 @@ export const useCardTasks = (cardId: string): UseCardTasksResult => {
 
     try {
       const { data, error } = await supabase
-        .from('crm_card_tasks')
+        .from('csm_card_tasks')
         .select('*')
         .eq('card_id', cardId);
 
@@ -81,7 +81,7 @@ export const createCardTasksForStage = async (cardId: string, stageId: string) =
   try {
     // Buscar tarefas configuradas para esta etapa
     const { data: stageTasks, error: stageTasksError } = await supabase
-      .from('crm_stage_tasks')
+      .from('csm_stage_tasks')
       .select('*')
       .eq('stage_id', stageId)
       .eq('is_active', true)
@@ -93,7 +93,7 @@ export const createCardTasksForStage = async (cardId: string, stageId: string) =
     // Verificar se já existem tarefas para este card nesta etapa
     const stageTaskIds = stageTasks.map(t => t.id);
     const { data: existingTasks, error: existingError } = await supabase
-      .from('crm_card_tasks')
+      .from('csm_card_tasks')
       .select('stage_task_id')
       .eq('card_id', cardId)
       .in('stage_task_id', stageTaskIds);
@@ -120,7 +120,7 @@ export const createCardTasksForStage = async (cardId: string, stageId: string) =
 
     if (newTasks.length > 0) {
       const { error: insertError } = await supabase
-        .from('crm_card_tasks')
+        .from('csm_card_tasks')
         .insert(newTasks);
 
       if (insertError) throw insertError;

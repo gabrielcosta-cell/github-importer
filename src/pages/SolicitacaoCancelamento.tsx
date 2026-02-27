@@ -36,7 +36,7 @@ export default function SolicitacaoCancelamento() {
         
         // Buscar card pelo e-mail de contato principal
         const { data: cards, error } = await supabase
-          .from('crm_cards')
+          .from('csm_cards')
           .select('contact_email, contact_name, company_name, title')
           .eq('contact_email', emailToSearch)
           .limit(1);
@@ -58,13 +58,13 @@ export default function SolicitacaoCancelamento() {
         } else {
           // Se não encontrou pelo contact_email, buscar na tabela de emails múltiplos
           const { data: cardsByEmail } = await supabase
-            .from('crm_card_emails')
-            .select('card_id, crm_cards!inner(company_name, title, contact_name)')
+            .from('csm_card_emails')
+            .select('card_id, csm_cards!inner(company_name, title, contact_name)')
             .eq('email', emailToSearch)
             .limit(1);
 
           if (cardsByEmail && cardsByEmail.length > 0) {
-            const cardData = cardsByEmail[0].crm_cards as any;
+            const cardData = cardsByEmail[0].csm_cards as any;
             setFormData(prev => ({
               ...prev,
               contract_name: cardData.company_name || cardData.title || prev.contract_name,
@@ -158,7 +158,7 @@ export default function SolicitacaoCancelamento() {
         
         // Adicionar nota adicional com o motivo
         await supabase
-          .from('crm_card_stage_history')
+          .from('csm_card_stage_history')
           .insert({
             card_id: csmCard.cardId,
             stage_id: csmCard.stageId,

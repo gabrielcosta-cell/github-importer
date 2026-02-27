@@ -20,7 +20,7 @@ interface NPSResponseRaw {
   squad: string | null;
   created_at: string;
   card_id: string | null;
-  crm_cards: { squad: string | null } | { squad: string | null }[] | null;
+  csm_cards: { squad: string | null } | { squad: string | null }[] | null;
 }
 
 interface NPSResponse {
@@ -73,25 +73,25 @@ export const CustomerSuccessDashboard = () => {
         // Fetch NPS responses with CSM card squad
         const { data: npsResponses, error: npsError } = await supabase
           .from('nps_responses')
-          .select('id, recomendacao, squad, created_at, card_id, crm_cards(squad)');
+          .select('id, recomendacao, squad, created_at, card_id, csm_cards(squad)');
 
         if (npsError) throw npsError;
         
         // Process responses to use CSM card squad when nps_responses.squad is null
         const processedResponses: NPSResponse[] = (npsResponses || []).map((r: NPSResponseRaw) => {
-          // Handle crm_cards which could be an object, array, or null
-          let crmCardSquad: string | null = null;
-          if (r.crm_cards) {
-            if (Array.isArray(r.crm_cards) && r.crm_cards.length > 0) {
-              crmCardSquad = r.crm_cards[0].squad;
-            } else if (!Array.isArray(r.crm_cards)) {
-              crmCardSquad = r.crm_cards.squad;
+          // Handle csm_cards which could be an object, array, or null
+          let csmCardSquad: string | null = null;
+          if (r.csm_cards) {
+            if (Array.isArray(r.csm_cards) && r.csm_cards.length > 0) {
+              csmCardSquad = r.csm_cards[0].squad;
+            } else if (!Array.isArray(r.csm_cards)) {
+              csmCardSquad = r.csm_cards.squad;
             }
           }
           return {
             id: r.id,
             recomendacao: r.recomendacao,
-            squad: r.squad || crmCardSquad,
+            squad: r.squad || csmCardSquad,
             created_at: r.created_at
           };
         });
@@ -112,26 +112,25 @@ export const CustomerSuccessDashboard = () => {
     const fetchResponseWithSquad = async (id: string): Promise<NPSResponse | null> => {
       const { data, error } = await supabase
         .from('nps_responses')
-        .select('id, recomendacao, squad, created_at, card_id, crm_cards(squad)')
+        .select('id, recomendacao, squad, created_at, card_id, csm_cards(squad)')
         .eq('id', id)
         .single();
       
       if (error || !data) return null;
       
       const r = data as NPSResponseRaw;
-      // Handle crm_cards which could be an object, array, or null
-      let crmCardSquad: string | null = null;
-      if (r.crm_cards) {
-        if (Array.isArray(r.crm_cards) && r.crm_cards.length > 0) {
-          crmCardSquad = r.crm_cards[0].squad;
-        } else if (!Array.isArray(r.crm_cards)) {
-          crmCardSquad = r.crm_cards.squad;
+      let csmCardSquad: string | null = null;
+      if (r.csm_cards) {
+        if (Array.isArray(r.csm_cards) && r.csm_cards.length > 0) {
+          csmCardSquad = r.csm_cards[0].squad;
+        } else if (!Array.isArray(r.csm_cards)) {
+          csmCardSquad = r.csm_cards.squad;
         }
       }
       return {
         id: r.id,
         recomendacao: r.recomendacao,
-        squad: r.squad || crmCardSquad,
+        squad: r.squad || csmCardSquad,
         created_at: r.created_at
       };
     };
