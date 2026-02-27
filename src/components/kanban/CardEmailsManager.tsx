@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, X, Mail, Star, Copy } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/external-client';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface CardEmail {

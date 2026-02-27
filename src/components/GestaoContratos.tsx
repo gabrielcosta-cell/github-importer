@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FileText, Search, Filter, Download, Plus, Edit, Trash2, Upload, ChevronDown, Eye, Maximize2 } from "lucide-react";
 import { formatCurrency } from "@/utils/formatCurrency";
-import { supabase } from "@/integrations/supabase/external-client";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { EditableCell } from "@/components/EditableCell";
 

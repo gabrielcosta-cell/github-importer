@@ -6,7 +6,7 @@ import { useInterfacePreferences, ViewType } from "@/hooks/useInterfacePreferenc
 import { useAuth } from "@/contexts/AuthContext";
 import { useModulePermissions } from "@/hooks/useModulePermissions";
 
-import { supabase } from "@/integrations/supabase/external-client";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { UserManagement } from "@/components/UserManagement";
 import { UserProfile } from "@/components/UserProfile";

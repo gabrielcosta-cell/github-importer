@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Users, User, Flag, DollarSign, CheckCircle2 } from 'lucide-react';
 import { CRMCard } from '@/types/kanban';
-import { supabase } from '@/integrations/supabase/external-client';
+import { supabase } from '@/integrations/supabase/client';
 import * as LucideIcons from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { differenceInDays, isPast } from 'date-fns';

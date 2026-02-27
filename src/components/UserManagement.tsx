@@ -17,7 +17,7 @@ import { UserPermissions } from '@/components/UserPermissions';
 import { UserPlus, Trash2, Edit, Shield, User, UserCheck, ChevronDown, ChevronRight, Settings, Users, Plus, Upload, Camera, DollarSign, BarChart3, FolderCheck, Wallet, Trophy, BarChart2, ClipboardList, FileText, FolderOpen, Activity, Sparkles, Eye, PenLine, Trash, PlusCircle, Crown, AlertTriangle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/external-client';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CustomRole {
   id: string;

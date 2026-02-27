@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useMemo } from "react";
-import { externalSupabase } from "@/integrations/supabase/external-client";
+import { supabase } from "@/integrations/supabase/client";
 import { NPSGaugeChart } from "@/components/charts/NPSGaugeChart";
 import { NPSDonutChart } from "@/components/charts/NPSDonutChart";
 import { MonthYearPicker } from "@/components/MonthYearPicker";
@@ -57,7 +57,7 @@ export const CustomerSuccessDashboard = () => {
       setLoading(true);
       try {
         // Fetch squads
-        const { data: squadsData, error: squadsError } = await externalSupabase
+        const { data: squadsData, error: squadsError } = await supabase
           .from('squads')
           .select('id, name, color')
           .eq('is_active', true)
@@ -71,7 +71,7 @@ export const CustomerSuccessDashboard = () => {
         setSquads(filteredSquads);
 
         // Fetch NPS responses with CSM card squad
-        const { data: npsResponses, error: npsError } = await externalSupabase
+        const { data: npsResponses, error: npsError } = await supabase
           .from('nps_responses')
           .select('id, recomendacao, squad, created_at, card_id, crm_cards(squad)');
 
@@ -110,7 +110,7 @@ export const CustomerSuccessDashboard = () => {
   // Real-time subscription for NPS responses
   useEffect(() => {
     const fetchResponseWithSquad = async (id: string): Promise<NPSResponse | null> => {
-      const { data, error } = await externalSupabase
+      const { data, error } = await supabase
         .from('nps_responses')
         .select('id, recomendacao, squad, created_at, card_id, crm_cards(squad)')
         .eq('id', id)
@@ -136,7 +136,7 @@ export const CustomerSuccessDashboard = () => {
       };
     };
 
-    const channel = externalSupabase
+    const channel = supabase
       .channel('nps-realtime-updates')
       .on(
         'postgres_changes',
@@ -185,7 +185,7 @@ export const CustomerSuccessDashboard = () => {
       .subscribe();
 
     return () => {
-      externalSupabase.removeChannel(channel);
+      supabase.removeChannel(channel);
     };
   }, []);
 

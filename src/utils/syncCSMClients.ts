@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/external-client';
+import { supabase } from '@/integrations/supabase/client';
 
 // Lista de clientes atualizada conforme fornecida
 const clientesAtualizados = [

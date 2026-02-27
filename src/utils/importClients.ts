@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { supabase } from '@/integrations/supabase/external-client';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ClientData {
   empresa: string;

@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/external-client";
+import { supabase } from "@/integrations/supabase/client";
 
 export const updateClientCategories = async () => {
   const mrrVendidoClients = [

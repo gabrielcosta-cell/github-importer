@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { User, Lock, Shield, Mail, Calendar, Eye, EyeOff, Camera } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
-import { supabase } from '@/integrations/supabase/external-client'
+import { supabase } from '@/integrations/supabase/client'
 
 export const UserProfile = () => {
   const { profile, refreshProfiles } = useAuth()

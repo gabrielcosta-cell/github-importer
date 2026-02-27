@@ -3,7 +3,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/external-client";
+import { supabase } from "@/integrations/supabase/client";
 import { CSATGaugeChart } from "@/components/charts/CSATGaugeChart";
 import { CSATDonutChart } from "@/components/charts/CSATDonutChart";
 import { MonthYearPicker } from "@/components/MonthYearPicker";

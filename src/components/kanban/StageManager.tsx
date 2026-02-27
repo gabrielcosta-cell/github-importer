@@ -11,7 +11,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Plus, Edit2, Trash2, GripVertical, AlertTriangle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/external-client';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { CRMStage } from '@/types/kanban';
 import { useAuth } from '@/contexts/AuthContext';

@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { User, Lock, Shield, Mail, Calendar, Eye, EyeOff, Camera, Building2, Phone, Pencil, Check, X, Moon, Sun } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
-import { supabase } from '@/integrations/supabase/external-client'
+import { supabase } from '@/integrations/supabase/client'
 import { useTheme } from '@/components/ui/theme-provider'
 
 interface UserProfilePopoverProps {

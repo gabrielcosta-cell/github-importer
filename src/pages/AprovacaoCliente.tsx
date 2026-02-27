@@ -1,7 +1,7 @@
 // v2.0 - Página de aprovação com layout atualizado
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/external-client";
+import { supabase } from "@/integrations/supabase/client";
 import { InstagramPostPreview } from "@/components/approval/InstagramPostPreview";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
