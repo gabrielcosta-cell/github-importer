@@ -144,7 +144,7 @@ export default function GestaoCancelamentos() {
       // Buscar os cards do CSM correspondentes
       const cardIds = requestsWithCards.map((r: any) => r.card_id).filter(Boolean);
       const { data: csmCards } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .select('id, title, company_name')
         .in('id', cardIds);
       
@@ -207,7 +207,7 @@ export default function GestaoCancelamentos() {
       
       // Buscar cards de pipelines relevantes E cards vinculados diretamente
       const { data: pipelines } = await supabase
-        .from('crm_pipelines')
+        .from('csm_pipelines')
         .select('id')
         .in('name', ['Clientes ativos', 'Clientes Perdidos']);
 
@@ -216,7 +216,7 @@ export default function GestaoCancelamentos() {
       if (pipelines && pipelines.length > 0) {
         const pipelineIds = pipelines.map(p => p.id);
         const { data: pipelineCards } = await supabase
-          .from('crm_cards')
+          .from('csm_cards')
           .select('id, title, company_name, squad')
           .in('pipeline_id', pipelineIds);
         
@@ -230,7 +230,7 @@ export default function GestaoCancelamentos() {
         
         if (missingIds.length > 0) {
           const { data: linkedCards } = await supabase
-            .from('crm_cards')
+            .from('csm_cards')
             .select('id, title, company_name, squad')
             .in('id', missingIds);
           
@@ -1008,7 +1008,7 @@ export default function GestaoCancelamentos() {
 
       // Buscar o pipeline "Clientes perdidos" do CSM
       const { data: pipelines } = await supabase
-        .from('crm_pipelines')
+        .from('csm_pipelines')
         .select('id, name')
         .or('name.ilike.%clientes perdidos%,name.ilike.%perdidos%')
         .eq('is_active', true);
@@ -1030,7 +1030,7 @@ export default function GestaoCancelamentos() {
       if (clientesPerdidosPipeline) {
         // Buscar a etapa atual do card no pipeline de origem
         const { data: cardData } = await supabase
-          .from('crm_cards')
+          .from('csm_cards')
           .select('stage_id, stage_entered_at')
           .eq('id', cardId)
           .maybeSingle();
@@ -1040,7 +1040,7 @@ export default function GestaoCancelamentos() {
 
         if (cardData?.stage_id) {
           const { data: currentStage } = await supabase
-            .from('crm_stages')
+            .from('csm_stages')
             .select('name')
             .eq('id', cardData.stage_id)
             .maybeSingle();
@@ -1049,7 +1049,7 @@ export default function GestaoCancelamentos() {
 
         // Buscar todas as etapas do pipeline de clientes perdidos
         const { data: stages } = await supabase
-          .from('crm_stages')
+          .from('csm_stages')
           .select('id, name')
           .eq('pipeline_id', clientesPerdidosPipeline.id)
           .eq('is_active', true)
@@ -1075,19 +1075,19 @@ export default function GestaoCancelamentos() {
       }
 
       const { error } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .update(updateData)
         .eq('id', cardId);
 
       if (error) {
-        console.error('[Churn] Erro ao atualizar crm_cards:', error);
+        console.error('[Churn] Erro ao atualizar csm_cards:', error);
         // Não bloquear — continuar com o registro na cancellation_requests
       }
 
       // Registrar no histórico do card CSM (best-effort)
       try {
         await supabase
-          .from('crm_card_stage_history')
+          .from('csm_card_stage_history')
           .insert({
             card_id: cardId,
             stage_id: targetStageId || updateData.stage_id,

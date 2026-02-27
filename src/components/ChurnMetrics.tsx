@@ -255,7 +255,7 @@ export const ChurnMetrics = () => {
         // Isso é necessário sempre, independente de termos histórico ou não
         // IMPORTANTE: Filtrar apenas pipeline CSM (Clientes ativos), não CRM (leads)
         const { data: activeCards, error: activeError } = await supabase
-          .from('crm_cards')
+          .from('csm_cards')
           .select('monthly_revenue, squad, categoria')
           .eq('pipeline_id', '1242a985-2f74-4b4a-bc0e-c045a3951d65')
           .eq('churn', false);
@@ -269,7 +269,7 @@ export const ChurnMetrics = () => {
         // Buscar churns do mês SELECIONADO EM DIANTE para incluir na base de clientes
         // (eles faziam parte da base no início do mês selecionado)
         const { data: baseChurns, error: baseChurnError } = await supabase
-          .from('crm_cards')
+          .from('csm_cards')
           .select('squad, categoria')
           .in('pipeline_id', ['1242a985-2f74-4b4a-bc0e-c045a3951d65', '5dfc98f3-9614-419a-af65-1b87c8372aeb'])
           .eq('churn', true)
@@ -305,7 +305,7 @@ export const ChurnMetrics = () => {
         // Isso inclui: clientes ainda ativos + clientes que cancelaram a partir do mês selecionado
         // Exclui: clientes que já tinham cancelado ANTES do mês selecionado
         const { data: baseClientsData, error: baseError } = await supabase
-          .from('crm_cards')
+          .from('csm_cards')
           .select('squad, monthly_revenue, categoria, churn, data_perda')
           .in('pipeline_id', ['1242a985-2f74-4b4a-bc0e-c045a3951d65', '5dfc98f3-9614-419a-af65-1b87c8372aeb'])
           .or(`churn.eq.false,data_perda.gte.${startOfMonth}`);
@@ -345,7 +345,7 @@ export const ChurnMetrics = () => {
         
         // Buscar upsells do mês - agora do histórico
         const { data: upsellData, error: upsellError } = await supabase
-          .from('crm_card_upsell_history')
+          .from('csm_card_upsell_history')
           .select('upsell_value, card_id')
           .eq('upsell_month', selectedMonth)
           .eq('upsell_year', selectedYear);
@@ -354,7 +354,7 @@ export const ChurnMetrics = () => {
 
         // Buscar variáveis (investimento/venda) do mês
         const { data: variableData, error: variableError } = await supabase
-          .from('crm_card_variable_history')
+          .from('csm_card_variable_history')
           .select('variable_value, variable_type, card_id')
           .eq('variable_month', selectedMonth)
           .eq('variable_year', selectedYear);
@@ -367,7 +367,7 @@ export const ChurnMetrics = () => {
         const cardIds = [...new Set([...upsellCardIds, ...variableCardIds])];
         
         const { data: cardsWithUpsellOrVariable } = await supabase
-          .from('crm_cards')
+          .from('csm_cards')
           .select('id, squad, title')
           .in('pipeline_id', ['1242a985-2f74-4b4a-bc0e-c045a3951d65', '5dfc98f3-9614-419a-af65-1b87c8372aeb'])
           .in('id', cardIds);
@@ -414,7 +414,7 @@ export const ChurnMetrics = () => {
           // Buscar churns do mês específico
           // IMPORTANTE: Buscar churns em ambos pipelines (Clientes ativos + Clientes Perdidos)
           const { data: churnCards, error } = await supabase
-            .from('crm_cards')
+            .from('csm_cards')
             .select('*')
             .in('pipeline_id', ['1242a985-2f74-4b4a-bc0e-c045a3951d65', '5dfc98f3-9614-419a-af65-1b87c8372aeb'])
             .eq('churn', true)

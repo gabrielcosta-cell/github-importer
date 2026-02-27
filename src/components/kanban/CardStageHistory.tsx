@@ -32,7 +32,7 @@ export const CardStageHistory: React.FC<CardStageHistoryProps> = ({ cardId, stag
     queryKey: ['card-stage-history', cardId],
     queryFn: async () => {
       const { data: historyData, error: historyError } = await supabase
-        .from('crm_card_stage_history')
+        .from('csm_card_stage_history')
         .select('*')
         .eq('card_id', cardId)
         .order('entered_at', { ascending: false });

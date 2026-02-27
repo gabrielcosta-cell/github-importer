@@ -97,7 +97,7 @@ export function CSMClientsList({
       }
       
       const { data: cardsData, error } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .select(`
           id,
           title,
@@ -128,7 +128,7 @@ export function CSMClientsList({
       // Buscar informações das stages
       const stageIds = [...new Set(cardsData?.map(c => c.stage_id).filter(Boolean))];
       const { data: stagesData } = await supabase
-        .from('crm_stages')
+        .from('csm_stages')
         .select('id, name')
         .in('id', stageIds);
 
@@ -171,7 +171,7 @@ export function CSMClientsList({
   const updatePlano = async (clienteId: string, plano: string) => {
     try {
       const { error } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .update({ plano })
         .eq('id', clienteId);
 
@@ -191,7 +191,7 @@ export function CSMClientsList({
   const updateCategoria = async (clienteId: string, categoria: string) => {
     try {
       const { error } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .update({ categoria })
         .eq('id', clienteId);
 
@@ -211,7 +211,7 @@ export function CSMClientsList({
   const updateSquad = async (clienteId: string, squad: Cliente['squad']) => {
     try {
       const { error } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .update({ squad })
         .eq('id', clienteId);
 
@@ -231,7 +231,7 @@ export function CSMClientsList({
   const updateFlag = async (clienteId: string, flag: Cliente['flag']) => {
     try {
       const { error } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .update({ flag })
         .eq('id', clienteId);
 
