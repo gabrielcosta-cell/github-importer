@@ -83,7 +83,7 @@ export function JobDialog({ open, onOpenChange, job, onSave, onClose }: JobDialo
       try {
         // Buscar o pipeline "Clientes ativos"
         const { data: pipeline } = await supabase
-          .from('crm_pipelines')
+          .from('csm_pipelines')
           .select('id')
           .eq('name', 'Clientes ativos')
           .eq('is_active', true)
@@ -93,7 +93,7 @@ export function JobDialog({ open, onOpenChange, job, onSave, onClose }: JobDialo
 
         // Buscar todos os cards do pipeline
         const { data: cards } = await supabase
-          .from('crm_cards')
+          .from('csm_cards')
           .select('company_name')
           .eq('pipeline_id', pipeline.id);
 
@@ -101,7 +101,7 @@ export function JobDialog({ open, onOpenChange, job, onSave, onClose }: JobDialo
 
         // Buscar clientes na lista especial "perdido"
         const { data: lostClients } = await supabase
-          .from('crm_special_lists')
+          .from('csm_special_lists')
           .select('company_name')
           .eq('list_type', 'perdido');
 

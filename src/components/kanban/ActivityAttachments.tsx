@@ -53,7 +53,7 @@ export const ActivityAttachments: React.FC<ActivityAttachmentsProps> = ({
 
         // Save metadata to database
         const { error: dbError } = await supabase
-          .from('crm_activity_attachments')
+            .from('csm_activity_attachments')
           .insert({
             activity_id: activityId,
             file_name: file.name,
@@ -110,7 +110,7 @@ export const ActivityAttachments: React.FC<ActivityAttachmentsProps> = ({
 
       // Delete from database
       const { error: dbError } = await supabase
-        .from('crm_activity_attachments')
+        .from('csm_activity_attachments')
         .delete()
         .eq('id', attachmentId);
 

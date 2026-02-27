@@ -139,7 +139,7 @@ export default function GestaoNPS() {
   const fetchPipelines = async () => {
     try {
       const { data } = await supabase
-        .from('crm_pipelines')
+        .from('csm_pipelines')
         .select('id, name')
         .or('name.ilike.%clientes%,name.ilike.%csm%,name.ilike.%customer%')
         .eq('is_active', true)
@@ -153,14 +153,14 @@ export default function GestaoNPS() {
   const fetchAllLinkedCards = async () => {
     try {
       const { data: pipelinesData } = await supabase
-        .from('crm_pipelines')
+        .from('csm_pipelines')
         .select('id, name')
         .or('name.ilike.%clientes%,name.ilike.%csm%,name.ilike.%customer%');
 
       if (pipelinesData && pipelinesData.length > 0) {
         const pipelineIds = pipelinesData.map(p => p.id);
         const { data: cards } = await supabase
-          .from('crm_cards')
+          .from('csm_cards')
           .select('id, pipeline_id')
           .in('pipeline_id', pipelineIds);
         
@@ -196,14 +196,14 @@ export default function GestaoNPS() {
     try {
       // Buscar apenas o pipeline "Clientes ativos" para novas vinculações
       const { data: pipeline } = await supabase
-        .from('crm_pipelines')
+        .from('csm_pipelines')
         .select('id')
         .eq('name', 'Clientes ativos')
         .maybeSingle();
 
       if (pipeline) {
         const { data: cards } = await supabase
-          .from('crm_cards')
+          .from('csm_cards')
           .select('id, title, company_name, squad')
           .eq('pipeline_id', pipeline.id)
           .order('company_name', { ascending: true });
@@ -236,7 +236,7 @@ export default function GestaoNPS() {
 
       // Buscar apenas cards do pipeline "Clientes ativos" para novas vinculações
       const { data: pipeline } = await supabase
-        .from('crm_pipelines')
+        .from('csm_pipelines')
         .select('id')
         .eq('name', 'Clientes ativos')
         .maybeSingle();
@@ -244,7 +244,7 @@ export default function GestaoNPS() {
       if (!pipeline) return;
 
       const { data: cards } = await supabase
-        .from('crm_cards')
+          .from('csm_cards')
         .select('id, title, company_name, squad')
         .eq('pipeline_id', pipeline.id);
 
@@ -278,13 +278,13 @@ export default function GestaoNPS() {
             
             // Registrar no histórico do card CSM
             const { data: cardData } = await supabase
-              .from('crm_cards')
+              .from('csm_cards')
               .select('stage_id')
               .eq('id', matchingCard.id)
               .single();
             
             if (cardData) {
-              await supabase.from('crm_card_stage_history').insert({
+              await supabase.from('csm_card_stage_history').insert({
                 card_id: matchingCard.id,
                 stage_id: cardData.stage_id,
                 event_type: 'nps_linked',
@@ -362,9 +362,9 @@ export default function GestaoNPS() {
         const oldSquadDisplay = oldSquad || 'Sem squad';
         const newSquadDisplay = squadValue || 'Sem squad';
 
-        await supabase.from('crm_card_stage_history').insert({
+        await supabase.from('csm_card_stage_history').insert({
           card_id: cardId,
-          stage_id: (await supabase.from('crm_cards').select('stage_id').eq('id', cardId).single()).data?.stage_id,
+          stage_id: (await supabase.from('csm_cards').select('stage_id').eq('id', cardId).single()).data?.stage_id,
           event_type: 'field_change',
           notes: `Squad alterado de "${oldSquadDisplay}" para "${newSquadDisplay}" (via NPS) por ${userName}`,
           moved_by: profile.user_id
@@ -524,7 +524,7 @@ export default function GestaoNPS() {
 
       // Registrar no histórico do card CSM
       const { data: cardData } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .select('stage_id')
         .eq('id', selectedCardId)
         .single();
@@ -538,7 +538,7 @@ export default function GestaoNPS() {
 
         const userName = userData?.name || profile?.email || 'Usuário';
 
-        await supabase.from('crm_card_stage_history').insert({
+        await supabase.from('csm_card_stage_history').insert({
           card_id: selectedCardId,
           stage_id: cardData.stage_id,
           event_type: 'nps_linked',

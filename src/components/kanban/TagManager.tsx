@@ -57,7 +57,7 @@ export const TagManager: React.FC<TagManagerProps> = ({ open, onClose, onUpdate,
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('crm_tags')
+        .from('csm_tags')
         .select('*')
         .eq('is_active', true)
         .or(`module_scope.eq.${moduleType},module_scope.eq.both`)
@@ -91,7 +91,7 @@ export const TagManager: React.FC<TagManagerProps> = ({ open, onClose, onUpdate,
       }
 
       const { error } = await supabase
-        .from('crm_tags')
+        .from('csm_tags')
         .insert({
           name: newTagName.trim().toUpperCase(),
           color: newTagColor,
@@ -128,7 +128,7 @@ export const TagManager: React.FC<TagManagerProps> = ({ open, onClose, onUpdate,
     setLoading(true);
     try {
       const { error } = await supabase
-        .from('crm_tags')
+        .from('csm_tags')
         .update({
           name: editName.trim().toUpperCase(),
           color: editColor,
@@ -158,7 +158,7 @@ export const TagManager: React.FC<TagManagerProps> = ({ open, onClose, onUpdate,
     setLoading(true);
     try {
       const { error } = await supabase
-        .from('crm_tags')
+        .from('csm_tags')
         .update({ is_active: false })
         .eq('id', tagId);
 
@@ -223,7 +223,7 @@ export const TagManager: React.FC<TagManagerProps> = ({ open, onClose, onUpdate,
 
       for (const update of updates) {
         await supabase
-          .from('crm_tags')
+          .from('csm_tags')
           .update({ position: update.position })
           .eq('id', update.id);
       }

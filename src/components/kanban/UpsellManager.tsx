@@ -80,7 +80,7 @@ export function UpsellManager({ cardId, upsellHistory }: UpsellManagerProps) {
       if (!user) throw new Error("Usuário não autenticado");
 
       const { error } = await supabase
-        .from("crm_card_upsell_history")
+        .from("csm_card_upsell_history")
         .insert({
           card_id: cardId,
           upsell_type: type,
@@ -98,7 +98,7 @@ export function UpsellManager({ cardId, upsellHistory }: UpsellManagerProps) {
       if (error) throw error;
 
       // Log history
-      await supabase.from("crm_activities").insert({
+      await supabase.from("csm_activities").insert({
         card_id: cardId,
         activity_type: "note",
         title: `${type === 'upsell' ? 'Upsell' : 'Crosssell'} registrado`,
@@ -131,7 +131,7 @@ export function UpsellManager({ cardId, upsellHistory }: UpsellManagerProps) {
   const handleDeleteUpsell = async (recordId: string) => {
     try {
       const { error } = await supabase
-        .from("crm_card_upsell_history")
+        .from("csm_card_upsell_history")
         .delete()
         .eq("id", recordId);
 
@@ -140,7 +140,7 @@ export function UpsellManager({ cardId, upsellHistory }: UpsellManagerProps) {
       // Log history
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        await supabase.from("crm_activities").insert({
+        await supabase.from("csm_activities").insert({
           card_id: cardId,
           activity_type: "note",
           title: "Upsell/Crosssell removido",

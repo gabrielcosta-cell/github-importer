@@ -506,7 +506,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
       const phase = stagePhaseMap[card.stage_id];
       console.log(`  → Card "${card.title}" (${card.id}) -> Fase: "${phase}"`);
       return supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .update({ fase_projeto: phase })
         .eq('id', card.id)
         .then(({ error }) => {
@@ -547,7 +547,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
       // Busca o card diretamente do banco para garantir
       try {
         const { data: cardData, error } = await supabase
-          .from('crm_cards')
+          .from('csm_cards')
           .select('*')
           .eq('id', cardToOpen)
           .single();
@@ -597,7 +597,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
       }
 
       const { data, error } = await supabase
-        .from('crm_pipelines')
+        .from('csm_pipelines')
         .insert({
           name,
           description,
@@ -620,7 +620,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
         }));
 
         const { error: stagesError } = await supabase
-          .from('crm_stages')
+          .from('csm_stages')
           .insert(stagesToInsert);
 
         if (stagesError) {

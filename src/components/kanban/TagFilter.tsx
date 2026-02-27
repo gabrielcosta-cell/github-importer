@@ -35,7 +35,7 @@ export const TagFilter: React.FC<TagFilterProps> = ({
 
   const fetchAvailableTags = async () => {
     const { data, error } = await supabase
-      .from('crm_tags')
+      .from('csm_tags')
       .select('id, name, color, module_scope')
       .eq('is_active', true)
       .or(`module_scope.eq.${moduleType},module_scope.eq.both`);

@@ -16,7 +16,7 @@ export const updateClientCategories = async () => {
 
     // Primeiro, buscar todos os IDs dos clientes MRR Vendido
     const { data: vendidoCards, error: fetchError } = await supabase
-      .from('crm_cards')
+      .from('csm_cards')
       .select('id, company_name, title')
       .or(
         mrrVendidoClients
@@ -36,7 +36,7 @@ export const updateClientCategories = async () => {
       const vendidoIds = vendidoCards.map(card => card.id);
       
       const { error: vendidoError } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .update({ categoria: 'MRR Vendido' })
         .in('id', vendidoIds);
 
@@ -50,7 +50,7 @@ export const updateClientCategories = async () => {
 
     // Buscar TODOS os outros clientes (independente da categoria atual)
     const { data: allCards, error: allFetchError } = await supabase
-      .from('crm_cards')
+      .from('csm_cards')
       .select('id');
 
     if (allFetchError) {
@@ -69,7 +69,7 @@ export const updateClientCategories = async () => {
       const recorrenteIds = recorrenteCards.map(card => card.id);
       
       const { error: recorrenteError } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .update({ categoria: 'MRR Recorrente' })
         .in('id', recorrenteIds);
 
@@ -93,7 +93,7 @@ export const updateClientCategories = async () => {
 export const fixCCRContabilidadeCategory = async () => {
   try {
     const { error } = await supabase
-      .from('crm_cards')
+      .from('csm_cards')
       .update({ categoria: 'MRR recorrente' })
       .eq('id', '17220054-a5e1-4d53-b57e-2c5bf1e6c204');
 

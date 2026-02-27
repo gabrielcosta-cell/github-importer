@@ -75,7 +75,7 @@ export const LostReasonDialog: React.FC<LostReasonDialogProps> = ({
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('crm_loss_reasons')
+        .from('csm_loss_reasons')
         .select('id, name')
         .eq('is_active', true)
         .order('position');

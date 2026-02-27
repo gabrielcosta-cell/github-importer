@@ -37,13 +37,13 @@ export const FinancialMetrics = () => {
       
       const [cardsRes, upsellRes] = await Promise.all([
         supabase
-          .from('crm_cards')
+          .from('csm_cards')
           .select('monthly_revenue, plano')
           .eq('pipeline_id', '1242a985-2f74-4b4a-bc0e-c045a3951d65')
           .eq('churn', false)
           .eq('categoria', 'MRR recorrente'),
         supabase
-          .from('crm_card_upsell_history')
+          .from('csm_card_upsell_history')
           .select('upsell_type, upsell_value, payment_type')
       ]);
 
