@@ -1,3 +1,0 @@
-UPDATE crm_cards 
-SET data_perda = '2025-11-01T00:00:00.000Z'
-WHERE id = '909bd593-1368-44a4-8680-5293fce9c1c3';
