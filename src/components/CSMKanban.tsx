@@ -18,7 +18,7 @@ import { CardForm } from './kanban/CardForm';
 import { CSMSimpleCardForm } from './kanban/CSMSimpleCardForm';
 import { CardDetailsDialog } from './kanban/CardDetailsDialog';
 import { FilterPopover } from './csm/FilterPopover';
-import { CRMPipeline, CRMStage, CRMCard } from '@/types/kanban';
+import { CSMPipeline, CSMStage, CSMCard } from '@/types/kanban';
 import { useAutoMoveCards } from '@/hooks/useAutoMoveCards';
 import { CSMClientsList } from './CSMClientsList';
 import { DotLogo } from '@/components/DotLogo';
@@ -44,7 +44,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
   const cardIdFromUrl = searchParams.get('cardId');
 
   // Tentar abrir o card instantaneamente a partir do cache (evita flicker)
-  const [cardOpenedFromCache] = useState<CRMCard | null>(() => {
+  const [cardOpenedFromCache] = useState<CSMCard | null>(() => {
     const targetCardId = cardIdFromUrl || openCardId;
     if (!targetCardId || !initialCache?.cards?.length) return null;
     const cachedCard = initialCache.cards.find(c => c.id === targetCardId);
@@ -72,12 +72,12 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
   };
 
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
-  const [pipelines, setPipelines] = useState<CRMPipeline[]>(initialCache?.pipelines ?? []);
+  const [pipelines, setPipelines] = useState<CSMPipeline[]>(initialCache?.pipelines ?? []);
   const [selectedPipeline, setSelectedPipeline] = useState<string>(
     initialCache?.selectedPipeline ?? initialCache?.pipelines?.[0]?.id ?? ''
   );
-  const [stages, setStages] = useState<CRMStage[]>(initialCache?.stages ?? []);
-  const [cards, setCards] = useState<CRMCard[]>(initialCache?.cards ?? []);
+  const [stages, setStages] = useState<CSMStage[]>(initialCache?.stages ?? []);
+  const [cards, setCards] = useState<CSMCard[]>(initialCache?.cards ?? []);
   const [cardTagsMap, setCardTagsMap] = useState<Record<string, string[]>>(initialCache?.cardTagsMap ?? {});
   const [selectedTagsFilter, setSelectedTagsFilter] = useState<string[]>(getTagsFromUrl);
   const [availableTags, setAvailableTags] = useState<Array<{ id: string; name: string; color: string }>>(
@@ -91,7 +91,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
   const [showSimpleCardForm, setShowSimpleCardForm] = useState(false);
   const [selectedStageForCard, setSelectedStageForCard] = useState<string>('');
   // Se card existe no cache, abre instantaneamente sem flicker
-  const [selectedCard, setSelectedCard] = useState<CRMCard | null>(cardOpenedFromCache);
+  const [selectedCard, setSelectedCard] = useState<CSMCard | null>(cardOpenedFromCache);
   const [showCardDetails, setShowCardDetails] = useState(!!cardOpenedFromCache);
   const [searchTerm, setSearchTerm] = useState(() => getFilterFromUrl('search', ''));
   
@@ -246,7 +246,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
 
     try {
       const { data: stages, error } = await supabase
-        .from('crm_stages')
+        .from('csm_stages')
         .select('name, color')
         .eq('pipeline_id', pipelineId)
         .eq('is_active', true)
@@ -263,7 +263,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
   const fetchPipelines = async () => {
     try {
       const { data, error } = await supabase
-        .from('crm_pipelines')
+        .from('csm_pipelines')
         .select('*')
         .eq('is_active', true)
         .order('position');
@@ -309,7 +309,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
 
     try {
       const { data, error } = await supabase
-        .from('crm_stages')
+        .from('csm_stages')
         .select('*')
         .eq('pipeline_id', pipelineId)
         .eq('is_active', true)
@@ -329,7 +329,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
 
     try {
       const { data, error } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .select('*')
         .eq('pipeline_id', pipelineId)
         .order('position');
@@ -350,7 +350,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
       if (data && data.length > 0) {
         const cardIds = data.map(c => c.id);
         const { data: cardTags, error: tagsError } = await supabase
-          .from('crm_card_tags')
+          .from('csm_card_tags')
           .select('card_id, tag_id')
           .in('card_id', cardIds);
         
@@ -375,7 +375,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
   const fetchAvailableTags = async () => {
     try {
       const { data, error } = await supabase
-        .from('crm_tags')
+        .from('csm_tags')
         .select('id, name, color')
         .eq('is_active', true)
         .or('module_scope.eq.csm,module_scope.eq.both');
@@ -567,14 +567,14 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
           setSelectedPipeline(cardData.pipeline_id);
           // Aguarda um pouco mais para o pipeline carregar
           setTimeout(() => {
-            setSelectedCard(cardData as CRMCard);
+            setSelectedCard(cardData as CSMCard);
             setShowCardDetails(true);
             setCardIdInUrl(cardData.id);
             console.log('📂 Card aberto após mudança de pipeline!');
           }, 300);
         } else {
           // Pipeline já está correto, abre direto
-          setSelectedCard(cardData as CRMCard);
+          setSelectedCard(cardData as CSMCard);
           setShowCardDetails(true);
           setCardIdInUrl(cardData.id);
           console.log('📂 Card aberto!');
@@ -690,14 +690,14 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
     }
   };
 
-  const handleCardClick = (card: CRMCard) => {
+  const handleCardClick = (card: CSMCard) => {
     setSelectedCard(card);
     setShowCardDetails(true);
     setCardIdInUrl(card.id);
   };
 
   // Cross-pipeline card select from global search
-  const handleGlobalCardSelect = (card: CRMCard, pipelineId: string) => {
+  const handleGlobalCardSelect = (card: CSMCard, pipelineId: string) => {
     if (pipelineId !== selectedPipeline) {
       setSelectedPipeline(pipelineId);
       setTimeout(() => {
@@ -920,7 +920,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
                   cardsByStage={stages.reduce((acc, stage) => {
                     acc[stage.id] = filteredCardsData.cards.filter(c => c.stage_id === stage.id);
                     return acc;
-                  }, {} as Record<string, CRMCard[]>)}
+                  }, {} as Record<string, CSMCard[]>)}
                   onCardClick={handleCardClick}
                 />
               ) : (

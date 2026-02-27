@@ -18,7 +18,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Plus, Edit2, Kanban, ChevronDown, GripVertical, X, Trash2 } from 'lucide-react';
-import { CRMPipeline } from '@/types/kanban';
+import { CSMPipeline } from '@/types/kanban';
 import {
   DndContext,
   closestCenter,
@@ -98,7 +98,7 @@ const SortableStageItem: React.FC<SortableStageItemProps> = ({ stage, index, onR
 };
 
 interface PipelineSelectorProps {
-  pipelines: CRMPipeline[];
+  pipelines: CSMPipeline[];
   selectedPipeline: string;
   onPipelineChange: (pipelineId: string) => void;
   onCreatePipeline: (name: string, description?: string, stages?: SuggestedStage[]) => void;

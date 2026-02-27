@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
-import { CRMCard, CRMPipeline, CRMStage } from '@/types/kanban';
+import { CSMCard, CSMPipeline, CSMStage } from '@/types/kanban';
 
 interface SearchResult {
-  card: CRMCard;
+  card: CSMCard;
   pipelineId: string;
   pipelineName: string;
   stageName: string;
@@ -14,10 +14,10 @@ interface SearchResult {
 
 interface MobileGlobalSearchProps {
   currentPipelineId: string;
-  pipelines: CRMPipeline[];
-  currentCards: CRMCard[];
-  currentStages: CRMStage[];
-  onSelectCard: (card: CRMCard, pipelineId: string) => void;
+  pipelines: CSMPipeline[];
+  currentCards: CSMCard[];
+  currentStages: CSMStage[];
+  onSelectCard: (card: CSMCard, pipelineId: string) => void;
 }
 
 export const MobileGlobalSearch: React.FC<MobileGlobalSearchProps> = ({
@@ -34,8 +34,8 @@ export const MobileGlobalSearch: React.FC<MobileGlobalSearchProps> = ({
 
   // Cache all pipeline data for instant cross-pipeline search
   const allDataRef = useRef<{
-    cards: CRMCard[];
-    stages: CRMStage[];
+    cards: CSMCard[];
+    stages: CSMStage[];
     pipelineMap: Record<string, string>;
     stageMap: Record<string, { name: string; color: string; pipelineId: string }>;
   }>({ cards: [], stages: [], pipelineMap: {}, stageMap: {} });
@@ -45,12 +45,12 @@ export const MobileGlobalSearch: React.FC<MobileGlobalSearchProps> = ({
     const loadAllData = async () => {
       try {
         const [cardsRes, stagesRes] = await Promise.all([
-          supabase.from('crm_cards').select('*').order('position'),
-          supabase.from('crm_stages').select('*').eq('is_active', true).order('position'),
+          supabase.from('csm_cards').select('*').order('position'),
+          supabase.from('csm_stages').select('*').eq('is_active', true).order('position'),
         ]);
 
-        const allCards = (cardsRes.data || []) as CRMCard[];
-        const allStages = (stagesRes.data || []) as CRMStage[];
+        const allCards = (cardsRes.data || []) as CSMCard[];
+        const allStages = (stagesRes.data || []) as CSMStage[];
 
         const pipelineMap: Record<string, string> = {};
         pipelines.forEach(p => { pipelineMap[p.id] = p.name; });
@@ -231,7 +231,7 @@ export const DesktopGlobalSearch: React.FC<MobileGlobalSearchProps & { searchTer
   const inputRef = useRef<HTMLInputElement>(null);
 
   const allDataRef = useRef<{
-    cards: CRMCard[];
+    cards: CSMCard[];
     pipelineMap: Record<string, string>;
     stageMap: Record<string, { name: string; color: string; pipelineId: string }>;
   }>({ cards: [], pipelineMap: {}, stageMap: {} });
@@ -240,8 +240,8 @@ export const DesktopGlobalSearch: React.FC<MobileGlobalSearchProps & { searchTer
     const loadAllData = async () => {
       try {
         const [cardsRes, stagesRes] = await Promise.all([
-          supabase.from('crm_cards').select('*').order('position'),
-          supabase.from('crm_stages').select('*').eq('is_active', true).order('position'),
+          supabase.from('csm_cards').select('*').order('position'),
+          supabase.from('csm_stages').select('*').eq('is_active', true).order('position'),
         ]);
 
         const pipelineMap: Record<string, string> = {};
@@ -252,7 +252,7 @@ export const DesktopGlobalSearch: React.FC<MobileGlobalSearchProps & { searchTer
           stageMap[s.id] = { name: s.name, color: s.color, pipelineId: s.pipeline_id };
         });
 
-        allDataRef.current = { cards: (cardsRes.data || []) as CRMCard[], pipelineMap, stageMap };
+        allDataRef.current = { cards: (cardsRes.data || []) as CSMCard[], pipelineMap, stageMap };
       } catch (err) {
         console.error('Error preloading search data:', err);
       }

@@ -13,7 +13,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Plus, Edit2, Trash2, GripVertical, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { CRMStage } from '@/types/kanban';
+import { CSMStage } from '@/types/kanban';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   AlertDialog,
@@ -46,19 +46,19 @@ import { CSS } from '@dnd-kit/utilities';
 interface StageManagerProps {
   pipelineId: string;
   pipelineName: string;
-  stages: CRMStage[];
+  stages: CSMStage[];
   open: boolean;
   onClose: () => void;
   onRefresh: () => void;
 }
 
 interface SortableStageItemProps {
-  stage: CRMStage;
+  stage: CSMStage;
   index: number;
-  editingStage: CRMStage | null;
+  editingStage: CSMStage | null;
   defaultColors: string[];
   loading: boolean;
-  onSetEditingStage: (stage: CRMStage | null) => void;
+  onSetEditingStage: (stage: CSMStage | null) => void;
   onUpdateStage: () => void;
   onDeleteStage: (stageId: string) => void;
 }
@@ -218,12 +218,12 @@ export const StageManager: React.FC<StageManagerProps> = ({
   const { profile } = useAuth();
   const [newStageName, setNewStageName] = useState('');
   const [newStageColor, setNewStageColor] = useState('#6366f1');
-  const [editingStage, setEditingStage] = useState<CRMStage | null>(null);
+  const [editingStage, setEditingStage] = useState<CSMStage | null>(null);
   const [loading, setLoading] = useState(false);
   const [editingPipelineName, setEditingPipelineName] = useState(false);
   const [pipelineNameValue, setPipelineNameValue] = useState(pipelineName);
   const [deletePipelineDialogOpen, setDeletePipelineDialogOpen] = useState(false);
-  const [localStages, setLocalStages] = useState<CRMStage[]>(stages);
+  const [localStages, setLocalStages] = useState<CSMStage[]>(stages);
 
   const isAdmin = profile?.custom_roles?.base_role === 'admin' || profile?.role === 'admin';
 
@@ -250,7 +250,7 @@ export const StageManager: React.FC<StageManagerProps> = ({
     setLoading(true);
     try {
       const { error } = await supabase
-        .from('crm_stages')
+        .from('csm_stages')
         .insert({
           pipeline_id: pipelineId,
           name: newStageName.trim(),
@@ -279,7 +279,7 @@ export const StageManager: React.FC<StageManagerProps> = ({
     setLoading(true);
     try {
       const { error } = await supabase
-        .from('crm_stages')
+        .from('csm_stages')
         .update({
           name: editingStage.name.trim(),
           color: editingStage.color
@@ -308,7 +308,7 @@ export const StageManager: React.FC<StageManagerProps> = ({
     setLoading(true);
     try {
       const { error } = await supabase
-        .from('crm_stages')
+        .from('csm_stages')
         .delete()
         .eq('id', stageId);
 
@@ -334,7 +334,7 @@ export const StageManager: React.FC<StageManagerProps> = ({
     setLoading(true);
     try {
       const { error } = await supabase
-        .from('crm_pipelines')
+        .from('csm_pipelines')
         .update({ name: pipelineNameValue.trim() })
         .eq('id', pipelineId);
 
@@ -358,7 +358,7 @@ export const StageManager: React.FC<StageManagerProps> = ({
     try {
       // Primeiro, remover todos os cards relacionados a este funil
       const { error: cardsError } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .delete()
         .eq('pipeline_id', pipelineId);
 
@@ -366,7 +366,7 @@ export const StageManager: React.FC<StageManagerProps> = ({
 
       // Em seguida, remover todos os estágios do funil
       const { error: stagesError } = await supabase
-        .from('crm_stages')
+        .from('csm_stages')
         .delete()
         .eq('pipeline_id', pipelineId);
 
@@ -374,7 +374,7 @@ export const StageManager: React.FC<StageManagerProps> = ({
 
       // Por fim, remover o próprio funil
       const { error: pipelineError } = await supabase
-        .from('crm_pipelines')
+        .from('csm_pipelines')
         .delete()
         .eq('id', pipelineId);
 
@@ -412,7 +412,7 @@ export const StageManager: React.FC<StageManagerProps> = ({
 
       for (const update of updates) {
         const { error } = await supabase
-          .from('crm_stages')
+          .from('csm_stages')
           .update({ position: update.position })
           .eq('id', update.id);
 

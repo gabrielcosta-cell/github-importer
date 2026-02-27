@@ -1,12 +1,12 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { KanbanCard } from './KanbanCard';
-import { CRMStage, CRMCard } from '@/types/kanban';
+import { CSMStage, CSMCard } from '@/types/kanban';
 
 interface MobileStageSwiperProps {
-  stages: CRMStage[];
-  cardsByStage: Record<string, CRMCard[]>;
-  onCardClick: (card: CRMCard) => void;
+  stages: CSMStage[];
+  cardsByStage: Record<string, CSMCard[]>;
+  onCardClick: (card: CSMCard) => void;
   isOver?: boolean;
   overId?: string | null;
 }
@@ -76,9 +76,9 @@ export const MobileStageSwiper: React.FC<MobileStageSwiperProps> = ({
 
 // Individual stage column for mobile
 const MobileStageColumn: React.FC<{
-  stage: CRMStage;
-  cards: CRMCard[];
-  onCardClick: (card: CRMCard) => void;
+  stage: CSMStage;
+  cards: CSMCard[];
+  onCardClick: (card: CSMCard) => void;
   isOver: boolean;
 }> = ({ stage, cards, onCardClick, isOver }) => {
   const { setNodeRef } = useDroppable({ id: stage.id });

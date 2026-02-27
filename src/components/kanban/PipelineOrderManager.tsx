@@ -9,7 +9,7 @@ import {
 import { GripVertical } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { CRMPipeline } from '@/types/kanban';
+import { CSMPipeline } from '@/types/kanban';
 import {
   DndContext,
   closestCenter,
@@ -29,14 +29,14 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 interface PipelineOrderManagerProps {
-  pipelines: CRMPipeline[];
+  pipelines: CSMPipeline[];
   open: boolean;
   onClose: () => void;
   onRefresh: () => void;
 }
 
 interface SortablePipelineItemProps {
-  pipeline: CRMPipeline;
+  pipeline: CSMPipeline;
   index: number;
 }
 
@@ -95,7 +95,7 @@ export const PipelineOrderManager: React.FC<PipelineOrderManagerProps> = ({
   onClose,
   onRefresh
 }) => {
-  const [localPipelines, setLocalPipelines] = useState<CRMPipeline[]>(pipelines);
+  const [localPipelines, setLocalPipelines] = useState<CSMPipeline[]>(pipelines);
   const [loading, setLoading] = useState(false);
 
   const sensors = useSensors(
@@ -130,7 +130,7 @@ export const PipelineOrderManager: React.FC<PipelineOrderManagerProps> = ({
 
       for (const update of updates) {
         const { error } = await supabase
-          .from('crm_pipelines')
+          .from('csm_pipelines')
           .update({ position: update.position })
           .eq('id', update.id);
 

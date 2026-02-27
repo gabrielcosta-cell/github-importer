@@ -1,6 +1,6 @@
 // Shared Kanban types used by CSM and other modules
 
-export interface CRMPipeline {
+export interface CSMPipeline {
   id: string;
   name: string;
   description?: string;
@@ -11,7 +11,7 @@ export interface CRMPipeline {
   updated_at: string;
 }
 
-export interface CRMStage {
+export interface CSMStage {
   id: string;
   pipeline_id: string;
   name: string;
@@ -22,7 +22,7 @@ export interface CRMStage {
   updated_at: string;
 }
 
-export interface CRMCard {
+export interface CSMCard {
   id: string;
   stage_id: string;
   pipeline_id: string;
@@ -37,7 +37,7 @@ export interface CRMCard {
   monthly_revenue?: number; // Campo unificado: MRR (Receita Mensal)
   niche?: string;
   implementation_value?: number;
-  squad?: 'Apollo' | 'Artemis' | 'Athena' | 'Ares' | 'Aurora' | null;
+  squad?: 'Apollo' | 'Artemis' | 'Athena' | 'Ares' | null;
   plano?: 'Starter' | 'Business' | 'Pro' | 'Conceito' | 'Social' | null;
   categoria?: string;
   position: number;
