@@ -29,7 +29,7 @@ export const CardEmailsManager: React.FC<CardEmailsManagerProps> = ({ cardId, st
 
   const fetchEmails = async () => {
     const { data, error } = await supabase
-      .from('crm_card_emails')
+      .from('csm_card_emails')
       .select('*')
       .eq('card_id', cardId)
       .order('is_primary', { ascending: false })
@@ -68,7 +68,7 @@ export const CardEmailsManager: React.FC<CardEmailsManagerProps> = ({ cardId, st
       }
 
       const { error } = await supabase
-        .from('crm_card_emails')
+        .from('csm_card_emails')
         .insert({
           card_id: cardId,
           email: newEmail,
@@ -81,14 +81,14 @@ export const CardEmailsManager: React.FC<CardEmailsManagerProps> = ({ cardId, st
       // Update contact_email in crm_cards if this is the first email
       if (emails.length === 0) {
         await supabase
-          .from('crm_cards')
+          .from('csm_cards')
           .update({ contact_email: newEmail })
           .eq('id', cardId);
       }
 
       // Registrar no histórico
       await supabase
-        .from('crm_card_stage_history')
+        .from('csm_card_stage_history')
         .insert({
           card_id: cardId,
           stage_id: stageId,
@@ -116,7 +116,7 @@ export const CardEmailsManager: React.FC<CardEmailsManagerProps> = ({ cardId, st
       const emailAddress = emailToRemove?.email || '';
       
       const { error } = await supabase
-        .from('crm_card_emails')
+        .from('csm_card_emails')
         .delete()
         .eq('id', emailId);
 
@@ -128,14 +128,14 @@ export const CardEmailsManager: React.FC<CardEmailsManagerProps> = ({ cardId, st
         const newPrimaryEmail = remainingEmails[0]?.email || null;
         
         await supabase
-          .from('crm_cards')
+          .from('csm_cards')
           .update({ contact_email: newPrimaryEmail })
           .eq('id', cardId);
 
         // Set new primary if there are remaining emails
         if (newPrimaryEmail && remainingEmails[0]) {
           await supabase
-            .from('crm_card_emails')
+            .from('csm_card_emails')
             .update({ is_primary: true })
             .eq('id', remainingEmails[0].id);
         }
@@ -144,7 +144,7 @@ export const CardEmailsManager: React.FC<CardEmailsManagerProps> = ({ cardId, st
       // Registrar no histórico
       const { data: userData } = await supabase.auth.getUser();
       await supabase
-        .from('crm_card_stage_history')
+        .from('csm_card_stage_history')
         .insert({
           card_id: cardId,
           stage_id: stageId,
@@ -181,13 +181,13 @@ export const CardEmailsManager: React.FC<CardEmailsManagerProps> = ({ cardId, st
 
       // Remove primary from all emails
       await supabase
-        .from('crm_card_emails')
+        .from('csm_card_emails')
         .update({ is_primary: false })
         .eq('card_id', cardId);
 
       // Set new primary
       const { error } = await supabase
-        .from('crm_card_emails')
+        .from('csm_card_emails')
         .update({ is_primary: true })
         .eq('id', emailId);
 
@@ -195,14 +195,14 @@ export const CardEmailsManager: React.FC<CardEmailsManagerProps> = ({ cardId, st
 
       // Update card's contact_email
       await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .update({ contact_email: emailToSetPrimary.email })
         .eq('id', cardId);
 
       // Registrar no histórico
       const { data: userData } = await supabase.auth.getUser();
       await supabase
-        .from('crm_card_stage_history')
+        .from('csm_card_stage_history')
         .insert({
           card_id: cardId,
           stage_id: stageId,

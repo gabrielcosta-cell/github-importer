@@ -35,7 +35,7 @@ export const LossReasonsManager: React.FC<LossReasonsManagerProps> = ({ onClose 
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('crm_loss_reasons')
+        .from('csm_loss_reasons')
         .select('*')
         .order('position');
 
@@ -63,7 +63,7 @@ export const LossReasonsManager: React.FC<LossReasonsManagerProps> = ({ onClose 
       const maxPosition = reasons.length > 0 ? Math.max(...reasons.map(r => r.position)) + 1 : 0;
 
       const { error } = await supabase
-        .from('crm_loss_reasons')
+        .from('csm_loss_reasons')
         .insert({
           name: newReasonName.trim(),
           position: maxPosition,
@@ -87,7 +87,7 @@ export const LossReasonsManager: React.FC<LossReasonsManagerProps> = ({ onClose 
     setLoading(true);
     try {
       const { error } = await supabase
-        .from('crm_loss_reasons')
+        .from('csm_loss_reasons')
         .update(updates)
         .eq('id', id);
 
@@ -110,7 +110,7 @@ export const LossReasonsManager: React.FC<LossReasonsManagerProps> = ({ onClose 
     setLoading(true);
     try {
       const { error } = await supabase
-        .from('crm_loss_reasons')
+        .from('csm_loss_reasons')
         .delete()
         .eq('id', id);
 

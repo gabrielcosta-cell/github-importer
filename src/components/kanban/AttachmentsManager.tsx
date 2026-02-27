@@ -58,7 +58,7 @@ export const AttachmentsManager: React.FC<AttachmentsManagerProps> = ({ cardId }
     queryKey: ['card-attachments', cardId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('crm_card_attachments')
+        .from('csm_card_attachments')
         .select('*')
         .eq('card_id', cardId)
         .order('created_at', { ascending: false });
@@ -126,7 +126,7 @@ export const AttachmentsManager: React.FC<AttachmentsManagerProps> = ({ cardId }
 
           // Salvar metadados no banco
           const { error: dbError } = await supabase
-            .from('crm_card_attachments')
+            .from('csm_card_attachments')
             .insert({
               card_id: cardId,
               file_name: file.name,
@@ -226,7 +226,7 @@ export const AttachmentsManager: React.FC<AttachmentsManagerProps> = ({ cardId }
 
       // Deletar metadados
       const { error: dbError } = await supabase
-        .from('crm_card_attachments')
+        .from('csm_card_attachments')
         .delete()
         .eq('id', attachment.id);
 

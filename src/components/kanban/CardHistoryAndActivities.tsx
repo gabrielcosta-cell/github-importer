@@ -165,7 +165,7 @@ export const CardHistoryAndActivities: React.FC<CardHistoryAndActivitiesProps> =
   // Fetch activities
   const fetchActivities = async () => {
     const { data, error } = await supabase
-      .from('crm_activities')
+      .from('csm_activities')
       .select('*')
       .eq('card_id', cardId)
       .order('created_at', { ascending: false });
@@ -181,7 +181,7 @@ export const CardHistoryAndActivities: React.FC<CardHistoryAndActivitiesProps> =
     if (data && data.length > 0) {
       const activityIds = data.map(a => a.id);
       const { data: attachmentsData } = await supabase
-        .from('crm_activity_attachments')
+        .from('csm_activity_attachments')
         .select('*')
         .in('activity_id', activityIds);
       
@@ -228,7 +228,7 @@ export const CardHistoryAndActivities: React.FC<CardHistoryAndActivitiesProps> =
     queryKey: ['stageHistory', cardId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('crm_card_stage_history')
+        .from('csm_card_stage_history')
         .select('*')
         .eq('card_id', cardId)
         .order('entered_at', { ascending: false });
@@ -276,7 +276,7 @@ export const CardHistoryAndActivities: React.FC<CardHistoryAndActivitiesProps> =
     if (!user) return;
 
     const { error } = await supabase
-      .from('crm_activities')
+      .from('csm_activities')
       .insert({
         card_id: cardId,
         activity_type: 'comment',
@@ -303,7 +303,7 @@ export const CardHistoryAndActivities: React.FC<CardHistoryAndActivitiesProps> =
   // Toggle pin
   const togglePin = async (activityId: string, currentPinned: boolean) => {
     const { error } = await supabase
-      .from('crm_activities')
+      .from('csm_activities')
       .update({ is_pinned: !currentPinned })
       .eq('id', activityId);
 
@@ -322,7 +322,7 @@ export const CardHistoryAndActivities: React.FC<CardHistoryAndActivitiesProps> =
     if (!editingActivityId || !editingText.trim()) return;
 
     const { error } = await supabase
-      .from('crm_activities')
+      .from('csm_activities')
       .update({ description: editingText })
       .eq('id', editingActivityId);
 
@@ -343,7 +343,7 @@ export const CardHistoryAndActivities: React.FC<CardHistoryAndActivitiesProps> =
     if (!deletingActivityId) return;
 
     const { error } = await supabase
-      .from('crm_activities')
+      .from('csm_activities')
       .delete()
       .eq('id', deletingActivityId);
 
@@ -370,7 +370,7 @@ export const CardHistoryAndActivities: React.FC<CardHistoryAndActivitiesProps> =
     if (!user) return;
 
     const { error } = await supabase
-      .from('crm_activities')
+      .from('csm_activities')
       .insert({
         card_id: cardId,
         activity_type: 'comment',
@@ -409,7 +409,7 @@ export const CardHistoryAndActivities: React.FC<CardHistoryAndActivitiesProps> =
     scheduledDateTime.setHours(parseInt(hours), parseInt(minutes));
 
     const { error } = await supabase
-      .from('crm_activities')
+      .from('csm_activities')
       .insert({
         card_id: cardId,
         activity_type: newActivity.type,
@@ -438,7 +438,7 @@ export const CardHistoryAndActivities: React.FC<CardHistoryAndActivitiesProps> =
   // Complete activity
   const completeActivity = async (activityId: string) => {
     const { error } = await supabase
-      .from('crm_activities')
+      .from('csm_activities')
       .update({
         status: 'completed',
         completed_date: new Date().toISOString(),

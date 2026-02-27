@@ -75,7 +75,7 @@ export function PerformanceManager({ cardId, performanceHistory }: PerformanceMa
 
       // Check if record exists for this month/year/type
       const { data: existing } = await supabase
-        .from("crm_card_performance_history")
+        .from("csm_card_performance_history")
         .select("id")
         .eq("card_id", cardId)
         .eq("performance_type", type)
@@ -86,7 +86,7 @@ export function PerformanceManager({ cardId, performanceHistory }: PerformanceMa
       if (existing) {
         // Update existing record
         const { error } = await supabase
-          .from("crm_card_performance_history")
+          .from("csm_card_performance_history")
           .update({
             performance_value: performanceValue,
             updated_at: new Date().toISOString(),
@@ -96,7 +96,7 @@ export function PerformanceManager({ cardId, performanceHistory }: PerformanceMa
         if (error) throw error;
 
         // Log history
-        await supabase.from("crm_activities").insert({
+        await supabase.from("csm_activities").insert({
           card_id: cardId,
           activity_type: "note",
           title: "Performance atualizada",
@@ -109,7 +109,7 @@ export function PerformanceManager({ cardId, performanceHistory }: PerformanceMa
       } else {
         // Insert new record
         const { error } = await supabase
-          .from("crm_card_performance_history")
+          .from("csm_card_performance_history")
           .insert({
             card_id: cardId,
             performance_type: type,
@@ -122,7 +122,7 @@ export function PerformanceManager({ cardId, performanceHistory }: PerformanceMa
         if (error) throw error;
 
         // Log history
-        await supabase.from("crm_activities").insert({
+        await supabase.from("csm_activities").insert({
           card_id: cardId,
           activity_type: "note",
           title: "Performance registrada",
@@ -153,7 +153,7 @@ export function PerformanceManager({ cardId, performanceHistory }: PerformanceMa
   const handleDeletePerformance = async (recordId: string, type: string, value: string, month: number, year: number) => {
     try {
       const { error } = await supabase
-        .from("crm_card_performance_history")
+        .from("csm_card_performance_history")
         .delete()
         .eq("id", recordId);
 
@@ -162,7 +162,7 @@ export function PerformanceManager({ cardId, performanceHistory }: PerformanceMa
       // Log history
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        await supabase.from("crm_activities").insert({
+        await supabase.from("csm_activities").insert({
           card_id: cardId,
           activity_type: "note",
           title: "Performance removida",

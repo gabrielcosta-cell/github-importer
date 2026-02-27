@@ -144,7 +144,7 @@ export default function GestaoCSAT() {
     try {
       // Buscar pipelines de CSM para o filtro
       const { data } = await supabase
-        .from('crm_pipelines')
+        .from('csm_pipelines')
         .select('id, name')
         .or('name.ilike.%clientes%,name.ilike.%csm%,name.ilike.%customer%')
         .eq('is_active', true)
@@ -159,14 +159,14 @@ export default function GestaoCSAT() {
     try {
       // Buscar todos os cards vinculados a respostas CSAT (para o filtro por pipeline)
       const { data: pipelinesData } = await supabase
-        .from('crm_pipelines')
+        .from('csm_pipelines')
         .select('id, name')
         .or('name.ilike.%clientes%,name.ilike.%csm%,name.ilike.%customer%');
 
       if (pipelinesData && pipelinesData.length > 0) {
         const pipelineIds = pipelinesData.map(p => p.id);
         const { data: cards } = await supabase
-          .from('crm_cards')
+          .from('csm_cards')
           .select('id, pipeline_id')
           .in('pipeline_id', pipelineIds);
         
@@ -202,14 +202,14 @@ export default function GestaoCSAT() {
     try {
       // Buscar apenas o pipeline "Clientes ativos" para novas vinculações
       const { data: pipeline } = await supabase
-        .from('crm_pipelines')
+        .from('csm_pipelines')
         .select('id, name')
         .eq('name', 'Clientes ativos')
         .maybeSingle();
 
       if (pipeline) {
         const { data: cards, error } = await supabase
-          .from('crm_cards')
+          .from('csm_cards')
           .select('id, title, company_name, squad, stage_id, pipeline_id')
           .eq('pipeline_id', pipeline.id)
           .order('company_name', { ascending: true });
@@ -255,7 +255,7 @@ export default function GestaoCSAT() {
 
         // Registrar no histórico do card CSM - escala 1-5
         const avgScore = ((response.nota_atendimento + response.nota_conteudo + response.nota_performance) / 3).toFixed(1);
-        await supabase.from('crm_card_stage_history').insert({
+        await supabase.from('csm_card_stage_history').insert({
           card_id: matchingCard.id,
           stage_id: matchingCard.stage_id,
           event_type: 'csat_linked',
@@ -505,14 +505,14 @@ export default function GestaoCSAT() {
       // Se vinculou a um card, registrar no histórico
       if (updateData.card_id) {
         const { data: stageData } = await supabase
-          .from('crm_cards')
+          .from('csm_cards')
           .select('stage_id')
           .eq('id', updateData.card_id)
           .single();
 
         if (stageData) {
           const avgScore = calculateAverageScore(pendingResponse).toFixed(1);
-          await supabase.from('crm_card_stage_history').insert({
+          await supabase.from('csm_card_stage_history').insert({
             card_id: updateData.card_id,
             stage_id: stageData.stage_id,
             event_type: 'csat_linked',
@@ -616,14 +616,14 @@ export default function GestaoCSAT() {
 
       // Registrar no histórico do card CSM
       const { data: stageData } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .select('stage_id')
         .eq('id', selectedCardId)
         .single();
 
       if (stageData) {
         const avgScore = calculateAverageScore(selectedResponse).toFixed(1);
-        await supabase.from('crm_card_stage_history').insert({
+        await supabase.from('csm_card_stage_history').insert({
           card_id: selectedCardId,
           stage_id: stageData.stage_id,
           event_type: 'csat_linked',

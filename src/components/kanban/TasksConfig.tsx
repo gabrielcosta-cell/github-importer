@@ -60,7 +60,7 @@ export const TasksConfig: React.FC<TasksConfigProps> = ({ pipelines }) => {
 
     const fetchStages = async () => {
       const { data, error } = await supabase
-        .from('crm_stages')
+        .from('csm_stages')
         .select('id, name, color')
         .eq('pipeline_id', selectedPipeline)
         .eq('is_active', true)
@@ -76,7 +76,7 @@ export const TasksConfig: React.FC<TasksConfigProps> = ({ pipelines }) => {
 
     const fetchTasks = async () => {
       const { data, error } = await supabase
-        .from('crm_stage_tasks')
+        .from('csm_stage_tasks')
         .select('*')
         .eq('pipeline_id', selectedPipeline)
         .eq('is_active', true)
@@ -108,7 +108,7 @@ export const TasksConfig: React.FC<TasksConfigProps> = ({ pipelines }) => {
       const maxPosition = tasks.filter(t => t.stage_id === newTask.stage_id).length;
 
       const { error } = await supabase
-        .from('crm_stage_tasks')
+        .from('csm_stage_tasks')
         .insert({
           stage_id: newTask.stage_id,
           pipeline_id: selectedPipeline,
@@ -126,7 +126,7 @@ export const TasksConfig: React.FC<TasksConfigProps> = ({ pipelines }) => {
       
       // Recarregar tarefas
       const { data: updatedTasks } = await supabase
-        .from('crm_stage_tasks')
+        .from('csm_stage_tasks')
         .select('*')
         .eq('pipeline_id', selectedPipeline)
         .eq('is_active', true)
@@ -144,7 +144,7 @@ export const TasksConfig: React.FC<TasksConfigProps> = ({ pipelines }) => {
   const handleDeleteTask = async (taskId: string) => {
     try {
       const { error } = await supabase
-        .from('crm_stage_tasks')
+        .from('csm_stage_tasks')
         .update({ is_active: false })
         .eq('id', taskId);
 

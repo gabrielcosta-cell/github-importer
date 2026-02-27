@@ -55,7 +55,7 @@ export const LinkCardDialog: React.FC<LinkCardDialogProps> = ({
       
       // Primeiro, buscar pipelines que são de CSM/Clientes (excluindo pipelines de teste/comercial)
       const { data: pipelines, error: pipelinesError } = await supabase
-        .from('crm_pipelines')
+        .from('csm_pipelines')
         .select('id, name')
         .or('name.ilike.%cliente%,name.ilike.%csm%,name.ilike.%customer%')
         .not('name', 'ilike', '%comercial%')
@@ -74,7 +74,7 @@ export const LinkCardDialog: React.FC<LinkCardDialogProps> = ({
 
       // Buscar cards apenas dos pipelines de CSM identificados
       const { data, error } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .select('id, title, company_name, squad, monthly_revenue, plano, pipeline_id')
         .in('pipeline_id', pipelineIds)
         .or(`title.ilike.%${searchTerm}%,company_name.ilike.%${searchTerm}%`)

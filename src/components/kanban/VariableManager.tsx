@@ -72,7 +72,7 @@ export function VariableManager({ cardId, variableHistory, filterType }: Variabl
       if (!user) throw new Error("Usuário não autenticado");
 
       const { error } = await supabase
-        .from("crm_card_variable_history")
+        .from("csm_card_variable_history")
         .insert({
           card_id: cardId,
           variable_type: type,
@@ -86,7 +86,7 @@ export function VariableManager({ cardId, variableHistory, filterType }: Variabl
       if (error) throw error;
 
       // Log history
-      await supabase.from("crm_activities").insert({
+      await supabase.from("csm_activities").insert({
         card_id: cardId,
         activity_type: "note",
         title: "Variável registrada",
@@ -117,7 +117,7 @@ export function VariableManager({ cardId, variableHistory, filterType }: Variabl
   const handleDeleteVariable = async (recordId: string) => {
     try {
       const { error } = await supabase
-        .from("crm_card_variable_history")
+        .from("csm_card_variable_history")
         .delete()
         .eq("id", recordId);
 
@@ -126,7 +126,7 @@ export function VariableManager({ cardId, variableHistory, filterType }: Variabl
       // Log history
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        await supabase.from("crm_activities").insert({
+        await supabase.from("csm_activities").insert({
           card_id: cardId,
           activity_type: "note",
           title: "Variável removida",

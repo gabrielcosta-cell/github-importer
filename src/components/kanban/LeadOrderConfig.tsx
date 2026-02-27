@@ -42,7 +42,7 @@ export const LeadOrderConfig: React.FC<LeadOrderConfigProps> = ({
         const { data, error } = await supabase
           .from('system_settings')
           .select('setting_value')
-          .eq('setting_key', 'crm_lead_order_settings')
+          .eq('setting_key', 'csm_lead_order_settings')
           .maybeSingle();
 
         if (!error && data?.setting_value) {
@@ -72,7 +72,7 @@ export const LeadOrderConfig: React.FC<LeadOrderConfigProps> = ({
       const { data: existing } = await supabase
         .from('system_settings')
         .select('id')
-        .eq('setting_key', 'crm_lead_order_settings')
+        .eq('setting_key', 'csm_lead_order_settings')
         .maybeSingle();
 
       if (existing) {
@@ -82,14 +82,14 @@ export const LeadOrderConfig: React.FC<LeadOrderConfigProps> = ({
             setting_value: JSON.stringify(settings),
             updated_at: new Date().toISOString()
           })
-          .eq('setting_key', 'crm_lead_order_settings');
+          .eq('setting_key', 'csm_lead_order_settings');
 
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('system_settings')
           .insert({
-            setting_key: 'crm_lead_order_settings',
+            setting_key: 'csm_lead_order_settings',
             setting_value: JSON.stringify(settings)
           });
 
@@ -231,7 +231,7 @@ export const useLeadOrderSettings = () => {
         const { data, error } = await supabase
           .from('system_settings')
           .select('setting_value')
-          .eq('setting_key', 'crm_lead_order_settings')
+          .eq('setting_key', 'csm_lead_order_settings')
           .maybeSingle();
 
         if (!error && data?.setting_value) {
