@@ -18,7 +18,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Building2, DollarSign, User, Mail, Phone, ChevronRight, ChevronDown, Globe, Instagram } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/external-client';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { CRMStage } from '@/types/kanban';
 import { createCardTasksForStage } from '@/hooks/useCardTasks';

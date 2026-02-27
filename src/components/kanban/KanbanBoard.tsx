@@ -14,7 +14,7 @@ import { arrayMove, SortableContext, horizontalListSortingStrategy } from '@dnd-
 import { KanbanColumn } from './KanbanColumn';
 import { KanbanCard } from './KanbanCard';
 import { CRMStage, CRMCard } from '@/types/kanban';
-import { supabase } from '@/integrations/supabase/external-client';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface KanbanBoardProps {

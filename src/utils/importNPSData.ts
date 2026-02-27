@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/external-client";
+import { supabase } from "@/integrations/supabase/client";
 
 const npsData = [
   { empresa: 'Versátil', sentimento_sem_dot: 'muito_desapontado', created_at: '2025-09-25', observacoes: '- vcs precisam fazer um estudo mais afundo dos seus clientes, principalmente os que ja vem com bagagem de marketing.- estudar muiiiito as campanhas existente a fim de saber o que esta dando certo e melhorar e o que deu errado evitar. - agilidade nas entregas e transparência no cronograma- errar todos nós erramos. Persistir nos erros é o que complica tudo, isso eu estou falando de mim.', recomendacao: 4, responsavel: 'Danilo Carvalho', email: 'CRIACAO@VERSATILBANHERIAS.COM.BR', squad: 'Apollo' },

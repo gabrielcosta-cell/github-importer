@@ -8,7 +8,7 @@ import { EditableCell } from './EditableCell'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Plus, Download, Copy, Trash2, Undo2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import { supabase } from '@/integrations/supabase/external-client'
+import { supabase } from '@/integrations/supabase/client'
 
 interface Projeto {
   id: string

@@ -34,7 +34,7 @@ import { CEPInput } from '@/components/kanban/CEPInput';
 import { CardEmailsManager } from '@/components/kanban/CardEmailsManager';
 // WinRequiredFieldsDialog removed - commercial module
 import { usePipelineAutomations } from '@/hooks/usePipelineAutomations';
-import { supabase } from '@/integrations/supabase/external-client';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { sortTags } from '@/utils/tagSorting';
 

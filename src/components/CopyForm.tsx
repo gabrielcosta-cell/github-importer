@@ -19,7 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAuth } from "@/contexts/AuthContext"
-import { supabase } from "@/integrations/supabase/external-client"
+import { supabase } from "@/integrations/supabase/client"
 import { useModulePermissions } from "@/hooks/useModulePermissions"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"

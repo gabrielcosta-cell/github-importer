@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { supabase } from "@/integrations/supabase/external-client";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 // Set para rastrear automações em execução (evitar execuções paralelas)
