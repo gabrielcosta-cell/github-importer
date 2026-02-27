@@ -18,7 +18,7 @@ export const FixItabanDuplicate = () => {
 
       // 1. Deletar histórico de stage do registro duplicado
       const { error: historyError } = await supabase
-        .from('crm_card_stage_history')
+        .from('csm_card_stage_history')
         .delete()
         .eq('card_id', duplicateId);
 
@@ -26,7 +26,7 @@ export const FixItabanDuplicate = () => {
 
       // 2. Deletar o registro duplicado
       const { error: cardError } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .delete()
         .eq('id', duplicateId);
 
@@ -34,7 +34,7 @@ export const FixItabanDuplicate = () => {
 
       // 3. Verificar resultado
       const { data: verification, error: verifyError } = await supabase
-        .from('crm_cards')
+        .from('csm_cards')
         .select('id, company_name, monthly_revenue')
         .eq('company_name', 'Itiban');
 

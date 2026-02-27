@@ -25,7 +25,7 @@ export const useAutoMoveCards = ({
 
       // 1. Buscar etapas do pipeline ordenadas
       const { data: stages, error: stagesError } = await supabase
-        .from('crm_stages')
+        .from('csm_stages')
         .select('id, position, name')
         .eq('pipeline_id', pipelineId)
         .eq('is_active', true)
@@ -38,7 +38,7 @@ export const useAutoMoveCards = ({
 
       // 2. Buscar histórico de cards ativos (sem exited_at)
       const { data: activeHistory, error: historyError } = await supabase
-        .from('crm_card_stage_history')
+        .from('csm_card_stage_history')
         .select('card_id, stage_id, entered_at')
         .is('exited_at', null);
 
@@ -67,7 +67,7 @@ export const useAutoMoveCards = ({
         if (enteredAt <= thirtyDaysAgo) {
           // Buscar dados do card
           const { data: card, error: cardError } = await supabase
-            .from('crm_cards')
+            .from('csm_cards')
             .select('id, stage_id, title, pipeline_id')
             .eq('id', history.card_id)
             .eq('pipeline_id', pipelineId)
@@ -107,7 +107,7 @@ export const useAutoMoveCards = ({
 
         for (const move of cardsToMove) {
           const { error: updateError } = await supabase
-            .from('crm_cards')
+            .from('csm_cards')
             .update({ 
               stage_id: move.nextStageId,
               updated_at: new Date().toISOString()

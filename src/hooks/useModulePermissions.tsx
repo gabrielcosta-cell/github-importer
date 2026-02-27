@@ -21,7 +21,7 @@ export const useModulePermissions = () => {
 
   const checkModulePermission = (moduleName: string, permissionType: 'view' | 'create' | 'edit' | 'delete' = 'view'): boolean => {
     // Módulos removidos (comercial) - sempre retorna false
-    const removedModules = ['crm', 'dashboard', 'wallet', 'lista-espera', 'lista_espera'];
+    const removedModules = ['dashboard', 'wallet', 'lista-espera', 'lista_espera'];
     if (removedModules.includes(moduleName)) {
       return false;
     }

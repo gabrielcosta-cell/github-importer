@@ -93,7 +93,7 @@ export function PipelineAutomations() {
       
       // Fetch pipelines
       const { data: pipelinesData, error: pipelinesError } = await supabase
-        .from("crm_pipelines")
+        .from("csm_pipelines")
         .select("id, name")
         .eq("is_active", true)
         .order("position");
