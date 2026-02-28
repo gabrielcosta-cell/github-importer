@@ -14,7 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { UserPermissions } from '@/components/UserPermissions';
-import { UserPlus, Trash2, Edit, Shield, User, UserCheck, ChevronDown, ChevronRight, Settings, Users, Plus, Upload, Camera, DollarSign, BarChart3, FolderCheck, Wallet, Trophy, BarChart2, ClipboardList, FileText, FolderOpen, Activity, Sparkles, Eye, PenLine, Trash, PlusCircle, Crown, AlertTriangle } from 'lucide-react';
+import { UserPlus, Trash2, Edit, Shield, User, UserCheck, ChevronDown, ChevronRight, Settings, Users, Plus, Upload, Camera, DollarSign, BarChart3, FolderCheck, Wallet, Trophy, BarChart2, ClipboardList, FileText, FolderOpen, Activity, Sparkles, Eye, PenLine, Trash, PlusCircle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -68,7 +68,7 @@ const menuStructure: MenuSection[] = [
     color: '#ec4a55',
     icon: DollarSign,
     modules: [
-      { name: 'crm', displayName: 'CRM', icon: DollarSign },
+      { name: 'csm', displayName: 'CSM', icon: DollarSign },
       { name: 'dashboard', displayName: 'Quadro de vendas', icon: BarChart3 },
       { name: 'projetos', displayName: 'Lista de espera', icon: FolderCheck },
       { name: 'wallet', displayName: 'Wallet', icon: Wallet },
@@ -634,7 +634,7 @@ type UserProfile = {
   user_id: string;
   name: string;
   email: string;
-  role: 'workspace_admin' | 'admin' | 'sdr' | 'closer';
+  role: 'admin' | 'sdr' | 'closer';
   department?: string | null;
   phone?: string | null;
   is_active: boolean;
@@ -663,7 +663,7 @@ export const UserManagement = () => {
     name: '',
     email: '',
     password: '',
-    role: 'sdr' as 'workspace_admin' | 'admin' | 'sdr' | 'closer',
+    role: 'sdr' as 'admin' | 'sdr' | 'closer',
     department: '',
     phone: '',
     customRoleId: 'sdr',
@@ -928,8 +928,8 @@ export const UserManagement = () => {
       return;
     }
 
-    const isBaseRole = ['workspace_admin', 'admin', 'sdr', 'closer'].includes(formData.customRoleId);
-    const role = isBaseRole ? formData.customRoleId as 'workspace_admin' | 'admin' | 'sdr' | 'closer' : 'sdr';
+    const isBaseRole = ['admin', 'sdr', 'closer'].includes(formData.customRoleId);
+    const role = isBaseRole ? formData.customRoleId as 'admin' | 'sdr' | 'closer' : 'sdr';
     const customRoleId = isBaseRole ? undefined : formData.customRoleId;
 
     const result = await addUser({ ...formData, role, customRoleId });
@@ -948,9 +948,9 @@ export const UserManagement = () => {
     const user = profiles.find(u => u.user_id === userId);
     if (user) {
       // Garantir que o role seja um dos valores válidos
-      const userRole: 'workspace_admin' | 'admin' | 'sdr' | 'closer' = 
-        (user.role === 'workspace_admin' || user.role === 'admin' || user.role === 'sdr' || user.role === 'closer') 
-          ? user.role as 'workspace_admin' | 'admin' | 'sdr' | 'closer'
+      const userRole: 'admin' | 'sdr' | 'closer' = 
+        (user.role === 'admin' || user.role === 'sdr' || user.role === 'closer') 
+          ? user.role as 'admin' | 'sdr' | 'closer'
           : 'sdr';
       
       setFormData({
@@ -973,8 +973,8 @@ export const UserManagement = () => {
 
     setIsUpdating(true);
     
-    const isBaseRole = ['workspace_admin', 'admin', 'sdr', 'closer'].includes(formData.customRoleId);
-    const role = isBaseRole ? formData.customRoleId as 'workspace_admin' | 'admin' | 'sdr' | 'closer' : formData.role;
+    const isBaseRole = ['admin', 'sdr', 'closer'].includes(formData.customRoleId);
+    const role = isBaseRole ? formData.customRoleId as 'admin' | 'sdr' | 'closer' : formData.role;
     const customRoleId = isBaseRole ? null : formData.customRoleId;
 
     const { error } = await supabase
@@ -1023,7 +1023,7 @@ export const UserManagement = () => {
       if (role?.display_name) return role.display_name;
     }
     // Roles base que não são admin
-    if (user.role && !['admin', 'workspace_admin'].includes(user.role)) {
+    if (user.role && user.role !== 'admin') {
       const roleNames: Record<string, string> = {
         'sdr': 'SDR',
         'closer': 'Closer',
@@ -1038,7 +1038,6 @@ export const UserManagement = () => {
   // Obter todos os usuários comuns (não-admin) incluindo os sem grupo
   const getAllCommonUsers = () => {
     return profiles.filter(u => {
-      if (u.role === 'workspace_admin') return false;
       const baseRole = (u as any).custom_roles?.base_role;
       const effectiveRole = (baseRole && baseRole !== 'custom') ? baseRole : u.role;
       return effectiveRole !== 'admin' && u.is_active;
@@ -1196,182 +1195,28 @@ export const UserManagement = () => {
     </div>
   );
 
-  // Hierarquia de níveis de admin:
-  // 1. workspace_admin - podem alterar qualquer usuário, incluindo outros workspace_admins
-  // 2. admin - só podem alterar usuários comuns (não workspace_admins nem outros admins)
-  // 3. usuários comuns (sdr, closer, custom roles)
+  // Hierarquia simplificada:
+  // 1. admin - controle total
+  // 2. usuários comuns (sdr, closer, custom roles)
   
-  // Determinar o nível do usuário
-  const getUserLevel = (user: any): 'workspace_admin' | 'admin' | 'user' => {
+  const getUserLevel = (user: any): 'admin' | 'user' => {
     const baseRole = (user as any).custom_roles?.base_role;
     const effectiveRole = (baseRole && baseRole !== 'custom') ? baseRole : user.role;
-    
-    // Workspace admins são identificados por role === 'workspace_admin'
-    if (user.role === 'workspace_admin') return 'workspace_admin';
     if (effectiveRole === 'admin') return 'admin';
     return 'user';
   };
   
-  // Verificar se o usuário atual pode editar o usuário alvo
   const canEditUser = (targetUser: any): boolean => {
     if (!profile) return false;
-    
-    // Usuário pode editar a si mesmo
     if (targetUser.user_id === profile.user_id) return true;
-    
     const currentLevel = getUserLevel(profile);
-    const targetLevel = getUserLevel(targetUser);
-    
-    // Workspace admins podem editar qualquer um
-    if (currentLevel === 'workspace_admin') return true;
-    
-    // Admins só podem editar usuários comuns
-    if (currentLevel === 'admin' && targetLevel === 'user') return true;
-    
+    if (currentLevel === 'admin') return true;
     return false;
   };
 
-  // Função para promover/remover workspace admin (usa edge function para bypass RLS)
-  const toggleWorkspaceAdmin = async (userId: string, currentlyWorkspaceAdmin: boolean) => {
-    const newRole = currentlyWorkspaceAdmin ? 'admin' : 'workspace_admin';
-    
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast({ 
-          title: "Erro", 
-          description: "Você precisa estar logado", 
-          variant: "destructive" 
-        });
-        return;
-      }
-
-      const response = await fetch(
-        'https://yoauzllgwcsrmvkwdcoa.supabase.co/functions/v1/update-user-role',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ targetUserId: userId, newRole }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        toast({ 
-          title: "Erro", 
-          description: result.error || "Erro ao atualizar status de administrador", 
-          variant: "destructive" 
-        });
-      } else {
-        toast({ 
-          title: "Sucesso", 
-          description: currentlyWorkspaceAdmin 
-            ? "Usuário removido dos administradores do workspace" 
-            : "Usuário promovido a administrador do workspace"
-        });
-        refreshProfiles();
-      }
-    } catch (error) {
-      console.error('Error updating role:', error);
-      toast({ 
-        title: "Erro", 
-        description: "Erro ao atualizar status de administrador", 
-        variant: "destructive" 
-      });
-    }
-  };
-  
-  // Função para promover/remover admin completo (usa edge function para bypass RLS)
-  const toggleAdmin = async (userId: string, currentlyAdmin: boolean) => {
-    const newRole = currentlyAdmin ? 'sdr' : 'admin';
-    
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast({ 
-          title: "Erro", 
-          description: "Você precisa estar logado", 
-          variant: "destructive" 
-        });
-        return;
-      }
-
-      const response = await fetch(
-        'https://yoauzllgwcsrmvkwdcoa.supabase.co/functions/v1/update-user-role',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ targetUserId: userId, newRole }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        toast({ 
-          title: "Erro", 
-          description: result.error || "Erro ao atualizar status de administrador", 
-          variant: "destructive" 
-        });
-      } else {
-        toast({ 
-          title: "Sucesso", 
-          description: currentlyAdmin 
-            ? "Usuário removido dos administradores" 
-            : "Usuário promovido a administrador completo"
-        });
-        refreshProfiles();
-      }
-    } catch (error) {
-      console.error('Error updating role:', error);
-      toast({ 
-        title: "Erro", 
-        description: "Erro ao atualizar status de administrador", 
-        variant: "destructive" 
-      });
-    }
-  };
-
-  // Verificar se o usuário atual é workspace admin
-  const isCurrentUserWorkspaceAdmin = () => {
-    if (!profile) return false;
-    return profile.role === 'workspace_admin';
-  };
-  
-  // Verificar se o usuário atual é admin (para bootstrap)
-  const isCurrentUserAdmin = () => {
-    if (!profile) return false;
-    const baseRole = (profile as any).custom_roles?.base_role;
-    const effectiveRole = (baseRole && baseRole !== 'custom') ? baseRole : profile.role;
-    return effectiveRole === 'admin' || profile.role === 'workspace_admin';
-  };
-  
-  // Verificar se não há workspace admins (modo bootstrap)
-  const isBootstrapMode = () => {
-    return getWorkspaceAdmins().length === 0;
-  };
-  
-  // Pode promover workspace admin: ou é workspace_admin, ou é admin em modo bootstrap
-  const canPromoteWorkspaceAdmin = () => {
-    return isCurrentUserWorkspaceAdmin() || (isCurrentUserAdmin() && isBootstrapMode());
-  };
-
-  // Obter todos os administradores do workspace (role = workspace_admin)
-  const getWorkspaceAdmins = () => {
-    return profiles.filter(u => u.role === 'workspace_admin' && u.is_active);
-  };
-  
-  // Obter administradores completos (role = admin ou custom_role base_role = admin, mas não workspace_admin)
+  // Obter administradores (role = admin ou custom_role base_role = admin)
   const getFullAdmins = () => {
     return profiles.filter(u => {
-      if (u.role === 'workspace_admin') return false;
       const baseRole = (u as any).custom_roles?.base_role;
       const effectiveRole = (baseRole && baseRole !== 'custom') ? baseRole : u.role;
       return effectiveRole === 'admin' && u.is_active;
@@ -1381,146 +1226,14 @@ export const UserManagement = () => {
   // Obter usuários não-admin ativos (para promover a admin)
   const getNonAdminUsers = () => {
     return profiles.filter(u => {
-      if (u.role === 'workspace_admin') return false;
       const baseRole = (u as any).custom_roles?.base_role;
       const effectiveRole = (baseRole && baseRole !== 'custom') ? baseRole : u.role;
       return effectiveRole !== 'admin' && u.is_active;
     });
   };
-  
-  // Obter usuários que não são workspace admin (para promover a workspace admin)
-  const getNonWorkspaceAdminUsers = () => {
-    return profiles.filter(u => u.role !== 'workspace_admin' && u.is_active);
-  };
 
   return (
     <div className="space-y-6">
-      {/* Seção Administradores do Workspace - visível para quem tem permissão de ver users, mas só workspace_admins podem editar */}
-      {checkModulePermission('users', 'view') && (
-        <Card className="border-amber-500/30 bg-gradient-to-r from-amber-500/5 to-transparent">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Crown className="h-5 w-5 text-amber-500" />
-                  Administradores do Workspace
-                </CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Podem gerenciar qualquer usuário, incluindo outros administradores. Nível máximo de permissão.
-                </p>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Lista de workspace admins atuais */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center gap-2">
-                  <Crown className="h-4 w-4 text-amber-500" />
-                  Workspace Admins ({getWorkspaceAdmins().length})
-                </Label>
-                <div className="grid gap-2">
-                  {getWorkspaceAdmins().map(admin => (
-                    <div 
-                      key={admin.user_id} 
-                      className="flex items-center justify-between p-3 rounded-lg border border-amber-500/20 bg-amber-500/5"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center">
-                          <Crown className="h-4 w-4 text-amber-500" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">{admin.name}</p>
-                          <p className="text-xs text-muted-foreground">{admin.email}</p>
-                        </div>
-                      </div>
-                      {admin.user_id !== profile?.user_id && isCurrentUserWorkspaceAdmin() && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="text-amber-600 hover:text-amber-700 hover:bg-amber-500/10"
-                            >
-                              <Trash2 className="h-4 w-4 mr-1" />
-                              Remover
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle className="flex items-center gap-2">
-                                <AlertTriangle className="h-5 w-5 text-amber-500" />
-                                Remover Workspace Admin?
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                <strong>{admin.name}</strong> será rebaixado para Admin Completo.
-                                Não poderá mais gerenciar outros Workspace Admins.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction 
-                                onClick={() => toggleWorkspaceAdmin(admin.user_id, true)}
-                                className="bg-amber-600 hover:bg-amber-700"
-                              >
-                                Remover
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                      {admin.user_id === profile?.user_id && (
-                        <Badge variant="secondary" className="text-xs">Você</Badge>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Promover a workspace admin - workspace admins OU admins em modo bootstrap */}
-              {canPromoteWorkspaceAdmin() && getNonWorkspaceAdminUsers().length > 0 && (
-                <div className="space-y-2 pt-4 border-t">
-                  <Label className="text-sm font-medium flex items-center gap-2">
-                    <UserPlus className="h-4 w-4" />
-                    Promover a Workspace Admin
-                  </Label>
-                  {isBootstrapMode() && (
-                    <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 mb-2">
-                      <p className="text-xs text-amber-600 dark:text-amber-400">
-                        ⚠️ <strong>Modo de configuração inicial:</strong> Como não há Workspace Admins cadastrados, 
-                        você pode promover o primeiro. Após isso, apenas Workspace Admins poderão gerenciar outros.
-                      </p>
-                    </div>
-                  )}
-                  <div className="flex gap-2">
-                    <Select onValueChange={(userId) => {
-                      if (userId) {
-                        toggleWorkspaceAdmin(userId, false);
-                      }
-                    }}>
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Selecionar usuário..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {getNonWorkspaceAdminUsers().map(user => (
-                          <SelectItem key={user.user_id} value={user.user_id}>
-                            {user.name} ({user.email})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Workspace Admins têm controle total sobre todos os usuários e configurações.
-                  </p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -1648,46 +1361,7 @@ export const UserManagement = () => {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Seção 1: Workspace Admins */}
-          <Card className="border-amber-500/30">
-            <Collapsible open={expandedRoles.has('workspace_admins')} onOpenChange={() => toggleRoleExpanded('workspace_admins')}>
-              <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/30 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      {expandedRoles.has('workspace_admins') ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
-                      <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                        <Crown className="h-5 w-5 text-amber-500" />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">Workspace Admin</h3>
-                        <Badge className="bg-amber-500/20 text-amber-600 border-amber-500/30">
-                          MÁXIMO
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {getWorkspaceAdmins().length} usuário{getWorkspaceAdmins().length !== 1 ? 's' : ''} • Controle total do sistema
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="border-t">
-                  {getWorkspaceAdmins().length === 0 ? (
-                    <div className="p-6 text-center text-muted-foreground">
-                      Nenhum Workspace Admin cadastrado
-                    </div>
-                  ) : (
-                    getWorkspaceAdmins().map(user => renderUserRow(user))
-                  )}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          </Card>
-
+          {/* Seção 1: Administradores */}
           {/* Seção 2: Administradores Completos */}
           <Card className="border-blue-500/30">
             <Collapsible open={expandedRoles.has('full_admins')} onOpenChange={() => toggleRoleExpanded('full_admins')}>

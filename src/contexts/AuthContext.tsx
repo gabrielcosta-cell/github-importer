@@ -9,7 +9,7 @@ interface Profile {
   email: string;
   phone?: string;
   department?: string;
-  role: 'workspace_admin' | 'admin' | 'sdr' | 'closer';
+  role: 'admin' | 'sdr' | 'closer';
   is_active: boolean;
   last_login?: string;
   created_at: string;
@@ -34,7 +34,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   refreshProfiles: () => Promise<void>;
   refreshProfile: () => Promise<void>;
-  addUser: (userData: { name: string; email: string; password: string; role: 'workspace_admin' | 'admin' | 'sdr' | 'closer'; department?: string; phone?: string; customRoleId?: string }) => Promise<{ success: boolean; error?: string; message?: string }>;
+  addUser: (userData: { name: string; email: string; password: string; role: 'admin' | 'sdr' | 'closer'; department?: string; phone?: string; customRoleId?: string }) => Promise<{ success: boolean; error?: string; message?: string }>;
   updateUser: (userId: string, userData: Partial<Profile>) => Promise<boolean>;
   removeUser: (userId: string) => Promise<boolean>;
   activateUser: (userId: string) => Promise<boolean>;
@@ -104,7 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } else if (newProfile) {
             const userProfile: Profile = {
               ...newProfile,
-              role: newProfile.role as 'workspace_admin' | 'admin' | 'sdr' | 'closer',
+              role: newProfile.role as 'admin' | 'sdr' | 'closer',
               project_scope: newProfile.project_scope as 'csm' | 'cs' | 'both',
               effectiveRole: newProfile.role,
               customRoleDisplayName: undefined,
@@ -132,7 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const effectiveRole = baseRole && baseRole !== 'custom' ? baseRole : profileData.role;
           const userProfile: Profile = {
             ...profileData,
-            role: profileData.role as 'workspace_admin' | 'admin' | 'sdr' | 'closer',
+            role: profileData.role as 'admin' | 'sdr' | 'closer',
             project_scope: profileData.project_scope as 'csm' | 'cs' | 'both',
             effectiveRole,
             customRoleDisplayName: profileData.custom_roles?.display_name,
@@ -140,8 +140,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           if (!cancelled) setProfile(userProfile);
 
-          // Buscar todos os perfis se for admin ou workspace_admin
-          if (userProfile.effectiveRole === 'admin' || userProfile.role === 'workspace_admin') {
+          // Buscar todos os perfis se for admin
+          if (userProfile.effectiveRole === 'admin') {
             // Não bloquear o fluxo de autenticação/rotas esperando essa listagem
             // (evita que /auth fique preso em loading se essa query demorar/falhar).
             void refreshProfiles();
@@ -230,7 +230,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const effectiveRole = (baseRole && baseRole !== 'custom') ? baseRole : p.role;
           return {
             ...p,
-            role: p.role as 'workspace_admin' | 'admin' | 'sdr' | 'closer',
+            role: p.role as 'admin' | 'sdr' | 'closer',
             project_scope: p.project_scope as 'csm' | 'cs' | 'both',
             effectiveRole,
             customRoleDisplayName: p.custom_roles?.display_name
@@ -260,7 +260,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const effectiveRole = (baseRole && baseRole !== 'custom') ? baseRole : profileData.role;
         const userProfile: Profile = {
           ...profileData,
-          role: profileData.role as 'workspace_admin' | 'admin' | 'sdr' | 'closer',
+          role: profileData.role as 'admin' | 'sdr' | 'closer',
           project_scope: profileData.project_scope as 'csm' | 'cs' | 'both',
           effectiveRole,
           customRoleDisplayName: profileData.custom_roles?.display_name
@@ -273,7 +273,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const addUser = async (userData: { name: string; email: string; password: string; role: 'workspace_admin' | 'admin' | 'sdr' | 'closer'; department?: string; phone?: string; customRoleId?: string }): Promise<{ success: boolean; error?: string; message?: string }> => {
+  const addUser = async (userData: { name: string; email: string; password: string; role: 'admin' | 'sdr' | 'closer'; department?: string; phone?: string; customRoleId?: string }): Promise<{ success: boolean; error?: string; message?: string }> => {
     try {
       console.log('=== INICIANDO CRIAÇÃO DE USUÁRIO ===');
       console.log('Dados enviados:', userData);
