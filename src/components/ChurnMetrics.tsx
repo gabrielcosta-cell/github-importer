@@ -253,7 +253,7 @@ export const ChurnMetrics = () => {
         
         // Buscar clientes ativos (não churn) para calcular total de clientes
         // Isso é necessário sempre, independente de termos histórico ou não
-        // IMPORTANTE: Filtrar apenas pipeline CSM (Clientes ativos), não CRM (leads)
+        // IMPORTANTE: Filtrar apenas pipeline CSM (Clientes ativos), não leads
         const { data: activeCards, error: activeError } = await supabase
           .from('csm_cards')
           .select('monthly_revenue, squad, categoria')

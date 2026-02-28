@@ -16,7 +16,7 @@ interface Profile {
   updated_at: string;
   custom_role_id?: string;
   selected_celebration_id?: string;
-  project_scope?: 'crm' | 'cs' | 'both'; // Define qual projeto o usuário pertence
+  project_scope?: 'csm' | 'cs' | 'both'; // Define qual projeto o usuário pertence
   custom_roles?: {
     base_role: string;
     display_name?: string;
@@ -92,7 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               name: userName,
               role: 'sdr',
               is_active: true,
-              project_scope: 'crm',
+              project_scope: 'csm',
             })
             .select('*, custom_roles(base_role, display_name)')
             .single();
@@ -105,7 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const userProfile: Profile = {
               ...newProfile,
               role: newProfile.role as 'workspace_admin' | 'admin' | 'sdr' | 'closer',
-              project_scope: newProfile.project_scope as 'crm' | 'cs' | 'both',
+              project_scope: newProfile.project_scope as 'csm' | 'cs' | 'both',
               effectiveRole: newProfile.role,
               customRoleDisplayName: undefined,
             };
@@ -133,7 +133,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const userProfile: Profile = {
             ...profileData,
             role: profileData.role as 'workspace_admin' | 'admin' | 'sdr' | 'closer',
-            project_scope: profileData.project_scope as 'crm' | 'cs' | 'both',
+            project_scope: profileData.project_scope as 'csm' | 'cs' | 'both',
             effectiveRole,
             customRoleDisplayName: profileData.custom_roles?.display_name,
           };
@@ -214,11 +214,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshProfiles = async () => {
     try {
-      // Filtrar apenas usuários do projeto CRM (project_scope = 'crm' ou 'both')
+      // Filtrar apenas usuários do projeto CSM (project_scope = 'csm' ou 'both')
       const { data, error } = await supabase
         .from('profiles')
         .select('*, custom_roles(base_role, display_name)')
-        .in('project_scope', ['crm', 'both'])
+        .in('project_scope', ['csm', 'both'])
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -231,7 +231,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return {
             ...p,
             role: p.role as 'workspace_admin' | 'admin' | 'sdr' | 'closer',
-            project_scope: p.project_scope as 'crm' | 'cs' | 'both',
+            project_scope: p.project_scope as 'csm' | 'cs' | 'both',
             effectiveRole,
             customRoleDisplayName: p.custom_roles?.display_name
           };
@@ -261,7 +261,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const userProfile: Profile = {
           ...profileData,
           role: profileData.role as 'workspace_admin' | 'admin' | 'sdr' | 'closer',
-          project_scope: profileData.project_scope as 'crm' | 'cs' | 'both',
+          project_scope: profileData.project_scope as 'csm' | 'cs' | 'both',
           effectiveRole,
           customRoleDisplayName: profileData.custom_roles?.display_name
         };
@@ -291,7 +291,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           phone: userData.phone || null,
           is_active: true,
           custom_role_id: userData.customRoleId || null,
-          project_scope: 'crm' // Usuários criados neste projeto pertencem ao CRM
+          project_scope: 'csm' // Usuários criados neste projeto pertencem ao CSM
         }
       };
       

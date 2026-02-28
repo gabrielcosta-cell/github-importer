@@ -94,7 +94,7 @@ export const SecurityAuditLogs = () => {
     const tableNames: Record<string, string> = {
       businesses: 'Empresas',
       contracts: 'Contratos',
-      crm_cards: 'Cards CRM',
+      csm_cards: 'Cards CSM',
       profiles: 'Perfis',
       copy_forms: 'Formulários Copy',
       commissions: 'Comissões'

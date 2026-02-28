@@ -45,7 +45,7 @@ interface CardDetailsDialogProps {
   onUpdate?: () => void;
   stages: CSMStage[];
   pipelineName?: string;
-  moduleType?: 'crm' | 'csm';
+  moduleType?: 'csm';
 }
 
 export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
@@ -55,7 +55,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
   onUpdate,
   stages,
   pipelineName,
-  moduleType = 'crm'
+  moduleType = 'csm'
 }) => {
   const { profile } = useAuth();
   const isMobile = useIsMobile();
@@ -243,7 +243,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
           }
           return false;
         } else {
-          // Para CRM: admin, closer, SDR
+          // Para CSM: admin, closer, SDR
           if (user.baseRole && user.baseRole !== 'custom') {
             return user.effectiveRole === 'sdr' || user.effectiveRole === 'closer';
           }
@@ -313,10 +313,10 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
           return;
         }
 
-        // Filtrar: excluir pipelines CRM e pipelines de perdidos/excluídos
+        // Filtrar: excluir pipelines de vendas e pipelines de perdidos/excluídos
         const filteredCsmPipelines = (allCsmPipelines || []).filter(p => {
           const lowerName = p.name.toLowerCase();
-          // Excluir pipelines CRM (SDR, Closer, Leads ganhos, Leads perdidos, Leads Excluídos sem CSM)
+          // Excluir pipelines de vendas (SDR, Closer, Leads ganhos, Leads perdidos, Leads Excluídos sem CSM)
           if (lowerName.includes('sdr')) return false;
           if (lowerName.includes('closer')) return false;
           if (lowerName.includes('leads ganhos')) return false;
@@ -2900,7 +2900,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                     </>
                   ) : (
                     <>
-                      {/* Exibir grupos para CRM */}
+                      {/* Exibir grupos para CSM */}
                       {users.filter(u => u.effectiveRole === 'admin').length > 0 && (
                         <>
                           <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Administradores</div>
