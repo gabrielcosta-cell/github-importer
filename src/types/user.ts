@@ -2,7 +2,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'sdr' | 'closer';
+  role: 'admin' | 'user';
   createdAt: string;
   lastLogin?: string;
   photo?: string;
@@ -10,7 +10,7 @@ export interface User {
   department?: string;
   phone?: string;
   celebrationMusic?: string; // URL do áudio de celebração
-  custom_role_id?: string; // ID da role customizada
+  is_global_admin?: boolean; // Apenas Gabriel Costa
 }
 
 export interface AuthContextType {
@@ -25,4 +25,5 @@ export interface AuthContextType {
   removeUser: (userId: string) => void;
   activateUser: (userId: string) => void;
   updateUser: (userId: string, updates: Partial<User>) => void;
+  is_global_admin?: boolean;
 }

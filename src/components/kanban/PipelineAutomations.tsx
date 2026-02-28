@@ -68,8 +68,7 @@ export function PipelineAutomations() {
 
       const baseRoles = [
         { id: 'admin', name: 'Administradores' },
-        { id: 'sdr', name: 'SDRs' },
-        { id: 'closer', name: 'Closers' },
+        { id: 'user', name: 'Usuários' },
       ];
 
       const allRoles = [

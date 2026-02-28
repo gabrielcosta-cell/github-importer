@@ -152,25 +152,18 @@ export const UserProfile = () => {
     }
     
     // Caso contrário, exibir o role base
-    if (profile.role === 'admin') {
+    if (profile.role === 'admin' || profile.is_global_admin) {
       return (
         <Badge variant="default" className="bg-primary">
           <Shield className="h-3 w-3 mr-1" />
-          Administrador
-        </Badge>
-      )
-    } else if (profile.role === 'sdr') {
-      return (
-        <Badge variant="secondary" className="bg-blue-600 text-white">
-          <User className="h-3 w-3 mr-1" />
-          SDR
+          {profile.is_global_admin ? 'Admin Global' : 'Administrador'}
         </Badge>
       )
     } else {
       return (
-        <Badge variant="secondary" className="bg-green-600 text-white">
+        <Badge variant="secondary">
           <User className="h-3 w-3 mr-1" />
-          Closer
+          Usuário
         </Badge>
       )
     }

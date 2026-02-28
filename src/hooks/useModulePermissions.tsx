@@ -20,58 +20,62 @@ export const useModulePermissions = () => {
   const lastRoleRef = useRef<string | null>(null);
 
   const checkModulePermission = (moduleName: string, permissionType: 'view' | 'create' | 'edit' | 'delete' = 'view'): boolean => {
-    // Módulos removidos (comercial) - sempre retorna false
+    // Módulos removidos - sempre retorna false
     const removedModules = ['dashboard', 'wallet', 'lista-espera', 'lista_espera'];
     if (removedModules.includes(moduleName)) {
       return false;
     }
     
-    // Módulos que TODOS os usuários podem acessar, independente de permissões
+    // Módulos públicos - todos podem acessar
     const publicModules = ['preferencias-interface', 'preferencias', 'interface_preferences', 'profile', 'meu-perfil'];
     if (publicModules.includes(moduleName)) {
       return true;
     }
 
-    // Regra do produto: CSM é o módulo padrão para qualquer usuário AUTENTICADO
-    // (mesmo quando o carregamento de permissões falhar/retornar vazio)
+    // CSM é módulo padrão para qualquer usuário autenticado (view)
     if (user && moduleName === 'csm' && permissionType === 'view') {
       return true;
     }
     
+    const isGlobalAdmin = profile?.is_global_admin || false;
     const effectiveRole = profile?.effectiveRole || profile?.role;
-    const customRoles = profile?.custom_roles as { base_role?: string; name?: string; display_name?: string } | undefined;
-    const customRoleName = customRoles?.name?.toLowerCase() || '';
-    const customRoleDisplayName = customRoles?.display_name?.toLowerCase() || '';
     
-    // Admin sempre tem acesso total a TODOS os módulos
-    if (effectiveRole === 'admin' || customRoleName === 'admin' || customRoleDisplayName.includes('administrador completo')) {
+    // Admin Global: acesso total a TUDO
+    if (isGlobalAdmin) {
       return true;
     }
     
-    // Verificar permissões do banco de dados primeiro
+    // Admin: acesso total exceto que não pode se auto-promover (tratado na UI)
+    if (effectiveRole === 'admin') {
+      return true;
+    }
+
+    // Usuário Comum: módulo 'users' bloqueado completamente
+    if (moduleName === 'users') {
+      return false;
+    }
+
+    // Usuário Comum: bloqueio de delete em CSM e pipelines
+    if (permissionType === 'delete') {
+      const deleteBlockedModules = ['csm', 'pipelines', 'csm_pipelines', 'kanban'];
+      if (deleteBlockedModules.includes(moduleName)) {
+        return false;
+      }
+    }
+    
+    // Verificar permissões do banco de dados
     const modulePerms = permissions[moduleName];
     if (modulePerms) {
-      const hasPermission = (() => {
-        switch (permissionType) {
-          case 'view':
-            return modulePerms.can_view;
-          case 'create':
-            return modulePerms.can_create;
-          case 'edit':
-            return modulePerms.can_edit;
-          case 'delete':
-            return modulePerms.can_delete;
-          default:
-            return false;
-        }
-      })();
-      
-      if (hasPermission) {
-        return true;
+      switch (permissionType) {
+        case 'view': return modulePerms.can_view;
+        case 'create': return modulePerms.can_create;
+        case 'edit': return modulePerms.can_edit;
+        case 'delete': return modulePerms.can_delete;
+        default: return false;
       }
     }
 
-    // Se não tem permissão explícita no banco, negar acesso
+    // Sem permissão explícita = negar
     return false;
   };
 
@@ -86,37 +90,30 @@ export const useModulePermissions = () => {
         return;
       }
 
-      // Check if we need to refetch (user or role changed)
       const userChanged = lastUserIdRef.current !== user.id;
       const roleChanged = lastRoleRef.current !== profile.role;
       const needsRefetch = userChanged || roleChanged || !hasLoadedRef.current;
 
-      // Update refs
       lastUserIdRef.current = user.id;
       lastRoleRef.current = profile.role;
 
       if (!needsRefetch) {
-        console.log('🚀 Permissions already loaded, skipping fetch');
         return;
       }
 
-      console.log('🔄 Fetching permissions for user:', user.id, 'role:', profile.role, 'effectiveRole:', profile.effectiveRole);
-
-      // Admin tem acesso total - não precisa verificar permissões específicas
+      // Admin e Admin Global têm acesso total - não precisa verificar
       const effectiveRole = profile?.effectiveRole || profile.role;
-      if (effectiveRole === 'admin') {
+      if (effectiveRole === 'admin' || profile.is_global_admin) {
         setLoading(false);
         hasLoadedRef.current = true;
         return;
       }
 
       try {
-        // Only show loading if we haven't loaded before
         if (!hasLoadedRef.current) {
           setLoading(true);
         }
 
-        // Buscar todos os módulos ativos
         const { data: modules, error: modulesError } = await supabase
           .from('modules')
           .select('id, name')
@@ -127,49 +124,24 @@ export const useModulePermissions = () => {
           return;
         }
 
-        // Usar a função do banco para verificar permissões
         const modulePermissions: ModulePermissions = {};
         
         for (const module of modules || []) {
-          console.log('🔄 Checking permissions for module:', module.name);
-          
-          // Verificar cada tipo de permissão
           const [viewResult, createResult, editResult, deleteResult] = await Promise.all([
-            supabase.rpc('user_has_module_permission', {
-              _user_id: user.id,
-              _module_name: module.name,
-              _permission_type: 'view'
-            }),
-            supabase.rpc('user_has_module_permission', {
-              _user_id: user.id,
-              _module_name: module.name,
-              _permission_type: 'create'
-            }),
-            supabase.rpc('user_has_module_permission', {
-              _user_id: user.id,
-              _module_name: module.name,
-              _permission_type: 'edit'
-            }),
-            supabase.rpc('user_has_module_permission', {
-              _user_id: user.id,
-              _module_name: module.name,
-              _permission_type: 'delete'
-            })
+            supabase.rpc('user_has_module_permission', { _user_id: user.id, _module_name: module.name, _permission_type: 'view' }),
+            supabase.rpc('user_has_module_permission', { _user_id: user.id, _module_name: module.name, _permission_type: 'create' }),
+            supabase.rpc('user_has_module_permission', { _user_id: user.id, _module_name: module.name, _permission_type: 'edit' }),
+            supabase.rpc('user_has_module_permission', { _user_id: user.id, _module_name: module.name, _permission_type: 'delete' })
           ]);
 
-          const modulePermissions_single = {
+          modulePermissions[module.name] = {
             can_view: viewResult.data || false,
             can_create: createResult.data || false,
             can_edit: editResult.data || false,
             can_delete: deleteResult.data || false
           };
-
-          console.log(`📊 Permissions for ${module.name}:`, modulePermissions_single);
-
-          modulePermissions[module.name] = modulePermissions_single;
         }
 
-        console.log('🎯 Final permissions object:', modulePermissions);
         setPermissions(modulePermissions);
       } catch (error) {
         console.error('Erro ao verificar permissões:', error);
@@ -180,7 +152,7 @@ export const useModulePermissions = () => {
     };
 
     fetchPermissions();
-  }, [user?.id, profile?.role, profile?.effectiveRole]);
+  }, [user?.id, profile?.role, profile?.effectiveRole, profile?.is_global_admin]);
 
   return {
     permissions,

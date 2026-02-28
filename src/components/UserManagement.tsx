@@ -1,640 +1,28 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Separator } from '@/components/ui/separator';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { UserPermissions } from '@/components/UserPermissions';
-import { UserPlus, Trash2, Edit, Shield, User, UserCheck, ChevronDown, ChevronRight, Settings, Users, Plus, Upload, Camera, DollarSign, BarChart3, FolderCheck, Wallet, Trophy, BarChart2, ClipboardList, FileText, FolderOpen, Activity, Sparkles, Eye, PenLine, Trash, PlusCircle } from 'lucide-react';
+import { UserPlus, Trash2, Edit, Shield, User, UserCheck, ChevronDown, ChevronRight, Settings, Users, Camera, Crown } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-interface CustomRole {
-  id: string;
-  name: string;
-  display_name: string;
-  description: string;
-  base_role: string;
-}
-
-interface Module {
-  id: string;
-  name: string;
-  display_name: string;
-}
-
-interface RolePermission {
-  module_id: string;
-  module_name: string;
-  display_name: string;
-  can_view: boolean;
-  can_create: boolean;
-  can_edit: boolean;
-  can_delete: boolean;
-}
-
-// Estrutura do menu para organizar permissões
-interface MenuModule {
-  name: string;
-  displayName: string;
-  icon: React.ElementType;
-  submodules?: {
-    name: string;
-    displayName: string;
-    icon: React.ElementType;
-  }[];
-}
-
-interface MenuSection {
-  title: string;
-  color: string;
-  icon: React.ElementType;
-  modules: MenuModule[];
-}
-
-const menuStructure: MenuSection[] = [
-  {
-    title: 'Comercial',
-    color: '#ec4a55',
-    icon: DollarSign,
-    modules: [
-      { name: 'csm', displayName: 'CSM', icon: DollarSign },
-      { name: 'dashboard', displayName: 'Quadro de vendas', icon: BarChart3 },
-      { name: 'projetos', displayName: 'Lista de espera', icon: FolderCheck },
-      { name: 'wallet', displayName: 'Wallet', icon: Wallet },
-    ]
-  },
-  {
-    title: 'Customer Success',
-    color: '#ec4a55',
-    icon: UserCheck,
-    modules: [
-      { name: 'csm', displayName: 'CSM', icon: UserCheck },
-      { name: 'cs', displayName: 'Cases de sucesso', icon: Trophy },
-    ]
-  },
-  {
-    title: 'Customer Experience',
-    color: '#ec4a55',
-    icon: BarChart2,
-    modules: [
-      { 
-        name: 'dashboards_cx', 
-        displayName: 'Dashboards', 
-        icon: BarChart2,
-        submodules: [
-          { name: 'csat', displayName: 'CSAT', icon: ClipboardList },
-          { name: 'nps', displayName: 'NPS', icon: ClipboardList },
-          { name: 'churn', displayName: 'CHURN', icon: BarChart2 },
-        ]
-      },
-      { 
-        name: 'pipelines_cx', 
-        displayName: 'Pipelines', 
-        icon: ClipboardList,
-        submodules: [
-          { name: 'csat', displayName: 'CSAT', icon: ClipboardList },
-          { name: 'nps', displayName: 'NPS', icon: ClipboardList },
-          { name: 'churn', displayName: 'CHURN', icon: BarChart2 },
-        ]
-      },
-      { 
-        name: 'formularios_cx', 
-        displayName: 'Formulários', 
-        icon: FileText,
-        submodules: [
-          { name: 'formularios', displayName: 'Gerar Forms', icon: FileText },
-          { name: 'csat', displayName: 'CSAT', icon: ClipboardList },
-          { name: 'nps', displayName: 'NPS', icon: ClipboardList },
-          { name: 'churn', displayName: 'CHURN', icon: BarChart2 },
-        ]
-      },
-    ]
-  },
-  {
-    title: 'Operação',
-    color: '#ec4a55',
-    icon: FolderOpen,
-    modules: [
-      { 
-        name: 'projetos_op', 
-        displayName: 'Projetos', 
-        icon: FolderOpen,
-        submodules: [
-          { name: 'projetos_clientes', displayName: 'Clientes', icon: Users },
-          { name: 'metricas_financeiras', displayName: 'Métricas Financeiras', icon: BarChart3 },
-        ]
-      },
-      { name: 'performance', displayName: 'Performance', icon: Activity },
-      { 
-        name: 'criacao_op', 
-        displayName: 'Criação', 
-        icon: Sparkles,
-        submodules: [
-          { name: 'aprovacao', displayName: 'Aprovação', icon: Sparkles },
-          { name: 'copy', displayName: 'Copy', icon: Sparkles },
-          { name: 'analise_bench', displayName: 'Análise e Bench', icon: Sparkles },
-        ]
-      },
-    ]
-  },
-  {
-    title: 'Configurações',
-    color: '#ec4a55',
-    icon: Settings,
-    modules: [
-      { name: 'users', displayName: 'Usuários', icon: Users },
-    ]
-  },
-];
-
-// Componente para edição de permissões com estrutura de menu
-interface RolePermissionsEditorProps {
-  permissions: RolePermission[];
-  onPermissionsChange: React.Dispatch<React.SetStateAction<RolePermission[]>>;
-  onSave: () => void;
-  onCancel: () => void;
-}
-
-const RolePermissionsEditor: React.FC<RolePermissionsEditorProps> = ({
-  permissions,
-  onPermissionsChange,
-  onSave,
-  onCancel
-}) => {
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
-  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
-
-  const toggleSection = (title: string) => {
-    const newExpanded = new Set(expandedSections);
-    if (newExpanded.has(title)) {
-      newExpanded.delete(title);
-    } else {
-      newExpanded.add(title);
-    }
-    setExpandedSections(newExpanded);
-  };
-
-  const toggleModule = (moduleName: string) => {
-    const newExpanded = new Set(expandedModules);
-    if (newExpanded.has(moduleName)) {
-      newExpanded.delete(moduleName);
-    } else {
-      newExpanded.add(moduleName);
-    }
-    setExpandedModules(newExpanded);
-  };
-
-  const getPermissionForModule = (moduleName: string) => {
-    return permissions.find(p => p.module_name === moduleName);
-  };
-
-  const updatePermission = (moduleName: string, field: keyof RolePermission, value: boolean) => {
-    onPermissionsChange(prev => prev.map(p => {
-      if (p.module_name === moduleName) {
-        return { ...p, [field]: value };
-      }
-      return p;
-    }));
-  };
-
-  const toggleAllForModule = (moduleName: string, value: boolean) => {
-    onPermissionsChange(prev => prev.map(p => {
-      if (p.module_name === moduleName) {
-        return { ...p, can_view: value, can_create: value, can_edit: value, can_delete: value };
-      }
-      return p;
-    }));
-  };
-
-  const hasAnyPermission = (moduleName: string) => {
-    const perm = getPermissionForModule(moduleName);
-    return perm && (perm.can_view || perm.can_create || perm.can_edit || perm.can_delete);
-  };
-
-  const hasAllPermissions = (moduleName: string) => {
-    const perm = getPermissionForModule(moduleName);
-    return perm && perm.can_view && perm.can_create && perm.can_edit && perm.can_delete;
-  };
-
-  // Helper para obter todos os módulos reais de uma seção (incluindo submodules)
-  const getAllModulesFromSection = (section: MenuSection): string[] => {
-    const modules: string[] = [];
-    section.modules.forEach(m => {
-      if (m.submodules && m.submodules.length > 0) {
-        m.submodules.forEach(sub => modules.push(sub.name));
-      } else {
-        modules.push(m.name);
-      }
-    });
-    return [...new Set(modules)]; // Remove duplicatas
-  };
-
-  // Helper para verificar se há permissão para algum módulo da seção
-  const hasPermissionsInSection = (section: MenuSection): boolean => {
-    const allModules = getAllModulesFromSection(section);
-    return allModules.some(m => getPermissionForModule(m));
-  };
-
-  // Renderizar módulo com ou sem submodules
-  const renderModule = (module: MenuModule) => {
-    const ModuleIcon = module.icon;
-
-    // Se tem submodules, renderizar como categoria com filhos
-    if (module.submodules && module.submodules.length > 0) {
-      const isModuleExpanded = expandedModules.has(module.name);
-      const submodulesWithPerms = module.submodules.filter(sub => getPermissionForModule(sub.name));
-      
-      if (submodulesWithPerms.length === 0) return null;
-
-      return (
-        <div key={module.name} className="border-b last:border-b-0">
-          <Collapsible open={isModuleExpanded} onOpenChange={() => toggleModule(module.name)}>
-            <CollapsibleTrigger asChild>
-              <div className="flex items-center justify-between p-3 pl-8 cursor-pointer hover:bg-muted/30 transition-colors">
-                <div className="flex items-center gap-3">
-                  {isModuleExpanded ? (
-                    <ChevronDown className="h-3 w-3" />
-                  ) : (
-                    <ChevronRight className="h-3 w-3" />
-                  )}
-                  <ModuleIcon className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">{module.displayName}</span>
-                </div>
-                <Badge variant="secondary" className="text-xs">
-                  {submodulesWithPerms.filter(sub => hasAnyPermission(sub.name)).length}/{submodulesWithPerms.length}
-                </Badge>
-              </div>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="pl-6">
-                {submodulesWithPerms.map((submodule) => {
-                  const permission = getPermissionForModule(submodule.name);
-                  if (!permission) return null;
-                  
-                  const isSubExpanded = expandedModules.has(`${module.name}-${submodule.name}`);
-                  const SubIcon = submodule.icon;
-
-                  return (
-                    <div key={submodule.name} className="border-b last:border-b-0">
-                      <Collapsible open={isSubExpanded} onOpenChange={() => toggleModule(`${module.name}-${submodule.name}`)}>
-                        <CollapsibleTrigger asChild>
-                          <div className="flex items-center justify-between p-2 pl-8 cursor-pointer hover:bg-muted/20 transition-colors">
-                            <div className="flex items-center gap-3">
-                              {isSubExpanded ? (
-                                <ChevronDown className="h-3 w-3" />
-                              ) : (
-                                <ChevronRight className="h-3 w-3" />
-                              )}
-                              <SubIcon className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-xs font-medium">{submodule.displayName}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Checkbox
-                                checked={hasAllPermissions(submodule.name)}
-                                onCheckedChange={(checked) => {
-                                  toggleAllForModule(submodule.name, checked as boolean);
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                              />
-                              <span className="text-xs text-muted-foreground">Todos</span>
-                            </div>
-                          </div>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-2 pl-20 bg-muted/10">
-                            <div className="flex items-center gap-2">
-                              <Checkbox
-                                checked={permission.can_view}
-                                onCheckedChange={(checked) => updatePermission(submodule.name, 'can_view', checked as boolean)}
-                              />
-                              <span className="text-xs flex items-center gap-1">
-                                <Eye className="h-3 w-3" />
-                                Visualizar
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Checkbox
-                                checked={permission.can_create}
-                                onCheckedChange={(checked) => updatePermission(submodule.name, 'can_create', checked as boolean)}
-                              />
-                              <span className="text-xs flex items-center gap-1">
-                                <PlusCircle className="h-3 w-3" />
-                                Criar
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Checkbox
-                                checked={permission.can_edit}
-                                onCheckedChange={(checked) => updatePermission(submodule.name, 'can_edit', checked as boolean)}
-                              />
-                              <span className="text-xs flex items-center gap-1">
-                                <PenLine className="h-3 w-3" />
-                                Editar
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Checkbox
-                                checked={permission.can_delete}
-                                onCheckedChange={(checked) => updatePermission(submodule.name, 'can_delete', checked as boolean)}
-                              />
-                              <span className="text-xs flex items-center gap-1">
-                                <Trash className="h-3 w-3" />
-                                Excluir
-                              </span>
-                            </div>
-                          </div>
-                        </CollapsibleContent>
-                      </Collapsible>
-                    </div>
-                  );
-                })}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-        </div>
-      );
-    }
-
-    // Módulo simples sem submodules
-    const permission = getPermissionForModule(module.name);
-    if (!permission) return null;
-
-    const isModuleExpanded = expandedModules.has(module.name);
-
-    return (
-      <div key={module.name} className="border-b last:border-b-0">
-        <Collapsible open={isModuleExpanded} onOpenChange={() => toggleModule(module.name)}>
-          <CollapsibleTrigger asChild>
-            <div className="flex items-center justify-between p-3 pl-8 cursor-pointer hover:bg-muted/30 transition-colors">
-              <div className="flex items-center gap-3">
-                {isModuleExpanded ? (
-                  <ChevronDown className="h-3 w-3" />
-                ) : (
-                  <ChevronRight className="h-3 w-3" />
-                )}
-                <ModuleIcon className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">{module.displayName}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  checked={hasAllPermissions(module.name)}
-                  onCheckedChange={(checked) => {
-                    toggleAllForModule(module.name, checked as boolean);
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                />
-                <span className="text-xs text-muted-foreground">Todos</span>
-              </div>
-            </div>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 pl-16 bg-muted/10">
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id={`${module.name}-view`}
-                  checked={permission.can_view}
-                  onCheckedChange={(checked) => updatePermission(module.name, 'can_view', checked as boolean)}
-                />
-                <label htmlFor={`${module.name}-view`} className="text-xs flex items-center gap-1 cursor-pointer">
-                  <Eye className="h-3 w-3" />
-                  Visualizar
-                </label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id={`${module.name}-create`}
-                  checked={permission.can_create}
-                  onCheckedChange={(checked) => updatePermission(module.name, 'can_create', checked as boolean)}
-                />
-                <label htmlFor={`${module.name}-create`} className="text-xs flex items-center gap-1 cursor-pointer">
-                  <PlusCircle className="h-3 w-3" />
-                  Criar
-                </label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id={`${module.name}-edit`}
-                  checked={permission.can_edit}
-                  onCheckedChange={(checked) => updatePermission(module.name, 'can_edit', checked as boolean)}
-                />
-                <label htmlFor={`${module.name}-edit`} className="text-xs flex items-center gap-1 cursor-pointer">
-                  <PenLine className="h-3 w-3" />
-                  Editar
-                </label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id={`${module.name}-delete`}
-                  checked={permission.can_delete}
-                  onCheckedChange={(checked) => updatePermission(module.name, 'can_delete', checked as boolean)}
-                />
-                <label htmlFor={`${module.name}-delete`} className="text-xs flex items-center gap-1 cursor-pointer">
-                  <Trash className="h-3 w-3" />
-                  Excluir
-                </label>
-              </div>
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
-      </div>
-    );
-  };
-
-  return (
-    <div className="space-y-3">
-      {menuStructure.map((section) => {
-        const isSectionExpanded = expandedSections.has(section.title);
-        
-        if (!hasPermissionsInSection(section)) return null;
-
-        const SectionIcon = section.icon;
-
-        return (
-          <div key={section.title} className="border rounded-lg overflow-hidden">
-            <Collapsible open={isSectionExpanded} onOpenChange={() => toggleSection(section.title)}>
-              <CollapsibleTrigger asChild>
-                <div 
-                  className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50 transition-colors"
-                  style={{ borderLeft: `4px solid ${section.color}` }}
-                >
-                  <div className="flex items-center gap-3">
-                    {isSectionExpanded ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4" />
-                    )}
-                    <SectionIcon className="h-4 w-4" style={{ color: section.color }} />
-                    <span className="font-semibold" style={{ color: section.color }}>
-                      {section.title}
-                    </span>
-                  </div>
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="border-t bg-muted/20">
-                  {section.modules.map((module) => renderModule(module))}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          </div>
-        );
-      })}
-      {/* Módulos que não estão na estrutura do menu - filtrados para ocultar módulos escondidos */}
-      {(() => {
-        // Módulos ocultos que não devem aparecer nas permissões
-        const hiddenModules = ['gestao_contratos', 'cs_dashboards', 'cs_pipelines', 'dashboards_cx', 'pipelines_cx', 'formularios_cx', 'projetos_op', 'criacao_op'];
-        
-        // Coletar todos os módulos mapeados (incluindo submodules)
-        const allMappedModules: string[] = [];
-        menuStructure.forEach(section => {
-          section.modules.forEach(m => {
-            allMappedModules.push(m.name);
-            if (m.submodules) {
-              m.submodules.forEach(sub => allMappedModules.push(sub.name));
-            }
-          });
-        });
-        
-        const unmappedModules = permissions.filter(p => 
-          !allMappedModules.includes(p.module_name) &&
-          !hiddenModules.includes(p.module_name)
-        );
-        
-        if (unmappedModules.length === 0) return null;
-
-        return (
-          <div className="border rounded-lg overflow-hidden">
-            <Collapsible open={expandedSections.has('outros')} onOpenChange={() => toggleSection('outros')}>
-              <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50 transition-colors border-l-4 border-muted-foreground">
-                  <div className="flex items-center gap-3">
-                    {expandedSections.has('outros') ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4" />
-                    )}
-                    <Settings className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-semibold text-muted-foreground">Outros Módulos</span>
-                  </div>
-                  <Badge variant="secondary" className="text-xs">
-                    {unmappedModules.filter(p => p.can_view || p.can_create || p.can_edit || p.can_delete).length}/{unmappedModules.length}
-                  </Badge>
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="border-t bg-muted/20">
-                  {unmappedModules.map((permission) => {
-                    const isModuleExpanded = expandedModules.has(permission.module_name);
-
-                    return (
-                      <div key={permission.module_name} className="border-b last:border-b-0">
-                        <Collapsible open={isModuleExpanded} onOpenChange={() => toggleModule(permission.module_name)}>
-                          <CollapsibleTrigger asChild>
-                            <div className="flex items-center justify-between p-3 pl-8 cursor-pointer hover:bg-muted/30 transition-colors">
-                              <div className="flex items-center gap-3">
-                                {isModuleExpanded ? (
-                                  <ChevronDown className="h-3 w-3" />
-                                ) : (
-                                  <ChevronRight className="h-3 w-3" />
-                                )}
-                                <span className="text-sm font-medium">{permission.display_name}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Checkbox
-                                  checked={permission.can_view && permission.can_create && permission.can_edit && permission.can_delete}
-                                  onCheckedChange={(checked) => {
-                                    toggleAllForModule(permission.module_name, checked as boolean);
-                                  }}
-                                  onClick={(e) => e.stopPropagation()}
-                                />
-                                <span className="text-xs text-muted-foreground">Todos</span>
-                              </div>
-                            </div>
-                          </CollapsibleTrigger>
-                          <CollapsibleContent>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 pl-16 bg-muted/10">
-                              <div className="flex items-center gap-2">
-                                <Checkbox
-                                  checked={permission.can_view}
-                                  onCheckedChange={(checked) => updatePermission(permission.module_name, 'can_view', checked as boolean)}
-                                />
-                                <span className="text-xs flex items-center gap-1">
-                                  <Eye className="h-3 w-3" />
-                                  Visualizar
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Checkbox
-                                  checked={permission.can_create}
-                                  onCheckedChange={(checked) => updatePermission(permission.module_name, 'can_create', checked as boolean)}
-                                />
-                                <span className="text-xs flex items-center gap-1">
-                                  <PlusCircle className="h-3 w-3" />
-                                  Criar
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Checkbox
-                                  checked={permission.can_edit}
-                                  onCheckedChange={(checked) => updatePermission(permission.module_name, 'can_edit', checked as boolean)}
-                                />
-                                <span className="text-xs flex items-center gap-1">
-                                  <PenLine className="h-3 w-3" />
-                                  Editar
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Checkbox
-                                  checked={permission.can_delete}
-                                  onCheckedChange={(checked) => updatePermission(permission.module_name, 'can_delete', checked as boolean)}
-                                />
-                                <span className="text-xs flex items-center gap-1">
-                                  <Trash className="h-3 w-3" />
-                                  Excluir
-                                </span>
-                              </div>
-                            </div>
-                          </CollapsibleContent>
-                        </Collapsible>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          </div>
-        );
-      })()}
-
-      <div className="flex gap-2 pt-4">
-        <Button onClick={onSave}>
-          Salvar Permissões do Grupo
-        </Button>
-        <Button variant="outline" onClick={onCancel}>
-          Cancelar
-        </Button>
-      </div>
-    </div>
-  );
-};
-
-// Using Profile type from AuthContext
 type UserProfile = {
   user_id: string;
   name: string;
   email: string;
-  role: 'admin' | 'sdr' | 'closer';
+  role: 'admin' | 'user';
+  is_global_admin: boolean;
   department?: string | null;
   phone?: string | null;
   is_active: boolean;
@@ -648,187 +36,31 @@ export const UserManagement = () => {
   const { checkModulePermission } = useModulePermissions();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<string | null>(null);
-  const [customRoles, setCustomRoles] = useState<CustomRole[]>([]);
-  const [modules, setModules] = useState<Module[]>([]);
   const [permissionsUserId, setPermissionsUserId] = useState<string | null>(null);
   const [permissionsUserName, setPermissionsUserName] = useState<string>('');
   const [currentUserRoleId, setCurrentUserRoleId] = useState<string | undefined>(undefined);
   const [isUpdating, setIsUpdating] = useState(false);
   const [expandedRoles, setExpandedRoles] = useState<Set<string>>(new Set());
-  const [editingRolePermissions, setEditingRolePermissions] = useState<string | null>(null);
-  const [rolePermissions, setRolePermissions] = useState<RolePermission[]>([]);
-  const [isCreateRoleOpen, setIsCreateRoleOpen] = useState(false);
-  const [newRole, setNewRole] = useState({ name: '', display_name: '', base_role: 'custom' });
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    role: 'sdr' as 'admin' | 'sdr' | 'closer',
+    role: 'user' as 'admin' | 'user',
     department: '',
     phone: '',
-    customRoleId: 'sdr',
     avatar_url: ''
   });
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
+  const isGlobalAdmin = profile?.is_global_admin || false;
+  const isAdmin = profile?.role === 'admin' || isGlobalAdmin;
+
   useEffect(() => {
     if (checkModulePermission('users', 'view')) {
       refreshProfiles();
-      fetchCustomRoles();
-      fetchModules();
     }
   }, []);
-
-  const fetchCustomRoles = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('custom_roles')
-        .select('*')
-        .eq('is_active', true)
-        .order('display_name');
-
-      if (error) {
-        console.error('Erro ao buscar roles:', error);
-        setCustomRoles([]);
-      } else {
-        setCustomRoles(data || []);
-      }
-    } catch (error) {
-      console.error('Erro ao buscar roles:', error);
-      setCustomRoles([]);
-    }
-  };
-
-  // Módulos com acesso padrão para todos usuários
-  const publicModuleNames = ['meu_perfil', 'preferencias', 'profile', 'preferences'];
-
-  const fetchModules = async () => {
-    const { data, error } = await supabase
-      .from('modules')
-      .select('id, name, display_name')
-      .eq('is_active', true)
-      .order('display_name');
-
-    if (!error && data) {
-      // Filtrar módulos públicos da lista de permissões
-      const filteredModules = data.filter(m => !publicModuleNames.includes(m.name.toLowerCase()));
-      setModules(filteredModules);
-    }
-  };
-
-  const fetchRolePermissions = async (roleId: string) => {
-    const { data: allModules } = await supabase
-      .from('modules')
-      .select('*')
-      .eq('is_active', true)
-      .order('display_name');
-
-    const { data: existingPermissions } = await supabase
-      .from('role_module_permissions')
-      .select('*')
-      .eq('role_id', roleId);
-
-    // Filtrar módulos públicos da lista de permissões
-    const filteredModules = (allModules || []).filter(m => !publicModuleNames.includes(m.name.toLowerCase()));
-
-    const permissions = filteredModules.map(module => {
-      const existingPerm = existingPermissions?.find(p => p.module_id === module.id);
-      return {
-        module_id: module.id,
-        module_name: module.name,
-        display_name: module.display_name,
-        can_view: existingPerm?.can_view || false,
-        can_create: existingPerm?.can_create || false,
-        can_edit: existingPerm?.can_edit || false,
-        can_delete: existingPerm?.can_delete || false
-      };
-    });
-
-    setRolePermissions(permissions);
-  };
-
-  const saveRolePermissions = async (roleId: string) => {
-    const updates = rolePermissions.map(perm => ({
-      role_id: roleId,
-      module_id: perm.module_id,
-      can_view: perm.can_view,
-      can_create: perm.can_create,
-      can_edit: perm.can_edit,
-      can_delete: perm.can_delete
-    }));
-
-    const { error } = await supabase
-      .from('role_module_permissions')
-      .upsert(updates, { onConflict: 'role_id,module_id' });
-
-    if (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao salvar permissões do grupo",
-        variant: "destructive"
-      });
-    } else {
-      toast({
-        title: "Sucesso",
-        description: "Permissões do grupo atualizadas. Todos os usuários deste grupo foram afetados."
-      });
-      setEditingRolePermissions(null);
-    }
-  };
-
-  const createRole = async () => {
-    if (!newRole.name || !newRole.display_name) {
-      toast({ title: "Erro", description: "Preencha todos os campos", variant: "destructive" });
-      return;
-    }
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from('custom_roles')
-      .insert([{
-        name: newRole.name.toLowerCase().replace(/\s+/g, '_'),
-        display_name: newRole.display_name,
-        base_role: newRole.base_role as 'admin' | 'closer' | 'custom' | 'manager' | 'sdr',
-        created_by: user.id
-      }])
-      .select()
-      .single();
-
-    if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
-    } else {
-      // Create default permissions
-      const defaultPerms = modules.map(m => ({
-        role_id: data.id,
-        module_id: m.id,
-        can_view: false,
-        can_create: false,
-        can_edit: false,
-        can_delete: false
-      }));
-      await supabase.from('role_module_permissions').insert(defaultPerms);
-
-      toast({ title: "Sucesso", description: "Grupo criado com sucesso" });
-      setNewRole({ name: '', display_name: '', base_role: 'custom' });
-      setIsCreateRoleOpen(false);
-      fetchCustomRoles();
-    }
-  };
-
-  const deleteRole = async (roleId: string) => {
-    const { error } = await supabase
-      .from('custom_roles')
-      .update({ is_active: false })
-      .eq('id', roleId);
-
-    if (!error) {
-      toast({ title: "Sucesso", description: "Grupo desativado" });
-      fetchCustomRoles();
-    }
-  };
 
   if (!checkModulePermission('users', 'view')) {
     return (
@@ -844,16 +76,6 @@ export const UserManagement = () => {
     );
   }
 
-  // Group users by their custom_role_id
-  const getUsersByRole = (roleId: string) => {
-    return profiles.filter(u => u.custom_role_id === roleId && u.is_active);
-  };
-
-  // Users without custom role (legacy base roles)
-  const getLegacyUsers = () => {
-    return profiles.filter(u => !u.custom_role_id && u.is_active);
-  };
-
   const toggleRoleExpanded = (roleId: string) => {
     const newExpanded = new Set(expandedRoles);
     if (newExpanded.has(roleId)) {
@@ -864,58 +86,42 @@ export const UserManagement = () => {
     setExpandedRoles(newExpanded);
   };
 
-  const getRoleBadgeColor = (baseRole: string) => {
-    switch (baseRole) {
-      case 'admin': return 'bg-red-500/20 text-red-300 border-red-500/30';
-      case 'manager': return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
-      case 'closer': return 'bg-green-500/20 text-green-300 border-green-500/30';
-      case 'sdr': return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30';
-      default: return 'bg-slate-500/20 text-slate-300 border-slate-500/30';
-    }
+  // Helpers para hierarquia
+  const getGlobalAdmin = () => profiles.filter(u => u.is_global_admin && u.is_active);
+  const getAdmins = () => profiles.filter(u => u.role === 'admin' && !u.is_global_admin && u.is_active);
+  const getCommonUsers = () => profiles.filter(u => u.role === 'user' && !u.is_global_admin && u.is_active);
+  const getInactiveUsers = () => profiles.filter(u => !u.is_active);
+
+  // Admin pode ver: apenas comuns. Global admin: todos.
+  const getVisibleProfiles = () => {
+    if (isGlobalAdmin) return profiles;
+    if (isAdmin) return profiles.filter(u => (u.role === 'user' && !u.is_global_admin) || u.user_id === profile?.user_id);
+    return [];
   };
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>, userId: string) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       toast({ title: "Erro", description: "Por favor, selecione uma imagem válida", variant: "destructive" });
       return;
     }
-
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast({ title: "Erro", description: "A imagem deve ter no máximo 5MB", variant: "destructive" });
       return;
     }
 
     setUploadingAvatar(true);
-
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${userId}-${Date.now()}.${fileExt}`;
-      const filePath = `${fileName}`;
-
-      // Upload to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file, { upsert: true });
-
+      const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, file, { upsert: true });
       if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-      // Update form data and preview
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(fileName);
       setFormData(prev => ({ ...prev, avatar_url: publicUrl }));
       setAvatarPreview(publicUrl);
-
       toast({ title: "Sucesso", description: "Foto de perfil carregada" });
     } catch (error: any) {
-      console.error('Error uploading avatar:', error);
       toast({ title: "Erro", description: error.message || "Erro ao carregar foto", variant: "destructive" });
     } finally {
       setUploadingAvatar(false);
@@ -928,14 +134,17 @@ export const UserManagement = () => {
       return;
     }
 
-    const isBaseRole = ['admin', 'sdr', 'closer'].includes(formData.customRoleId);
-    const role = isBaseRole ? formData.customRoleId as 'admin' | 'sdr' | 'closer' : 'sdr';
-    const customRoleId = isBaseRole ? undefined : formData.customRoleId;
+    // Admin normal só pode criar usuário comum
+    let role = formData.role;
+    if (!isGlobalAdmin && role === 'admin') {
+      toast({ title: "Erro", description: "Apenas o Admin Global pode criar administradores", variant: "destructive" });
+      return;
+    }
 
-    const result = await addUser({ ...formData, role, customRoleId });
+    const result = await addUser({ ...formData, role });
     
     if (result.success) {
-      setFormData({ name: '', email: '', password: '', role: 'sdr', department: '', phone: '', customRoleId: 'sdr', avatar_url: '' });
+      setFormData({ name: '', email: '', password: '', role: 'user', department: '', phone: '', avatar_url: '' });
       setAvatarPreview(null);
       setIsAddDialogOpen(false);
       toast({ title: "Sucesso", description: `${formData.name} foi adicionado ao sistema.` });
@@ -947,20 +156,13 @@ export const UserManagement = () => {
   const handleEditUser = (userId: string) => {
     const user = profiles.find(u => u.user_id === userId);
     if (user) {
-      // Garantir que o role seja um dos valores válidos
-      const userRole: 'admin' | 'sdr' | 'closer' = 
-        (user.role === 'admin' || user.role === 'sdr' || user.role === 'closer') 
-          ? user.role as 'admin' | 'sdr' | 'closer'
-          : 'sdr';
-      
       setFormData({
         name: user.name,
         email: user.email,
         password: '',
-        role: userRole,
+        role: user.role as 'admin' | 'user',
         department: user.department || '',
         phone: user.phone || '',
-        customRoleId: user.custom_role_id || '',
         avatar_url: (user as any).avatar_url || ''
       });
       setAvatarPreview((user as any).avatar_url || null);
@@ -973,9 +175,23 @@ export const UserManagement = () => {
 
     setIsUpdating(true);
     
-    const isBaseRole = ['admin', 'sdr', 'closer'].includes(formData.customRoleId);
-    const role = isBaseRole ? formData.customRoleId as 'admin' | 'sdr' | 'closer' : formData.role;
-    const customRoleId = isBaseRole ? null : formData.customRoleId;
+    // Verificar permissão de alterar role
+    const targetUser = profiles.find(u => u.user_id === editingUser);
+    let role = formData.role;
+    
+    // Admin normal não pode promover para admin
+    if (!isGlobalAdmin && role === 'admin' && targetUser?.role !== 'admin') {
+      toast({ title: "Erro", description: "Apenas o Admin Global pode promover a administrador", variant: "destructive" });
+      setIsUpdating(false);
+      return;
+    }
+
+    // Admin normal não pode editar admins
+    if (!isGlobalAdmin && targetUser?.role === 'admin') {
+      toast({ title: "Erro", description: "Apenas o Admin Global pode editar administradores", variant: "destructive" });
+      setIsUpdating(false);
+      return;
+    }
 
     const { error } = await supabase
       .from('profiles')
@@ -985,13 +201,12 @@ export const UserManagement = () => {
         role: role,
         department: formData.department,
         phone: formData.phone,
-        custom_role_id: customRoleId,
         avatar_url: formData.avatar_url || null
       })
       .eq('user_id', editingUser);
 
     if (!error) {
-      setFormData({ name: '', email: '', password: '', role: 'sdr', department: '', phone: '', customRoleId: 'sdr', avatar_url: '' });
+      setFormData({ name: '', email: '', password: '', role: 'user', department: '', phone: '', avatar_url: '' });
       setAvatarPreview(null);
       setEditingUser(null);
       refreshProfiles();
@@ -1007,8 +222,49 @@ export const UserManagement = () => {
       toast({ title: "Erro", description: "Você não pode remover sua própria conta", variant: "destructive" });
       return;
     }
+    
+    const targetUser = profiles.find(u => u.user_id === userId);
+    
+    // Admin normal não pode desativar admins
+    if (!isGlobalAdmin && targetUser?.role === 'admin') {
+      toast({ title: "Erro", description: "Apenas o Admin Global pode desativar administradores", variant: "destructive" });
+      return;
+    }
+
+    // Ninguém pode desativar o Admin Global
+    if (targetUser?.is_global_admin) {
+      toast({ title: "Erro", description: "O Admin Global não pode ser desativado", variant: "destructive" });
+      return;
+    }
+
     const success = await removeUser(userId);
     if (success) toast({ title: "Sucesso", description: "Usuário desativado" });
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!isGlobalAdmin) {
+      toast({ title: "Erro", description: "Apenas o Admin Global pode excluir usuários permanentemente", variant: "destructive" });
+      return;
+    }
+
+    const targetUser = profiles.find(u => u.user_id === userId);
+    if (targetUser?.is_global_admin) {
+      toast({ title: "Erro", description: "O Admin Global não pode ser excluído", variant: "destructive" });
+      return;
+    }
+
+    // Exclusão permanente do perfil
+    const { error } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('user_id', userId);
+
+    if (!error) {
+      refreshProfiles();
+      toast({ title: "Sucesso", description: "Usuário excluído permanentemente" });
+    } else {
+      toast({ title: "Erro", description: "Erro ao excluir usuário", variant: "destructive" });
+    }
   };
 
   const handleActivateUser = async (userId: string) => {
@@ -1016,49 +272,39 @@ export const UserManagement = () => {
     if (success) toast({ title: "Sucesso", description: "Usuário reativado" });
   };
 
-  // Função para obter o nome do cargo do usuário
-  const getUserCargoName = (user: any): string => {
-    if (user.custom_role_id) {
-      const role = customRoles.find(r => r.id === user.custom_role_id);
-      if (role?.display_name) return role.display_name;
-    }
-    // Roles base que não são admin
-    if (user.role && user.role !== 'admin') {
-      const roleNames: Record<string, string> = {
-        'sdr': 'SDR',
-        'closer': 'Closer',
-        'manager': 'Gerente'
-      };
-      if (roleNames[user.role]) return roleNames[user.role];
-      if (user.role !== 'custom') return user.role.toUpperCase();
-    }
-    return 'Sem função';
+  const canEditTargetUser = (targetUser: any): boolean => {
+    if (!profile) return false;
+    if (isGlobalAdmin) return true;
+    if (isAdmin && targetUser.role === 'user' && !targetUser.is_global_admin) return true;
+    return false;
   };
 
-  // Obter todos os usuários comuns (não-admin) incluindo os sem grupo
-  const getAllCommonUsers = () => {
-    return profiles.filter(u => {
-      const baseRole = (u as any).custom_roles?.base_role;
-      const effectiveRole = (baseRole && baseRole !== 'custom') ? baseRole : u.role;
-      return effectiveRole !== 'admin' && u.is_active;
-    });
+  const canDeactivateTargetUser = (targetUser: any): boolean => {
+    if (targetUser.user_id === profile?.user_id) return false;
+    if (targetUser.is_global_admin) return false;
+    if (isGlobalAdmin) return true;
+    if (isAdmin && targetUser.role === 'user') return true;
+    return false;
   };
 
-  const renderUserRow = (user: any, showCargo: boolean = false) => (
+  const renderUserRow = (user: any) => (
     <div key={user.user_id} className="flex items-center justify-between py-3 px-4 border-b last:border-b-0 hover:bg-muted/30">
       <div className="flex items-center gap-4">
         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-          <User className="h-5 w-5 text-primary" />
+          {user.is_global_admin ? (
+            <Crown className="h-5 w-5 text-amber-500" />
+          ) : user.role === 'admin' ? (
+            <Shield className="h-5 w-5 text-primary" />
+          ) : (
+            <User className="h-5 w-5 text-primary" />
+          )}
         </div>
         <div>
           <div className="flex items-center gap-2">
             <p className="font-medium">{user.name}</p>
-            {showCargo && (
-              <Badge 
-                variant="outline" 
-                className={`text-xs ${getUserCargoName(user) === 'Sem função' ? 'border-muted-foreground/30 text-muted-foreground' : ''}`}
-              >
-                {getUserCargoName(user)}
+            {user.is_global_admin && (
+              <Badge className="bg-amber-500/20 text-amber-600 border-amber-500/30 text-xs">
+                ADMIN GLOBAL
               </Badge>
             )}
           </div>
@@ -1066,126 +312,153 @@ export const UserManagement = () => {
         </div>
       </div>
       <div className="flex items-center gap-2">
-        {checkModulePermission('users', 'edit') && (
-          <>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setPermissionsUserId(user.user_id);
-                setPermissionsUserName(user.name);
-                setCurrentUserRoleId(user.custom_role_id || undefined);
-              }}
-              title="Permissões individuais"
-            >
-              <Shield className="h-4 w-4" />
-            </Button>
-            <Dialog open={editingUser === user.user_id} onOpenChange={(open) => !open && setEditingUser(null)}>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="sm" onClick={() => handleEditUser(user.user_id)}>
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Editar Usuário</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  {/* Avatar Upload */}
-                  <div className="flex flex-col items-center gap-3">
-                    <Label>Foto de Perfil</Label>
-                    <div className="relative">
-                      <Avatar className="h-24 w-24 border-2 border-border">
-                        <AvatarImage src={avatarPreview || undefined} />
-                        <AvatarFallback className="text-xl bg-primary/10">
-                          {formData.name?.charAt(0)?.toUpperCase() || <User className="h-8 w-8" />}
-                        </AvatarFallback>
-                      </Avatar>
-                      <label 
-                        htmlFor={`avatar-upload-${user.user_id}`}
-                        className="absolute bottom-0 right-0 p-1.5 bg-primary rounded-full cursor-pointer hover:bg-primary/80 transition-colors"
-                      >
-                        {uploadingAvatar ? (
-                          <div className="h-4 w-4 border-2 border-white border-t-transparent animate-spin rounded-full" />
-                        ) : (
-                          <Camera className="h-4 w-4 text-primary-foreground" />
-                        )}
-                      </label>
-                      <input
-                        id={`avatar-upload-${user.user_id}`}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => handleAvatarUpload(e, user.user_id)}
-                        disabled={uploadingAvatar}
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground">Clique no ícone para alterar</p>
+        {canEditTargetUser(user) && (
+          <Dialog open={editingUser === user.user_id} onOpenChange={(open) => !open && setEditingUser(null)}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="sm" onClick={() => handleEditUser(user.user_id)}>
+                <Edit className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Editar Usuário</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                {/* Avatar Upload */}
+                <div className="flex flex-col items-center gap-3">
+                  <Label>Foto de Perfil</Label>
+                  <div className="relative">
+                    <Avatar className="h-24 w-24 border-2 border-border">
+                      <AvatarImage src={avatarPreview || undefined} />
+                      <AvatarFallback className="text-xl bg-primary/10">
+                        {formData.name?.charAt(0)?.toUpperCase() || <User className="h-8 w-8" />}
+                      </AvatarFallback>
+                    </Avatar>
+                    <label 
+                      htmlFor={`avatar-upload-${user.user_id}`}
+                      className="absolute bottom-0 right-0 p-1.5 bg-primary rounded-full cursor-pointer hover:bg-primary/80 transition-colors"
+                    >
+                      {uploadingAvatar ? (
+                        <div className="h-4 w-4 border-2 border-white border-t-transparent animate-spin rounded-full" />
+                      ) : (
+                        <Camera className="h-4 w-4 text-primary-foreground" />
+                      )}
+                    </label>
+                    <input
+                      id={`avatar-upload-${user.user_id}`}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleAvatarUpload(e, user.user_id)}
+                      disabled={uploadingAvatar}
+                    />
                   </div>
+                </div>
 
-                  <Separator />
+                <Separator />
 
+                <div>
+                  <Label>Nome</Label>
+                  <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Email</Label>
+                  <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Telefone</Label>
+                  <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Departamento</Label>
+                  <Input value={formData.department} onChange={(e) => setFormData({ ...formData, department: e.target.value })} />
+                </div>
+                {/* Role select - apenas Global Admin pode alterar para Admin */}
+                {isGlobalAdmin && (
                   <div>
-                    <Label>Nome</Label>
-                    <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label>Email</Label>
-                    <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label>Telefone</Label>
-                    <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label>Departamento</Label>
-                    <Input value={formData.department} onChange={(e) => setFormData({ ...formData, department: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label>Grupo/Função</Label>
-                    <Select value={formData.customRoleId} onValueChange={(value) => setFormData({ ...formData, customRoleId: value })}>
+                    <Label>Nível de Acesso</Label>
+                    <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value as 'admin' | 'user' })}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecionar..." />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="sdr">SDR</SelectItem>
-                        <SelectItem value="closer">Closer</SelectItem>
-                        {customRoles.map(role => (
-                          <SelectItem key={role.id} value={role.id}>{role.display_name}</SelectItem>
-                        ))}
+                        <SelectItem value="admin">Administrador</SelectItem>
+                        <SelectItem value="user">Usuário Comum</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setEditingUser(null)}>Cancelar</Button>
-                    <Button onClick={handleUpdateUser} disabled={isUpdating}>
-                      {isUpdating ? "Salvando..." : "Salvar"}
-                    </Button>
-                  </div>
+                )}
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setEditingUser(null)}>Cancelar</Button>
+                  <Button onClick={handleUpdateUser} disabled={isUpdating}>
+                    {isUpdating ? "Salvando..." : "Salvar"}
+                  </Button>
                 </div>
-              </DialogContent>
-            </Dialog>
-          </>
+              </div>
+            </DialogContent>
+          </Dialog>
         )}
-        {checkModulePermission('users', 'delete') && (
+        
+        {/* Permissões individuais */}
+        {canEditTargetUser(user) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setPermissionsUserId(user.user_id);
+              setPermissionsUserName(user.name);
+              setCurrentUserRoleId(user.custom_role_id || undefined);
+            }}
+            title="Permissões individuais"
+          >
+            <Shield className="h-4 w-4" />
+          </Button>
+        )}
+
+        {/* Desativar (Admin e Global Admin) */}
+        {canDeactivateTargetUser(user) && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
-                <Trash2 className="h-4 w-4" />
+              <Button variant="ghost" size="sm" className="text-orange-600 hover:text-orange-700">
+                <UserCheck className="h-4 w-4" />
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Desativar usuário?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Esta ação desativará {user.name}.
+                  Esta ação desativará {user.name}. O usuário não poderá mais acessar o sistema.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={() => handleRemoveUser(user.user_id)} className="bg-red-600 hover:bg-red-700">
+                <AlertDialogAction onClick={() => handleRemoveUser(user.user_id)} className="bg-orange-600 hover:bg-orange-700">
                   Desativar
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+
+        {/* Excluir permanentemente (apenas Global Admin) */}
+        {isGlobalAdmin && !user.is_global_admin && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Excluir permanentemente?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta ação excluirá {user.name} permanentemente. Esta ação não pode ser desfeita.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={() => handleDeleteUser(user.user_id)} className="bg-destructive hover:bg-destructive/90">
+                  Excluir Permanentemente
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -1195,43 +468,6 @@ export const UserManagement = () => {
     </div>
   );
 
-  // Hierarquia simplificada:
-  // 1. admin - controle total
-  // 2. usuários comuns (sdr, closer, custom roles)
-  
-  const getUserLevel = (user: any): 'admin' | 'user' => {
-    const baseRole = (user as any).custom_roles?.base_role;
-    const effectiveRole = (baseRole && baseRole !== 'custom') ? baseRole : user.role;
-    if (effectiveRole === 'admin') return 'admin';
-    return 'user';
-  };
-  
-  const canEditUser = (targetUser: any): boolean => {
-    if (!profile) return false;
-    if (targetUser.user_id === profile.user_id) return true;
-    const currentLevel = getUserLevel(profile);
-    if (currentLevel === 'admin') return true;
-    return false;
-  };
-
-  // Obter administradores (role = admin ou custom_role base_role = admin)
-  const getFullAdmins = () => {
-    return profiles.filter(u => {
-      const baseRole = (u as any).custom_roles?.base_role;
-      const effectiveRole = (baseRole && baseRole !== 'custom') ? baseRole : u.role;
-      return effectiveRole === 'admin' && u.is_active;
-    });
-  };
-
-  // Obter usuários não-admin ativos (para promover a admin)
-  const getNonAdminUsers = () => {
-    return profiles.filter(u => {
-      const baseRole = (u as any).custom_roles?.base_role;
-      const effectiveRole = (baseRole && baseRole !== 'custom') ? baseRole : u.role;
-      return effectiveRole !== 'admin' && u.is_active;
-    });
-  };
-
   return (
     <div className="space-y-6">
       <Card>
@@ -1240,169 +476,148 @@ export const UserManagement = () => {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
-                Gerenciamento de Usuários por Grupo
+                Gerenciamento de Usuários
               </CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                Clique em um grupo para ver seus usuários. Configure acessos do grupo ou individualmente.
+                {isGlobalAdmin 
+                  ? 'Admin Global: controle total sobre todos os usuários.' 
+                  : 'Administrador: gerencie usuários comuns.'}
               </p>
             </div>
             <div className="flex items-center gap-2">
-              {checkModulePermission('users', 'create') && (
-                <>
-                  <Dialog open={isCreateRoleOpen} onOpenChange={setIsCreateRoleOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Novo Grupo
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Criar Novo Grupo</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div>
-                          <Label>Nome do Grupo</Label>
-                          <Input
-                            value={newRole.name}
-                            onChange={(e) => setNewRole(prev => ({ ...prev, name: e.target.value }))}
-                            placeholder="ex: vendas_senior"
-                          />
-                        </div>
-                        <div>
-                          <Label>Nome de Exibição</Label>
-                          <Input
-                            value={newRole.display_name}
-                            onChange={(e) => setNewRole(prev => ({ ...prev, display_name: e.target.value }))}
-                            placeholder="ex: Vendas Sênior"
-                          />
-                        </div>
-                        <div>
-                          <Label>Tipo Base</Label>
-                          <Select value={newRole.base_role} onValueChange={(value) => setNewRole(prev => ({ ...prev, base_role: value }))}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="admin">Administrador</SelectItem>
-                              <SelectItem value="manager">Gerente</SelectItem>
-                              <SelectItem value="closer">Closer</SelectItem>
-                              <SelectItem value="sdr">SDR</SelectItem>
-                              <SelectItem value="custom">Personalizada</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button onClick={createRole} className="flex-1">Criar</Button>
-                          <Button variant="outline" onClick={() => setIsCreateRoleOpen(false)}>Cancelar</Button>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-
-                  <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button>
-                        <UserPlus className="h-4 w-4 mr-2" />
-                        Novo Usuário
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>Adicionar Novo Usuário</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div>
-                          <Label>Nome *</Label>
-                          <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Nome completo" />
-                        </div>
-                        <div>
-                          <Label>Email *</Label>
-                          <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="email@exemplo.com" />
-                        </div>
-                        <div>
-                          <Label>Senha *</Label>
-                          <Input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="Senha" minLength={6} />
-                        </div>
-                        <div>
-                          <Label>Telefone</Label>
-                          <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="(11) 99999-9999" />
-                        </div>
-                        <div>
-                          <Label>Departamento</Label>
-                          <Input value={formData.department} onChange={(e) => setFormData({ ...formData, department: e.target.value })} placeholder="Ex: Vendas" />
-                        </div>
-                        <div>
-                          <Label>Grupo/Função *</Label>
-                          <Select value={formData.customRoleId} onValueChange={(value) => setFormData({ ...formData, customRoleId: value })}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecionar..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="admin">Admin</SelectItem>
-                              <SelectItem value="sdr">SDR</SelectItem>
-                              <SelectItem value="closer">Closer</SelectItem>
-                              {customRoles.map(role => (
-                                <SelectItem key={role.id} value={role.id}>{role.display_name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="flex justify-end gap-2">
-                          <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancelar</Button>
-                          <Button onClick={handleAddUser}>Adicionar</Button>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </>
-              )}
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Novo Usuário
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Adicionar Novo Usuário</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Nome *</Label>
+                      <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Nome completo" />
+                    </div>
+                    <div>
+                      <Label>Email *</Label>
+                      <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="email@exemplo.com" />
+                    </div>
+                    <div>
+                      <Label>Senha *</Label>
+                      <Input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="Senha" minLength={6} />
+                    </div>
+                    <div>
+                      <Label>Telefone</Label>
+                      <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="(11) 99999-9999" />
+                    </div>
+                    <div>
+                      <Label>Departamento</Label>
+                      <Input value={formData.department} onChange={(e) => setFormData({ ...formData, department: e.target.value })} placeholder="Ex: Vendas" />
+                    </div>
+                    {/* Role select - apenas Global Admin pode criar Admin */}
+                    <div>
+                      <Label>Nível de Acesso *</Label>
+                      <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value as 'admin' | 'user' })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {isGlobalAdmin && (
+                            <SelectItem value="admin">Administrador</SelectItem>
+                          )}
+                          <SelectItem value="user">Usuário Comum</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancelar</Button>
+                      <Button onClick={handleAddUser}>Adicionar</Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Seção 1: Administradores */}
-          {/* Seção 2: Administradores Completos */}
-          <Card className="border-blue-500/30">
-            <Collapsible open={expandedRoles.has('full_admins')} onOpenChange={() => toggleRoleExpanded('full_admins')}>
-              <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/30 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      {expandedRoles.has('full_admins') ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
-                      <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                        <Shield className="h-5 w-5 text-blue-500" />
-                      </div>
-                    </div>
-                    <div>
+          {/* Seção: Admin Global */}
+          {isGlobalAdmin && (
+            <Card className="border-amber-500/30">
+              <Collapsible open={expandedRoles.has('global_admin')} onOpenChange={() => toggleRoleExpanded('global_admin')}>
+                <CollapsibleTrigger asChild>
+                  <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/30 transition-colors">
+                    <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">Administrador Completo</h3>
-                        <Badge className="bg-blue-500/20 text-blue-600 border-blue-500/30">
-                          ADMIN
-                        </Badge>
+                        {expandedRoles.has('global_admin') ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+                        <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                          <Crown className="h-5 w-5 text-amber-500" />
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {getFullAdmins().length} usuário{getFullAdmins().length !== 1 ? 's' : ''} • Acesso administrativo
-                      </p>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold">Admin Global</h3>
+                          <Badge className="bg-amber-500/20 text-amber-600 border-amber-500/30">GLOBAL</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {getGlobalAdmin().length} usuário • Controle total do sistema
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="border-t">
-                  {getFullAdmins().length === 0 ? (
-                    <div className="p-6 text-center text-muted-foreground">
-                      Nenhum Administrador Completo cadastrado
-                    </div>
-                  ) : (
-                    getFullAdmins().map(user => renderUserRow(user))
-                  )}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          </Card>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="border-t">
+                    {getGlobalAdmin().map(user => renderUserRow(user))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            </Card>
+          )}
 
-          {/* Seção 3: Usuários Comuns (agrupa todos que não são admin) */}
+          {/* Seção: Administradores */}
+          {isGlobalAdmin && (
+            <Card className="border-blue-500/30">
+              <Collapsible open={expandedRoles.has('admins')} onOpenChange={() => toggleRoleExpanded('admins')}>
+                <CollapsibleTrigger asChild>
+                  <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/30 transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        {expandedRoles.has('admins') ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+                        <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                          <Shield className="h-5 w-5 text-blue-500" />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold">Administradores</h3>
+                          <Badge className="bg-blue-500/20 text-blue-600 border-blue-500/30">ADMIN</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {getAdmins().length} usuário{getAdmins().length !== 1 ? 's' : ''} • Acesso administrativo
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="border-t">
+                    {getAdmins().length === 0 ? (
+                      <div className="p-6 text-center text-muted-foreground">
+                        Nenhum administrador cadastrado
+                      </div>
+                    ) : (
+                      getAdmins().map(user => renderUserRow(user))
+                    )}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            </Card>
+          )}
+
+          {/* Seção: Usuários Comuns */}
           <Card className="border-border">
             <Collapsible open={expandedRoles.has('common_users')} onOpenChange={() => toggleRoleExpanded('common_users')}>
               <CollapsibleTrigger asChild>
@@ -1417,12 +632,10 @@ export const UserManagement = () => {
                     <div>
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold">Usuários Comuns</h3>
-                        <Badge variant="secondary">
-                          EQUIPE
-                        </Badge>
+                        <Badge variant="secondary">EQUIPE</Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {getAllCommonUsers().length} usuário{getAllCommonUsers().length !== 1 ? 's' : ''} • Closer, Copy, Designer, PO, SDR, etc.
+                        {getCommonUsers().length} usuário{getCommonUsers().length !== 1 ? 's' : ''}
                       </p>
                     </div>
                   </div>
@@ -1430,42 +643,90 @@ export const UserManagement = () => {
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <div className="border-t">
-                  {getAllCommonUsers().length === 0 ? (
+                  {getCommonUsers().length === 0 ? (
                     <div className="p-6 text-center text-muted-foreground">
                       Nenhum usuário comum cadastrado
                     </div>
                   ) : (
-                    getAllCommonUsers().map(user => renderUserRow(user, true))
+                    getCommonUsers().map(user => renderUserRow(user))
                   )}
                 </div>
               </CollapsibleContent>
             </Collapsible>
           </Card>
+
+          {/* Seção: Inativos (apenas Global Admin) */}
+          {isGlobalAdmin && getInactiveUsers().length > 0 && (
+            <Card className="border-muted-foreground/20">
+              <Collapsible open={expandedRoles.has('inactive')} onOpenChange={() => toggleRoleExpanded('inactive')}>
+                <CollapsibleTrigger asChild>
+                  <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/30 transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        {expandedRoles.has('inactive') ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+                        <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                          <User className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-muted-foreground">Inativos</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {getInactiveUsers().length} usuário{getInactiveUsers().length !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="border-t">
+                    {getInactiveUsers().map(user => (
+                      <div key={user.user_id} className="flex items-center justify-between py-3 px-4 border-b last:border-b-0 opacity-60">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                            <User className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{user.name}</p>
+                            <p className="text-sm text-muted-foreground">{user.email}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="sm" onClick={() => handleActivateUser(user.user_id)}>
+                            Reativar
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="text-destructive">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Excluir permanentemente?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Esta ação excluirá {user.name} permanentemente.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteUser(user.user_id)} className="bg-destructive hover:bg-destructive/90">
+                                  Excluir
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            </Card>
+          )}
         </CardContent>
       </Card>
 
-      {/* Modal de Permissões do Grupo */}
-      <Dialog open={!!editingRolePermissions} onOpenChange={(open) => !open && setEditingRolePermissions(null)}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              Configurar Acessos do Grupo
-            </DialogTitle>
-            <p className="text-sm text-muted-foreground">
-              As alterações afetarão <strong>todos os usuários</strong> deste grupo.
-            </p>
-          </DialogHeader>
-          <RolePermissionsEditor 
-            permissions={rolePermissions} 
-            onPermissionsChange={setRolePermissions}
-            onSave={() => editingRolePermissions && saveRolePermissions(editingRolePermissions)}
-            onCancel={() => setEditingRolePermissions(null)}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal de Permissões Individuais do Usuário */}
+      {/* Modal de Permissões Individuais */}
       {permissionsUserId && (
         <UserPermissions
           userId={permissionsUserId}
