@@ -63,7 +63,7 @@ const SortablePipelineItem: React.FC<SortablePipelineItemProps> = ({
     pipeline.name === 'Clientes ativos' || 
     pipeline.name === 'Clientes Perdidos' 
     ? '| CSM' 
-    : '| CRM';
+    : '| CSM';
 
   return (
     <div ref={setNodeRef} style={style} className="w-full">

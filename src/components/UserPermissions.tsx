@@ -66,7 +66,7 @@ const menuStructure: MenuSection[] = [
     color: '#ec4a55',
     icon: DollarSign,
     modules: [
-      { name: 'crm', displayName: 'CRM', icon: DollarSign },
+      { name: 'csm', displayName: 'CSM', icon: DollarSign },
       { name: 'dashboard', displayName: 'Quadro de vendas', icon: BarChart3 },
       { name: 'projetos', displayName: 'Lista de espera', icon: FolderCheck },
       { name: 'wallet', displayName: 'Wallet', icon: Wallet },

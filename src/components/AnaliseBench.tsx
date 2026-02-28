@@ -62,7 +62,7 @@ export function AnaliseBench() {
   const { checkModulePermission, loading: permissionsLoading } = useModulePermissions()
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<"formulario" | "resultados" | "prompts">("formulario")
-  const [crmClients, setCrmClients] = useState<any[]>([])
+  const [csmClients, setCsmClients] = useState<any[]>([])
   const [competitors, setCompetitors] = useState<Competitor[]>([
     { id: '1', nome: '', tipo: 'direto', site: '', instagram_linkedin: '', porque_escolhido: '' }
   ])
@@ -115,8 +115,8 @@ export function AnaliseBench() {
     }
   }, [selectedClient])
 
-  // Buscar clientes do CRM
-  const fetchCRMClients = async () => {
+  // Buscar clientes do CSM
+  const fetchCSMClients = async () => {
     try {
       const { data, error } = await supabase
         .from('csm_cards')
@@ -133,7 +133,7 @@ export function AnaliseBench() {
         ).values()
       )
       
-      setCrmClients(uniqueCompanies)
+      setCsmClients(uniqueCompanies)
     } catch (error) {
       console.error('Erro ao buscar clientes:', error)
     }
@@ -167,7 +167,7 @@ export function AnaliseBench() {
   }
 
   useEffect(() => {
-    fetchCRMClients()
+    fetchCSMClients()
     if (canView) {
       fetchBriefingHistory()
     }
@@ -502,7 +502,7 @@ export function AnaliseBench() {
                   <SelectValue placeholder="Selecione um cliente" />
                 </SelectTrigger>
                 <SelectContent className="z-50 bg-popover">
-                  {crmClients.map((client) => (
+                  {csmClients.map((client) => (
                     <SelectItem key={client.id} value={client.id}>
                       {client.company_name}
                     </SelectItem>
