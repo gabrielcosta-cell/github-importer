@@ -140,9 +140,17 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-muted/30 px-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-muted/30 px-4 relative overflow-hidden">
+      {/* Red gradient glow from top */}
+      <div
+        className="absolute top-0 left-0 right-0 h-[420px] pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse 80% 60% at 50% -10%, hsl(var(--primary) / 0.18) 0%, hsl(var(--primary) / 0.08) 40%, transparent 70%)',
+        }}
+      />
+
       {/* Logo above card */}
-      <div className="mb-8">
+      <div className="mb-8 relative z-10">
         <DotLogo size={56} />
       </div>
 
