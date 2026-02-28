@@ -1,45 +1,48 @@
 
 
-# Remover conexão com Supabase externo
+## Correção de referências residuais CRM para CSM
 
-## Contexto
+### Problema identificado
+O sistema carrega dados corretamente das tabelas `csm_*`, mas a lista de perfis (usuarios) retorna vazia porque o `AuthContext.tsx` filtra por `project_scope IN ('crm', 'both')` -- e o scope foi atualizado para `'csm'` no banco.
 
-Atualmente o projeto tem **dois arquivos de cliente Supabase** que apontam para o **mesmo servidor** (`vkfvqhilrhmuaoopiucb.supabase.co`):
+### Arquivos a corrigir
 
-- `src/integrations/supabase/client.ts` -- cliente tipado (usado em poucos lugares)
-- `src/integrations/supabase/external-client.ts` -- cliente sem tipagem (usado em **81 arquivos**)
+#### 1. AuthContext.tsx (CRITICO)
+- Trocar tipo `project_scope` de `'crm' | 'cs' | 'both'` para `'csm' | 'cs' | 'both'`
+- Trocar filtro `.in('project_scope', ['crm', 'both'])` para `['csm', 'both']`
+- Trocar valor default `project_scope: 'crm'` para `'csm'` na criacao de usuarios
 
-A diferença e que o `external-client` foi criado sem tipagem (`Database`) para contornar o fato de que o arquivo `types.ts` so tem 2 tabelas definidas, enquanto o banco real tem ~40 tabelas.
+#### 2. CardDetailsDialog.tsx
+- Trocar `moduleType` default de `'crm'` para `'csm'`
+- Atualizar referencia no tipo da prop `'crm' | 'csm'` -> remover `'crm'`
+- Remover comentarios "Para CRM:" e "pipelines CRM"
 
-## Plano
+#### 3. UserPermissions.tsx
+- Trocar modulo `{ name: 'crm', displayName: 'CRM' }` para `{ name: 'csm', displayName: 'CSM' }`
 
-### 1. Atualizar `client.ts` para funcionar sem tipagem restritiva
+#### 4. Storage bucket references (4 arquivos)
+- `ActivityAttachments.tsx` e `AttachmentsManager.tsx` usam bucket `'crm-card-attachments'`
+- O bucket no Supabase ainda se chama `crm-card-attachments`, entao manter como esta (bucket nao foi renomeado)
 
-Remover o generic `<Database>` do `createClient` em `client.ts` para que todas as tabelas do banco sejam acessiveis sem erros de TypeScript. Isso elimina a necessidade do arquivo separado.
+#### 5. AnaliseBench.tsx
+- Renomear variavel `crmClients` para `csmClients`
+- Renomear funcao `fetchCRMClients` para `fetchCSMClients`
+- Atualizar comentario "Buscar clientes do CRM"
 
-### 2. Substituir todos os imports de `external-client` para `client`
+#### 6. SecurityAuditLogs.tsx
+- Trocar label `'crm_cards': 'Cards CRM'` para `'csm_cards': 'Cards CSM'`
 
-Atualizar os **81 arquivos** que importam de `@/integrations/supabase/external-client` para importar de `@/integrations/supabase/client`.
+#### 7. PipelineOrderManager.tsx
+- Trocar texto `'| CRM'` para `'| CSM'`
 
-Tambem substituir as importacoes de `externalSupabase` por `supabase` no arquivo `CustomerSuccessDashboard.tsx`.
+#### 8. ChurnMetrics.tsx
+- Atualizar comentario "nao CRM (leads)" para "nao leads"
 
-### 3. Deletar `external-client.ts`
+### Detalhes tecnicos
 
-Remover o arquivo `src/integrations/supabase/external-client.ts` completamente.
-
-### 4. Remover `FixItabanDuplicate.tsx` (se referencia o externo)
-
-Este componente ja importa do external-client. Sera atualizado no passo 2.
-
----
-
-## Detalhes tecnicos
-
-**Arquivos modificados:**
-- `src/integrations/supabase/client.ts` -- remover tipagem `Database`
-- 81 arquivos com imports atualizados (busca e substituicao de `external-client` por `client`)
-- `src/components/CustomerSuccessDashboard.tsx` -- trocar `externalSupabase` por `supabase`
-- Deletar `src/integrations/supabase/external-client.ts`
-
-**Risco:** Nenhum impacto funcional, pois ambos os clientes ja apontam para o mesmo servidor com as mesmas credenciais.
+- **AuthContext.tsx**: Linhas 19, 95, 108, 136, 221, 234, 264, 294 -- todas com tipo ou valor `crm`
+- **CardDetailsDialog.tsx**: Linhas 48, 58, 246, 316 -- tipo da prop e default
+- **UserPermissions.tsx**: Linha 69 -- nome do modulo
+- **Buckets de storage**: NAO renomear -- o bucket `crm-card-attachments` continua existindo no Supabase com esse nome
+- Total: ~8 arquivos para corrigir
 
