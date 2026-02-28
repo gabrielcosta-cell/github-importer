@@ -161,9 +161,14 @@ export default function Auth() {
       {showLocalLogin && (
         <div className="w-full max-w-md animate-fade-in">
           <div className="bg-card rounded-2xl shadow-lg border border-border/40 px-8 py-10 space-y-6">
-            <h2 className="text-2xl font-semibold text-center text-foreground">
-              Bem-vindo à DOT
-            </h2>
+            <div className="text-center space-y-1">
+              <h2 className="text-2xl font-semibold text-foreground">
+                Bem-vindo ao CSM
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Plataforma de gestão de clientes
+              </p>
+            </div>
 
             <form onSubmit={handleLocalLogin} className="space-y-5">
               <div className="space-y-2">
