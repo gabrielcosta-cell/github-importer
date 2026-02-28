@@ -26,7 +26,7 @@ interface SidebarPreviewProps {
 
 const mainMenuLabels: Record<string, { label: string; icon: any }> = {
   'dashboard': { label: 'Quadro de vendas', icon: BarChart3 },
-  'crm': { label: 'CRM', icon: Kanban },
+  'crm': { label: 'CSM', icon: Kanban },
   'csm': { label: 'CSM', icon: UserCheck },
   'wallet': { label: 'Wallet', icon: Wallet },
   'lista-espera': { label: 'Lista de espera', icon: Clock },
@@ -48,14 +48,14 @@ export const SidebarPreview = ({ mainMenuOrder, csSubmenuOrder, criacaoSubmenuOr
     <Card className="p-4 bg-muted/30 sticky top-4">
       <div className="text-xs font-semibold mb-3 text-muted-foreground">Preview da Sidebar</div>
       <div className="space-y-1 text-sm">
-        {/* Skala Section */}
-        <div className="py-1 px-2 text-xs font-semibold text-muted-foreground">SKALA</div>
+        {/* DOT Section */}
+        <div className="py-1 px-2 text-xs font-semibold text-muted-foreground">DOT</div>
         
-        {/* Render CRM and CSM based on their position in mainMenuOrder */}
+        {/* Render CSM items based on their position in mainMenuOrder */}
         {mainMenuOrder.includes('crm') && (
           <div className="py-1.5 px-2 hover:bg-muted/50 rounded flex items-center gap-2">
             <Kanban className="h-3 w-3" />
-            <span>CRM</span>
+            <span>CSM</span>
           </div>
         )}
         {mainMenuOrder.includes('csm') && (

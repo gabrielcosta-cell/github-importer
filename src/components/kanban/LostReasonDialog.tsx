@@ -64,7 +64,7 @@ export const LostReasonDialog: React.FC<LostReasonDialogProps> = ({
   const [lossReasons, setLossReasons] = useState<LossReason[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Buscar motivos de perda do banco (apenas para CRM)
+  // Buscar motivos de perda do banco (para pipelines não-CSM)
   useEffect(() => {
     if (open && !isCSMPipeline) {
       fetchLossReasons();
@@ -113,7 +113,7 @@ export const LostReasonDialog: React.FC<LostReasonDialogProps> = ({
     onClose();
   };
 
-  // Motivos a exibir: do banco para CRM, fixos para CSM
+  // Motivos a exibir: do banco para pipelines não-CSM, fixos para CSM
   const motivosDisponiveis = isCSMPipeline 
     ? MOTIVOS_CHURN.map(m => ({ id: m, name: m }))
     : lossReasons;

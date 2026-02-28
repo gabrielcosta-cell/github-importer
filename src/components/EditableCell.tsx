@@ -85,7 +85,7 @@ export const EditableCell = ({
       if (strValue === 'Business') return 'plano-business';
       if (strValue === 'IA') return 'plano-ia';
       if (strValue === 'IDV') return 'plano-idv';
-      if (strValue === 'Implementação de CRM') return 'plano-crm';
+      if (strValue === 'Implementação de CRM') return 'plano-csm';
       if (strValue === 'Site') return 'plano-site';
       if (strValue === 'LP') return 'plano-lp';
       

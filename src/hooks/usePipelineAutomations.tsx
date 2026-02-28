@@ -67,7 +67,7 @@ export function usePipelineAutomations() {
       
       // Verificar se o card já está no pipeline de destino (evitar loop)
       const { data: currentCard } = await supabase
-        .from("crm_cards")
+        .from("csm_cards")
         .select("pipeline_id")
         .eq("id", cardId)
         .single();
@@ -86,7 +86,7 @@ export function usePipelineAutomations() {
       
       // Buscar o card
       const { data: card, error: cardError } = await supabase
-        .from("crm_cards")
+        .from("csm_cards")
         .select("*")
         .eq("id", cardId)
         .single();
@@ -98,7 +98,7 @@ export function usePipelineAutomations() {
 
       // Buscar primeira etapa do pipeline de destino
       const { data: targetStages, error: stagesError } = await supabase
-        .from("crm_stages")
+        .from("csm_stages")
         .select("*")
         .eq("pipeline_id", automation.target_pipeline_id)
         .eq("is_active", true)
@@ -118,7 +118,7 @@ export function usePipelineAutomations() {
         console.log('[executeAutomation] Tentando criar cópia no funil:', copyToPipelineId);
         
         const { data: copyStages, error: stagesError } = await supabase
-          .from("crm_stages")
+          .from("csm_stages")
           .select("id")
           .eq("pipeline_id", copyToPipelineId)
           .eq("is_active", true)
@@ -148,7 +148,7 @@ export function usePipelineAutomations() {
           });
 
           const { error: copyError } = await supabase
-            .from("crm_cards")
+            .from("csm_cards")
             .insert(copyData);
 
           if (copyError) {
@@ -184,7 +184,7 @@ export function usePipelineAutomations() {
 
       // Mover o card para o novo pipeline/etapa
       const { error: updateError } = await supabase
-        .from("crm_cards")
+        .from("csm_cards")
         .update(updateData)
         .eq("id", cardId);
 
@@ -199,13 +199,13 @@ export function usePipelineAutomations() {
 
       // Buscar nomes dos pipelines para mensagem
       const { data: sourcePipeline } = await supabase
-        .from("crm_pipelines")
+        .from("csm_pipelines")
         .select("name")
         .eq("id", sourcePipelineId)
         .single();
 
       const { data: targetPipeline } = await supabase
-        .from("crm_pipelines")
+        .from("csm_pipelines")
         .select("name")
         .eq("id", automation.target_pipeline_id)
         .single();

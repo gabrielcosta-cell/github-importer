@@ -1070,7 +1070,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
         setShowLostReasonDialog(true);
       }
     } else {
-      // CRM: abrir diretamente o dialog de motivo
+      // Pipelines não-CSM: abrir diretamente o dialog de motivo
       setShowLostReasonDialog(true);
     }
   };
@@ -2031,14 +2031,14 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
         if (ownerToUse) {
           console.log('[Automation] Reforçando assigned_to após automação com ownerToUse:', ownerToUse);
           await supabase
-            .from("crm_cards")
+            .from("csm_cards")
             .update({ assigned_to: ownerToUse, updated_at: new Date().toISOString() })
             .eq("id", card.id);
         }
 
         // Criar histórico de etapa para o card movido (verificar se já existe antes)
         const { data: updatedCard } = await supabase
-          .from("crm_cards")
+          .from("csm_cards")
           .select("stage_id")
           .eq("id", card.id)
           .single();
@@ -2047,7 +2047,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
           // Verificar se já existe um registro idêntico nos últimos 60 segundos
           const oneMinuteAgo = new Date(Date.now() - 60000).toISOString();
           const { data: existingHistory } = await supabase
-            .from("crm_card_stage_history")
+            .from("csm_card_stage_history")
             .select("id")
             .eq("card_id", card.id)
             .eq("stage_id", updatedCard.stage_id)
@@ -2059,7 +2059,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
           if (!existingHistory || existingHistory.length === 0) {
             const { data: { user } } = await supabase.auth.getUser();
             await supabase
-              .from("crm_card_stage_history")
+              .from("csm_card_stage_history")
               .insert({
                 card_id: card.id,
                 stage_id: updatedCard.stage_id,

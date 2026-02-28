@@ -138,7 +138,7 @@ export default function Auth() {
         {/* Brand name */}
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold text-foreground tracking-tight">
-            SKALA Operação
+            DOT Operação
           </h1>
           <p className="text-muted-foreground text-sm">
             Plataforma de gestão de clientes
@@ -228,7 +228,7 @@ export default function Auth() {
               Você será direcionado para o
             </p>
             <p className="text-sm text-center font-semibold text-primary mt-1">
-              SKALA Operação
+              DOT Operação
             </p>
           </div>
         )}

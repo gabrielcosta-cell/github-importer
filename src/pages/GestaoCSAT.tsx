@@ -849,7 +849,7 @@ export default function GestaoCSAT() {
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
-              placeholder="Pesquisar no Skala"
+              placeholder="Pesquisar no DOT"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 rounded-full bg-background h-10"
@@ -1068,7 +1068,7 @@ export default function GestaoCSAT() {
             <div className="relative w-80">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
-                placeholder="Pesquisar no Skala"
+                placeholder="Pesquisar no DOT"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 rounded-full bg-background"
