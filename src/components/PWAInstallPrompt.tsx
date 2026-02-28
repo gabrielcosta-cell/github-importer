@@ -71,7 +71,7 @@ export function PWAInstallPrompt() {
           {/* Content Section */}
           <div className="flex-1 flex flex-col justify-between min-w-0">
             <div>
-              <h3 className="text-base font-semibold text-card-foreground">Instalar DOT Skala</h3>
+              <h3 className="text-base font-semibold text-card-foreground">Instalar DOT</h3>
               <p className="text-sm text-muted-foreground mt-1">Acesse mais rápido direto da tela inicial</p>
             </div>
 

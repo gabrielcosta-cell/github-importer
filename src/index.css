@@ -323,7 +323,7 @@ All colors MUST be HSL.
   @apply bg-orange-400/20 text-orange-600 border border-orange-400/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-orange-400;
 }
 
-.plano-crm {
+.plano-csm {
   @apply bg-teal-500/20 text-teal-700 border border-teal-500/30 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap dark:text-teal-300;
 }
 

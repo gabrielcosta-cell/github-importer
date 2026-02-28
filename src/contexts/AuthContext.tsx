@@ -279,7 +279,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Dados enviados:', userData);
       
       // Formato para a nova função create-user
-      // Novos usuários criados neste projeto pertencem ao CRM
+      // Novos usuários criados neste projeto pertencem ao CSM
       const requestBody = {
         email: userData.email,
         password: userData.password,

@@ -47,7 +47,7 @@ export function TitleManager() {
   useEffect(() => {
     const view = new URLSearchParams(location.search).get("view");
     const pageTitle = titleForPath(location.pathname, view);
-    document.title = pageTitle ? `DOT - Skala ${pageTitle}` : "DOT - Skala";
+    document.title = pageTitle ? `DOT ${pageTitle}` : "DOT";
   }, [location.pathname, location.search]);
 
   return null;

@@ -70,7 +70,7 @@ export default function AuthHandoff() {
               .single();
 
             // Redireciona direto para o dashboard de Operação
-            setStatus('Entrando no SKALA Operação...');
+            setStatus('Entrando no DOT Operação...');
             navigate('/dashboard?view=csm', { replace: true });
             return;
           }
