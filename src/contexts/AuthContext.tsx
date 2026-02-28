@@ -9,20 +9,21 @@ interface Profile {
   email: string;
   phone?: string;
   department?: string;
-  role: 'admin' | 'sdr' | 'closer';
+  role: 'admin' | 'user';
   is_active: boolean;
+  is_global_admin: boolean;
   last_login?: string;
   created_at: string;
   updated_at: string;
   custom_role_id?: string;
   selected_celebration_id?: string;
-  project_scope?: 'csm' | 'cs' | 'both'; // Define qual projeto o usuário pertence
+  project_scope?: 'csm' | 'cs' | 'both';
   custom_roles?: {
     base_role: string;
     display_name?: string;
   };
-  effectiveRole?: string; // Role efetiva considerando custom_role
-  customRoleDisplayName?: string; // Nome de exibição do custom_role
+  effectiveRole?: string;
+  customRoleDisplayName?: string;
 }
 
 interface AuthContextType {
@@ -34,7 +35,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   refreshProfiles: () => Promise<void>;
   refreshProfile: () => Promise<void>;
-  addUser: (userData: { name: string; email: string; password: string; role: 'admin' | 'sdr' | 'closer'; department?: string; phone?: string; customRoleId?: string }) => Promise<{ success: boolean; error?: string; message?: string }>;
+  addUser: (userData: { name: string; email: string; password: string; role: 'admin' | 'user'; department?: string; phone?: string }) => Promise<{ success: boolean; error?: string; message?: string }>;
   updateUser: (userId: string, userData: Partial<Profile>) => Promise<boolean>;
   removeUser: (userId: string) => Promise<boolean>;
   activateUser: (userId: string) => Promise<boolean>;
@@ -90,8 +91,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               user_id: u.id,
               email: userEmail,
               name: userName,
-              role: 'sdr',
+              role: 'user',
               is_active: true,
+              is_global_admin: false,
               project_scope: 'csm',
             })
             .select('*, custom_roles(base_role, display_name)')
@@ -104,7 +106,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } else if (newProfile) {
             const userProfile: Profile = {
               ...newProfile,
-              role: newProfile.role as 'admin' | 'sdr' | 'closer',
+              role: newProfile.role as 'admin' | 'user',
+              is_global_admin: newProfile.is_global_admin || false,
               project_scope: newProfile.project_scope as 'csm' | 'cs' | 'both',
               effectiveRole: newProfile.role,
               customRoleDisplayName: undefined,
@@ -128,11 +131,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return;
           }
 
-          const baseRole = profileData.custom_roles?.base_role;
-          const effectiveRole = baseRole && baseRole !== 'custom' ? baseRole : profileData.role;
+          // Determinar role efetivo
+          const isGlobalAdmin = profileData.is_global_admin || false;
+          const effectiveRole = isGlobalAdmin ? 'admin' : (profileData.role === 'admin' ? 'admin' : profileData.role);
+          
           const userProfile: Profile = {
             ...profileData,
-            role: profileData.role as 'admin' | 'sdr' | 'closer',
+            role: profileData.role as 'admin' | 'user',
+            is_global_admin: isGlobalAdmin,
             project_scope: profileData.project_scope as 'csm' | 'cs' | 'both',
             effectiveRole,
             customRoleDisplayName: profileData.custom_roles?.display_name,
@@ -140,10 +146,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           if (!cancelled) setProfile(userProfile);
 
-          // Buscar todos os perfis se for admin
-          if (userProfile.effectiveRole === 'admin') {
-            // Não bloquear o fluxo de autenticação/rotas esperando essa listagem
-            // (evita que /auth fique preso em loading se essa query demorar/falhar).
+          // Buscar todos os perfis se for admin ou global admin
+          if (effectiveRole === 'admin' || isGlobalAdmin) {
             void refreshProfiles();
           }
         }
@@ -156,14 +160,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (cancelled) return;
       setLoading(true);
 
-      // Safety net: evita ficar preso em loading infinito caso alguma request trave
-      // (isso impacta diretamente a tela /auth que depende de `loading` para liberar o form).
       const safetyTimeout = globalThis.setTimeout(() => {
         console.warn('AuthContext: timeout ao carregar perfil; liberando loading para evitar travamento.');
         finishLoading();
       }, 8000);
 
-      // Importante: não chamar Supabase dentro do callback do onAuthStateChange; deferimos.
       setTimeout(() => {
         void loadProfileForUser(u).finally(() => {
           globalThis.clearTimeout(safetyTimeout);
@@ -172,7 +173,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }, 0);
     };
 
-    // Configurar listener de autenticação (callback síncrono)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, nextSession) => {
@@ -187,7 +187,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
-    // Verificar sessão inicial (IMPORTANTE: pode existir sessão sem disparar onAuthStateChange)
     supabase.auth
       .getSession()
       .then(({ data: { session: initialSession } }) => {
@@ -214,7 +213,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshProfiles = async () => {
     try {
-      // Filtrar apenas usuários do projeto CSM (project_scope = 'csm' ou 'both')
       const { data, error } = await supabase
         .from('profiles')
         .select('*, custom_roles(base_role, display_name)')
@@ -224,13 +222,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         console.error('Erro ao buscar perfis:', error);
       } else {
-        // Garantir que roles sejam do tipo correto
         const typedProfiles: Profile[] = (data || []).map(p => {
-          const baseRole = p.custom_roles?.base_role;
-          const effectiveRole = (baseRole && baseRole !== 'custom') ? baseRole : p.role;
+          const isGlobalAdmin = p.is_global_admin || false;
+          const effectiveRole = isGlobalAdmin ? 'admin' : p.role;
           return {
             ...p,
-            role: p.role as 'admin' | 'sdr' | 'closer',
+            role: p.role as 'admin' | 'user',
+            is_global_admin: isGlobalAdmin,
             project_scope: p.project_scope as 'csm' | 'cs' | 'both',
             effectiveRole,
             customRoleDisplayName: p.custom_roles?.display_name
@@ -256,11 +254,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error && error.code !== 'PGRST116') {
         console.error('Erro ao buscar perfil:', error);
       } else if (profileData) {
-        const baseRole = profileData.custom_roles?.base_role;
-        const effectiveRole = (baseRole && baseRole !== 'custom') ? baseRole : profileData.role;
+        const isGlobalAdmin = profileData.is_global_admin || false;
+        const effectiveRole = isGlobalAdmin ? 'admin' : profileData.role;
         const userProfile: Profile = {
           ...profileData,
-          role: profileData.role as 'admin' | 'sdr' | 'closer',
+          role: profileData.role as 'admin' | 'user',
+          is_global_admin: isGlobalAdmin,
           project_scope: profileData.project_scope as 'csm' | 'cs' | 'both',
           effectiveRole,
           customRoleDisplayName: profileData.custom_roles?.display_name
@@ -273,13 +272,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const addUser = async (userData: { name: string; email: string; password: string; role: 'admin' | 'sdr' | 'closer'; department?: string; phone?: string; customRoleId?: string }): Promise<{ success: boolean; error?: string; message?: string }> => {
+  const addUser = async (userData: { name: string; email: string; password: string; role: 'admin' | 'user'; department?: string; phone?: string }): Promise<{ success: boolean; error?: string; message?: string }> => {
     try {
       console.log('=== INICIANDO CRIAÇÃO DE USUÁRIO ===');
-      console.log('Dados enviados:', userData);
       
-      // Formato para a nova função create-user
-      // Novos usuários criados neste projeto pertencem ao CSM
       const requestBody = {
         email: userData.email,
         password: userData.password,
@@ -290,20 +286,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           department: userData.department || null,
           phone: userData.phone || null,
           is_active: true,
-          custom_role_id: userData.customRoleId || null,
-          project_scope: 'csm' // Usuários criados neste projeto pertencem ao CSM
+          is_global_admin: false,
+          project_scope: 'csm'
         }
       };
       
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: requestBody,
-        // Garantir envio do token JWT (supabase já faz isso, mas adicionamos por redundância)
         headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
       });
-
-      console.log('=== RESPOSTA DA EDGE FUNCTION ===');
-      console.log('Data:', data);
-      console.log('Error:', error);
 
       if (error) {
         console.error('Erro ao chamar função create-user:', error);
@@ -314,7 +305,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (data?.error) {
         console.error('Erro retornado pela função:', data.error);
-        // Retornar objeto com informações do erro para melhor tratamento
         return { success: false, error: data.error, message: data.message };
       }
 
@@ -341,7 +331,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       await refreshProfiles();
       
-      // Atualizar perfil atual se for o mesmo usuário
       if (profile?.user_id === userId) {
         setProfile({ ...profile, ...userData });
       }

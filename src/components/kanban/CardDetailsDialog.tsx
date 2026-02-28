@@ -235,21 +235,8 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
         if (user.effectiveRole === 'admin') {
           return true;
         }
-
-        if (moduleType === 'csm') {
-          // Para CSM: admin, CS, Head de Projetos, PO
-          if (user.customRoleName) {
-            return ['cs', 'head_de_projetos', 'project_owner'].includes(user.customRoleName);
-          }
-          return false;
-        } else {
-          // Para CSM: admin, closer, SDR
-          if (user.baseRole && user.baseRole !== 'custom') {
-            return user.effectiveRole === 'sdr' || user.effectiveRole === 'closer';
-          }
-          // Se a baseRole é custom (ou não existe), não considerar como SDR/Closer
-          return !user.baseRole && (user.effectiveRole === 'sdr' || user.effectiveRole === 'closer');
-        }
+        // Todos os usuários ativos são elegíveis
+        return true;
       });
 
       setUsers(filteredUsers);
@@ -2403,9 +2390,11 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                   <DropdownMenuItem onClick={handleConvertToLead}>
                     <ArrowRight className="h-4 w-4 mr-2" />Converter para lead
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleDeleteCard} className="text-destructive focus:text-destructive">
-                    <Trash2 className="h-4 w-4 mr-2" />Excluir
-                  </DropdownMenuItem>
+                  {(profile?.is_global_admin || profile?.role === 'admin') && (
+                    <DropdownMenuItem onClick={handleDeleteCard} className="text-destructive focus:text-destructive">
+                      <Trash2 className="h-4 w-4 mr-2" />Excluir
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -2911,20 +2900,10 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                           ))}
                         </>
                       )}
-                      {users.filter(u => u.effectiveRole === 'sdr').length > 0 && (
+                      {users.filter(u => u.effectiveRole !== 'admin').length > 0 && (
                         <>
-                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">SDRs</div>
-                          {users.filter(u => u.effectiveRole === 'sdr').map((user) => (
-                            <SelectItem key={user.id} value={user.id}>
-                              {user.name}
-                            </SelectItem>
-                          ))}
-                        </>
-                      )}
-                      {users.filter(u => u.effectiveRole === 'closer').length > 0 && (
-                        <>
-                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Closers</div>
-                          {users.filter(u => u.effectiveRole === 'closer').map((user) => (
+                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Equipe</div>
+                          {users.filter(u => u.effectiveRole !== 'admin').map((user) => (
                             <SelectItem key={user.id} value={user.id}>
                               {user.name}
                             </SelectItem>
@@ -3002,13 +2981,15 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                     <ArrowRight className="h-4 w-4 mr-2" />
                     Converter para lead
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={handleDeleteCard}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Excluir
-                  </DropdownMenuItem>
+                  {(profile?.is_global_admin || profile?.role === 'admin') && (
+                    <DropdownMenuItem 
+                      onClick={handleDeleteCard}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Excluir
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
               

@@ -31,9 +31,9 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
       }
 
       if (requireAdmin) {
-        // Verificar custom_role base_role ou role direto
-        const effectiveRole = profile?.custom_roles?.base_role || profile?.role;
-        if (effectiveRole !== 'admin') {
+        const isGlobalAdmin = profile?.is_global_admin || false;
+        const effectiveRole = profile?.role;
+        if (!isGlobalAdmin && effectiveRole !== 'admin') {
           navigate('/dashboard');
           return;
         }
@@ -62,8 +62,9 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
   }
 
   if (requireAdmin) {
-    const effectiveRole = profile?.custom_roles?.base_role || profile?.role;
-    if (effectiveRole !== 'admin') {
+    const isGlobalAdmin = profile?.is_global_admin || false;
+    const effectiveRole = profile?.role;
+    if (!isGlobalAdmin && effectiveRole !== 'admin') {
       return null;
     }
   }

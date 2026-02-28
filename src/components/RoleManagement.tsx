@@ -317,9 +317,7 @@ export const RoleManagement = () => {
   const getRoleBadgeColor = (baseRole: string) => {
     switch (baseRole) {
       case 'admin': return 'bg-red-500/20 text-red-700 border-red-500/30 dark:text-red-300'
-      case 'manager': return 'bg-blue-500/20 text-blue-700 border-blue-500/30 dark:text-blue-300'
-      case 'closer': return 'bg-green-500/20 text-green-700 border-green-500/30 dark:text-green-300'
-      case 'sdr': return 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30 dark:text-yellow-300'
+      case 'user': return 'bg-blue-500/20 text-blue-700 border-blue-500/30 dark:text-blue-300'
       default: return 'bg-gray-500/20 text-gray-700 border-gray-500/30 dark:text-gray-300'
     }
   }
@@ -370,9 +368,7 @@ export const RoleManagement = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="admin">Administrador</SelectItem>
-                    <SelectItem value="manager">Gerente</SelectItem>
-                    <SelectItem value="closer">Closer</SelectItem>
-                    <SelectItem value="sdr">SDR</SelectItem>
+                    <SelectItem value="user">Usuário</SelectItem>
                     <SelectItem value="custom">Personalizada</SelectItem>
                   </SelectContent>
                 </Select>
