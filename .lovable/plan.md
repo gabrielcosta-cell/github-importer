@@ -1,48 +1,89 @@
 
+# Reestruturar Hierarquia de Usuarios: 3 Niveis
 
-## Correção de referências residuais CRM para CSM
+## Resumo
 
-### Problema identificado
-O sistema carrega dados corretamente das tabelas `csm_*`, mas a lista de perfis (usuarios) retorna vazia porque o `AuthContext.tsx` filtra por `project_scope IN ('crm', 'both')` -- e o scope foi atualizado para `'csm'` no banco.
+Criar uma hierarquia de 3 niveis no sistema:
 
-### Arquivos a corrigir
+| Nivel | Nome | Quem |
+|-------|------|------|
+| 1 | **Admin Global** | Apenas Gabriel Costa (fixo, unico) |
+| 2 | **Administrador** | Usuarios promovidos pelo Admin Global |
+| 3 | **Usuario Comum** | Todos os demais (sem distincao de cargo tipo SDR, Closer, etc.) |
 
-#### 1. AuthContext.tsx (CRITICO)
-- Trocar tipo `project_scope` de `'crm' | 'cs' | 'both'` para `'csm' | 'cs' | 'both'`
-- Trocar filtro `.in('project_scope', ['crm', 'both'])` para `['csm', 'both']`
-- Trocar valor default `project_scope: 'crm'` para `'csm'` na criacao de usuarios
+## Tabela de Permissoes
 
-#### 2. CardDetailsDialog.tsx
-- Trocar `moduleType` default de `'crm'` para `'csm'`
-- Atualizar referencia no tipo da prop `'crm' | 'csm'` -> remover `'crm'`
-- Remover comentarios "Para CRM:" e "pipelines CRM"
+| Acao | Admin Global | Admin | Comum |
+|------|:-----------:|:-----:|:-----:|
+| Ver aba de usuarios | Sim | Sim | **Nao** |
+| Adicionar usuario comum | Sim | Sim | Nao |
+| Adicionar usuario admin | Sim | **Nao** | Nao |
+| Promover comum para admin | Sim | **Nao** | Nao |
+| Rebaixar admin para comum | Sim | **Nao** | Nao |
+| Desativar usuario comum | Sim | Sim | Nao |
+| Desativar usuario admin | Sim | **Nao** | Nao |
+| **Excluir** usuario (permanente) | Sim | **Nao** | Nao |
+| Excluir cards/dados do CSM | Sim | Sim | **Nao** |
+| Criar/editar cards | Sim | Sim | Sim |
+| Visualizar modulos (conforme permissao) | Sim | Sim | Sim |
 
-#### 3. UserPermissions.tsx
-- Trocar modulo `{ name: 'crm', displayName: 'CRM' }` para `{ name: 'csm', displayName: 'CSM' }`
+## Detalhes Tecnicos
 
-#### 4. Storage bucket references (4 arquivos)
-- `ActivityAttachments.tsx` e `AttachmentsManager.tsx` usam bucket `'crm-card-attachments'`
-- O bucket no Supabase ainda se chama `crm-card-attachments`, entao manter como esta (bucket nao foi renomeado)
+### 1. Adicionar campo `is_global_admin` na tabela `profiles`
 
-#### 5. AnaliseBench.tsx
-- Renomear variavel `crmClients` para `csmClients`
-- Renomear funcao `fetchCRMClients` para `fetchCSMClients`
-- Atualizar comentario "Buscar clientes do CRM"
+Criar uma migration adicionando uma coluna booleana `is_global_admin` (default `false`) na tabela `profiles`. Apenas o registro do Gabriel Costa tera `true`. Isso evita que qualquer admin se auto-promova -- apenas quem ja e global admin pode alterar esse campo.
 
-#### 6. SecurityAuditLogs.tsx
-- Trocar label `'crm_cards': 'Cards CRM'` para `'csm_cards': 'Cards CSM'`
+Tambem executar um UPDATE para marcar o usuario Gabriel Costa como `is_global_admin = true`.
 
-#### 7. PipelineOrderManager.tsx
-- Trocar texto `'| CRM'` para `'| CSM'`
+### 2. Simplificar roles: remover SDR/Closer como tipos distintos
 
-#### 8. ChurnMetrics.tsx
-- Atualizar comentario "nao CRM (leads)" para "nao leads"
+- O campo `role` na tabela `profiles` passara a ter apenas 2 valores: `'admin'` e `'user'`.
+- Remover as opcoes `sdr` e `closer` de todos os selects, tipos TypeScript e logica de negocio.
+- Usuarios que hoje sao `sdr` ou `closer` serao migrados para `role = 'user'`.
+- O tipo no `AuthContext` e `types/user.ts` sera atualizado para `'admin' | 'user'`.
 
-### Detalhes tecnicos
+### 3. Atualizar `AuthContext.tsx`
 
-- **AuthContext.tsx**: Linhas 19, 95, 108, 136, 221, 234, 264, 294 -- todas com tipo ou valor `crm`
-- **CardDetailsDialog.tsx**: Linhas 48, 58, 246, 316 -- tipo da prop e default
-- **UserPermissions.tsx**: Linha 69 -- nome do modulo
-- **Buckets de storage**: NAO renomear -- o bucket `crm-card-attachments` continua existindo no Supabase com esse nome
-- Total: ~8 arquivos para corrigir
+- Adicionar `is_global_admin` ao tipo `Profile`.
+- Carregar `is_global_admin` ao buscar perfil do usuario.
+- Expor `is_global_admin` no contexto para uso nos componentes.
 
+### 4. Atualizar `useModulePermissions.tsx`
+
+- Admin Global: acesso total (igual ao admin atual).
+- Admin: acesso total exceto excluir outros admins e gerenciar admins.
+- Usuario Comum: modulo `users` retorna `false` para todas as permissoes (nao ve a aba).
+- Usuario Comum: `can_delete` retorna `false` para modulos de cards/CSM/pipelines.
+
+### 5. Refatorar `UserManagement.tsx`
+
+- **Admin Global**: ve todos os usuarios, pode criar qualquer tipo, promover/rebaixar, excluir permanentemente.
+- **Admin**: ve apenas usuarios comuns, pode criar apenas usuarios comuns (select de role nao mostra "Admin"), pode desativar (nao excluir) apenas usuarios comuns.
+- **Usuario Comum**: bloqueado de acessar a tela (ja tratado pelo `checkModulePermission`).
+- Remover selects de SDR/Closer/Custom Roles do formulario de criacao -- agora o usuario e simplesmente "Comum" ou "Admin".
+- Botao "Excluir" (permanente) so aparece para Admin Global; Admins veem apenas "Desativar".
+
+### 6. Atualizar `ProtectedRoute.tsx`
+
+- `requireAdmin` continua funcionando, agora checa `role === 'admin'` ou `is_global_admin`.
+- Nenhuma mudanca estrutural necessaria, apenas ajustar o tipo de role.
+
+### 7. Bloquear exclusao de cards para usuarios comuns
+
+No componente `CardDetailsDialog.tsx`, o botao/acao de "Excluir" card so sera renderizado se `checkModulePermission('csm', 'delete')` retornar `true`. Como usuarios comuns terao `can_delete = false`, o botao sumira automaticamente. Verificar e adicionar essa checagem onde necessario.
+
+### 8. Remover sistema de Custom Roles/Grupos
+
+Como a hierarquia agora e fixa (Global Admin > Admin > Comum), o sistema de grupos customizados (`custom_roles`, `role_module_permissions`) e a UI de "Novo Grupo" serao simplificados. Os grupos de permissao por modulo ainda podem existir para controlar quais modulos cada usuario comum pode ver, mas a criacao de "cargos" como SDR, Closer sera removida.
+
+### Arquivos a modificar
+
+1. **Migration SQL** -- adicionar `is_global_admin`, migrar roles existentes
+2. **`src/integrations/supabase/types.ts`** -- atualizar tipos gerados
+3. **`src/types/user.ts`** -- role: `'admin' | 'user'`
+4. **`src/contexts/AuthContext.tsx`** -- Profile com `is_global_admin`, role simplificado
+5. **`src/hooks/useModulePermissions.tsx`** -- logica de permissao por nivel
+6. **`src/components/UserManagement.tsx`** -- UI refatorada para 3 niveis
+7. **`src/components/ProtectedRoute.tsx`** -- ajuste de tipos
+8. **`src/components/kanban/CardDetailsDialog.tsx`** -- checagem de permissao no botao excluir
+9. **Edge function `create-user`** -- aceitar apenas `'admin'` ou `'user'` como role
