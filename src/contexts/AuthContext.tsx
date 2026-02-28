@@ -77,43 +77,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (cancelled) return;
 
         if (error && (error as any).code === 'PGRST116') {
-          // Perfil não existe - criar para usuário OAuth (primeiro login via Google)
-          const userEmail = u.email;
-          const userName =
-            (u.user_metadata as any)?.full_name ||
-            (u.user_metadata as any)?.name ||
-            userEmail?.split('@')[0] ||
-            'Usuário';
-
-          const { data: newProfile, error: insertError } = await supabase
-            .from('profiles')
-            .insert({
-              user_id: u.id,
-              email: userEmail,
-              name: userName,
-              role: 'user',
-              is_active: true,
-              is_global_admin: false,
-              project_scope: 'csm',
-            })
-            .select('*, custom_roles(base_role, display_name)')
-            .single();
-
-          if (cancelled) return;
-
-          if (insertError) {
-            console.error('Erro ao criar perfil para usuário OAuth:', insertError);
-          } else if (newProfile) {
-            const userProfile: Profile = {
-              ...newProfile,
-              role: newProfile.role as 'admin' | 'user',
-              is_global_admin: newProfile.is_global_admin || false,
-              project_scope: newProfile.project_scope as 'csm' | 'cs' | 'both',
-              effectiveRole: newProfile.role,
-              customRoleDisplayName: undefined,
-            };
-            setProfile(userProfile);
-          }
+          // Perfil não existe - usuário não foi pré-cadastrado por um admin
+          console.warn('Usuário sem perfil pré-cadastrado tentou acessar:', u.email);
+          await supabase.auth.signOut();
+          clearAuthState();
           return;
         }
 
