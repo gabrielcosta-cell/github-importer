@@ -150,18 +150,10 @@ export default function Auth() {
       {/* Main content */}
       <div className="relative z-10 flex flex-col items-center gap-8 animate-fade-in">
         {/* Logo with glow effect */}
-        <div className="relative">
-          <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full scale-150 animate-pulse" />
-          <div className="relative bg-card/80 backdrop-blur-sm p-6 rounded-2xl border border-border/50 shadow-xl">
-            <DotLogo size={64} />
-          </div>
-        </div>
+        <DotLogo size={64} />
 
         {/* Brand name */}
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">
-            DOT Operação
-          </h1>
           <p className="text-muted-foreground text-sm">
             Plataforma de gestão de clientes
           </p>
@@ -233,7 +225,6 @@ export default function Auth() {
                     </>
                   ) : (
                     <>
-                      <Mail className="h-4 w-4 mr-2" />
                       Entrar
                     </>
                   )}
