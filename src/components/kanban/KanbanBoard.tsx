@@ -22,6 +22,7 @@ interface KanbanBoardProps {
   selectedTags?: string[];
   onRefreshCards: () => void;
   onCardClick: (card: CSMCard) => void;
+  disableDrag?: boolean;
 }
 
 interface TagInfo {
@@ -115,7 +116,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   cards,
   selectedTags = [],
   onRefreshCards,
-  onCardClick
+  onCardClick,
+  disableDrag = false,
 }) => {
   const [activeCard, setActiveCard] = React.useState<CSMCard | null>(null);
   const [localCards, setLocalCards] = React.useState<CSMCard[]>(cards);
@@ -336,6 +338,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 onCardClick={onCardClick}
                 isOver={overId === stage.id || localCards.some(c => c.id === overId && c.stage_id === stage.id)}
                 displayName={stageDisplayNames[stage.id]}
+                disableDrag={disableDrag}
               />
             ))}
           </SortableContext>

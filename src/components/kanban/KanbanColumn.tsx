@@ -13,6 +13,7 @@ interface KanbanColumnProps {
   onCardClick: (card: CSMCard) => void;
   isOver?: boolean;
   displayName?: string;
+  disableDrag?: boolean;
 }
 
 export const KanbanColumn: React.FC<KanbanColumnProps> = ({ 
@@ -20,7 +21,8 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
   cards, 
   onCardClick,
   isOver = false,
-  displayName
+  displayName,
+  disableDrag = false,
 }) => {
   const { setNodeRef } = useDroppable({
     id: stage.id,
@@ -72,6 +74,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
                 key={card.id} 
                 card={card}
                 onClick={() => onCardClick(card)}
+                disableDrag={disableDrag}
               />
             ))}
           </div>

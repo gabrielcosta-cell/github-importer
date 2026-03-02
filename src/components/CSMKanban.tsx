@@ -1037,6 +1037,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
                 cards={filteredCardsData.cards}
                 onRefreshCards={refreshCards}
                 onCardClick={handleCardClick}
+                disableDrag={selectedPipeline === '749ccdc2-5127-41a1-997b-3dcb47979555'}
               />
             )}
           </div>
