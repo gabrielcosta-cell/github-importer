@@ -1160,13 +1160,21 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
 
         if (updateError) throw updateError;
 
-        // Registrar no histórico de etapas
+        // Fechar o registro aberto no histórico de etapas (congela o contador de dias)
+        await supabase
+          .from('csm_card_stage_history')
+          .update({ exited_at: dataPerda.toISOString() })
+          .eq('card_id', card.id)
+          .is('exited_at', null);
+
+        // Registrar evento de churn no histórico
         await supabase
           .from('csm_card_stage_history')
           .insert({
             card_id: card.id,
             stage_id: card.stage_id,
             entered_at: dataPerda.toISOString(),
+            exited_at: dataPerda.toISOString(),
             moved_by: userId,
             notes: `Cliente marcado como churn - Motivo: ${motivo}${comentarios ? ` - ${comentarios}` : ''}`,
             event_type: 'churn'
@@ -1292,6 +1300,14 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
 
       const userId = (await supabase.auth.getUser()).data.user?.id;
 
+      // Fechar qualquer registro aberto anterior (não deveria existir, mas por segurança)
+      await supabase
+        .from('csm_card_stage_history')
+        .update({ exited_at: new Date().toISOString() })
+        .eq('card_id', card.id)
+        .is('exited_at', null);
+
+      // Criar novo registro aberto para retomar a contagem de dias
       await supabase
         .from('csm_card_stage_history')
         .insert({
