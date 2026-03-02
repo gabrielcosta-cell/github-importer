@@ -276,11 +276,8 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ card, onClick, disableDr
       )}
 
       <CardContent className="p-3 md:p-2 space-y-2 md:space-y-1.5 flex-1 flex flex-col overflow-hidden">
-        {/* Título com ID */}
+        {/* Título */}
         <div className="font-medium text-sm md:text-[11px] line-clamp-2 leading-tight">
-          {card.display_id != null && (
-            <span className="text-muted-foreground font-normal mr-1">#{String(card.display_id).padStart(4, '0')}</span>
-          )}
           {card.company_name || card.title}
         </div>
 
