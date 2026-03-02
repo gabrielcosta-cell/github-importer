@@ -2495,23 +2495,21 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                           {/* Status do cliente (somente leitura) */}
                           {moduleType === 'csm' && (
                             <>
-                               <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                               <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                                   <AlertTriangle className="h-3 w-3 text-yellow-500" />
                                   <span>Status do Cliente</span>
-                                </div>
-                                <Badge 
-                                  variant="outline" 
-                                  className={cn(
-                                    "text-[10px] px-1.5 py-0",
-                                    (card as any).client_status === 'cancelado' 
-                                      ? 'bg-destructive/10 border-destructive/30 text-destructive' 
-                                      : 'bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-400'
-                                  )}
-                                >
-                                  {(card as any).client_status === 'cancelado' ? 'Cancelado' : 'Ativo'}
-                                </Badge>
-                              </div>
+                                  <Badge 
+                                    variant="outline" 
+                                    className={cn(
+                                      "text-[10px] px-1.5 py-0",
+                                      (card as any).client_status === 'cancelado' 
+                                        ? 'bg-destructive/10 border-destructive/30 text-destructive' 
+                                        : 'bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-400'
+                                    )}
+                                  >
+                                    {(card as any).client_status === 'cancelado' ? 'Cancelado' : 'Ativo'}
+                                  </Badge>
+                               </div>
                               <Separator className="my-1" />
                             </>
                           )}
@@ -3238,11 +3236,9 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                     {/* Status do cliente (somente leitura) */}
                     {moduleType === 'csm' && (
                       <>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                            <AlertTriangle className="h-3 w-3 text-yellow-500" />
-                            <span>Status do Cliente</span>
-                          </div>
+                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                          <AlertTriangle className="h-3 w-3 text-yellow-500" />
+                          <span>Status do Cliente</span>
                           <Badge 
                             variant="outline" 
                             className={cn(
