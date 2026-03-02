@@ -38,7 +38,7 @@ const CANCELLED_CLIENTS: CancelledClient[] = [
     niche: 'Franquia',
     existe_comissao: true,
     observacao_comissao: '1e franquia das uni',
-    fase_projeto: 'Cancelamento',
+    fase_projeto: 'Renovação',
     etapa_formal: 'Renovação',
   },
   {
@@ -51,7 +51,7 @@ const CANCELLED_CLIENTS: CancelledClient[] = [
     valor_contrato: 42000,
     niche: 'Serviço',
     existe_comissao: false,
-    fase_projeto: 'Cancelamento',
+    fase_projeto: 'Renovação',
     etapa_formal: 'Renovação',
   },
   {
@@ -64,7 +64,7 @@ const CANCELLED_CLIENTS: CancelledClient[] = [
     valor_contrato: 18000,
     niche: 'Franquia',
     existe_comissao: false,
-    fase_projeto: 'Cancelamento',
+    fase_projeto: 'Renovação',
     etapa_formal: 'Renovação',
   },
   {
@@ -78,7 +78,7 @@ const CANCELLED_CLIENTS: CancelledClient[] = [
     niche: 'Franquia',
     existe_comissao: true,
     observacao_comissao: 'uando bater a meta',
-    fase_projeto: 'Cancelamento',
+    fase_projeto: 'Renovação',
     etapa_formal: 'Renovação',
   },
   {
@@ -92,7 +92,7 @@ const CANCELLED_CLIENTS: CancelledClient[] = [
     niche: 'Produto',
     existe_comissao: true,
     observacao_comissao: '2,5% sobre vendas',
-    fase_projeto: 'Cancelamento',
+    fase_projeto: 'Onboarding',
     etapa_formal: 'Onboarding',
   },
   {
@@ -105,7 +105,7 @@ const CANCELLED_CLIENTS: CancelledClient[] = [
     valor_contrato: 18000,
     niche: 'Produto',
     existe_comissao: false,
-    fase_projeto: 'Cancelamento',
+    fase_projeto: 'Escala',
     etapa_formal: 'Escala',
   },
   {
@@ -119,7 +119,7 @@ const CANCELLED_CLIENTS: CancelledClient[] = [
     niche: 'Educação',
     existe_comissao: true,
     observacao_comissao: 'nsalidade gerada pe',
-    fase_projeto: 'Cancelamento',
+    fase_projeto: 'Refinamento',
     etapa_formal: 'Refinamento',
   },
 ];
