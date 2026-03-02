@@ -1,4 +1,4 @@
-import { Users, Settings, User, FolderOpen, FileText, Copy, CheckCircle, BarChart2, TrendingDown, DollarSign, Heart, Activity, Sparkles, ChevronRight, UserCheck, Sliders, AlertCircle, Star, MessageSquare, ClipboardList, Trophy, LogOut, TrendingUp, Shield } from "lucide-react"
+import { Users, Settings, User, FolderOpen, FileText, Copy, CheckCircle, BarChart2, TrendingDown, DollarSign, Heart, Activity, Sparkles, ChevronRight, UserCheck, Sliders, AlertCircle, Star, MessageSquare, ClipboardList, Trophy, LogOut, TrendingUp, Shield, Briefcase } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { UserProfilePopover } from "./UserProfilePopover"
 import { useAuth } from "@/contexts/AuthContext"
@@ -32,8 +32,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 
 interface AppSidebarProps {
-  activeView: 'users' | 'profile' | 'gestao-projetos' | 'gestao-contratos' | 'csm' | 'cs' | 'cs-churn' | 'cs-metricas' | 'cs-nps' | 'cs-csat' | 'cs-cancelamento' | 'gestao-cancelamentos' | 'gestao-nps' | 'gestao-csat' | 'copy' | 'aprovacao' | 'analise-bench' | 'projetos-operacao' | 'projetos-clientes' | 'projetos-metricas' | 'performance' | 'preferencias-interface' | 'cases-sucesso'
-  onViewChange: (view: 'users' | 'profile' | 'gestao-projetos' | 'gestao-contratos' | 'csm' | 'cs' | 'cs-churn' | 'cs-metricas' | 'cs-nps' | 'cs-csat' | 'cs-cancelamento' | 'gestao-cancelamentos' | 'gestao-nps' | 'gestao-csat' | 'copy' | 'aprovacao' | 'analise-bench' | 'projetos-operacao' | 'projetos-clientes' | 'projetos-metricas' | 'performance' | 'preferencias-interface' | 'cases-sucesso') => void
+  activeView: 'users' | 'profile' | 'gestao-projetos' | 'gestao-contratos' | 'csm' | 'crm-ops' | 'cs' | 'cs-churn' | 'cs-metricas' | 'cs-nps' | 'cs-csat' | 'cs-cancelamento' | 'gestao-cancelamentos' | 'gestao-nps' | 'gestao-csat' | 'copy' | 'aprovacao' | 'analise-bench' | 'projetos-operacao' | 'projetos-clientes' | 'projetos-metricas' | 'performance' | 'preferencias-interface' | 'cases-sucesso'
+  onViewChange: (view: 'users' | 'profile' | 'gestao-projetos' | 'gestao-contratos' | 'csm' | 'crm-ops' | 'cs' | 'cs-churn' | 'cs-metricas' | 'cs-nps' | 'cs-csat' | 'cs-cancelamento' | 'gestao-cancelamentos' | 'gestao-nps' | 'gestao-csat' | 'copy' | 'aprovacao' | 'analise-bench' | 'projetos-operacao' | 'projetos-clientes' | 'projetos-metricas' | 'performance' | 'preferencias-interface' | 'cases-sucesso') => void
 }
 
 export function AppSidebar({ activeView, onViewChange }: AppSidebarProps) {
@@ -53,6 +53,15 @@ export function AppSidebar({ activeView, onViewChange }: AppSidebarProps) {
     title: "CSM",
     icon: UserCheck,
     view: 'csm' as const,
+    moduleName: 'csm',
+    available: checkModulePermission('csm', 'view')
+  }
+
+  // Item CRM Ops
+  const crmOpsItem = {
+    title: "CRM Ops",
+    icon: Briefcase,
+    view: 'crm-ops' as const,
     moduleName: 'csm',
     available: checkModulePermission('csm', 'view')
   }
@@ -447,6 +456,41 @@ export function AppSidebar({ activeView, onViewChange }: AppSidebarProps) {
                         >
                           <csmItem.icon className="h-4 w-4 flex-shrink-0" />
                           <span className="text-xs">{csmItem.title}</span>
+                        </SidebarMenuButton>
+                      )}
+                    </SidebarMenuItem>
+                  )
+                })()}
+                {/* CRM Ops - abaixo do CSM */}
+                {crmOpsItem.available && (() => {
+                  const isActive = activeView === crmOpsItem.view
+                  return (
+                    <SidebarMenuItem key={crmOpsItem.view}>
+                      {!shouldShowText ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <SidebarMenuButton
+                              onClick={() => onViewChange(crmOpsItem.view)}
+                              isActive={isActive}
+                              className="w-full transition-all duration-200 justify-center"
+                              style={isActive ? { backgroundColor: '#ec4a55', color: 'white' } : {}}
+                            >
+                              <crmOpsItem.icon className="h-4 w-4 flex-shrink-0" />
+                            </SidebarMenuButton>
+                          </TooltipTrigger>
+                          <TooltipContent side="right">
+                            <p>{crmOpsItem.title}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <SidebarMenuButton
+                          onClick={() => onViewChange(crmOpsItem.view)}
+                          isActive={isActive}
+                          className="w-full transition-all duration-200 justify-start"
+                          style={isActive ? { backgroundColor: '#ec4a55', color: 'white' } : {}}
+                        >
+                          <crmOpsItem.icon className="h-4 w-4 flex-shrink-0" />
+                          <span className="text-xs">{crmOpsItem.title}</span>
                         </SidebarMenuButton>
                       )}
                     </SidebarMenuItem>

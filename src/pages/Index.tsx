@@ -12,6 +12,7 @@ import { UserManagement } from "@/components/UserManagement";
 import { UserProfile } from "@/components/UserProfile";
 import { RoleManagement } from "@/components/RoleManagement";
 import { CSMKanban } from "@/components/CSMKanban";
+import { CRMOpsKanban } from "@/components/CRMOpsKanban";
 import { GestaoProjetosOperacao } from "@/components/GestaoProjetosOperacao";
 import { GestaoContratos } from "@/components/GestaoContratos";
 import { ProjetosView } from "@/components/ProjetosView";
@@ -28,9 +29,9 @@ import { ChurnMetrics } from "@/components/ChurnMetrics";
 import { InterfacePreferences } from "@/components/InterfacePreferences";
 import "@/utils/updateCategorias";
 
-type ActiveViewType = 'users' | 'profile' | 'gestao-projetos' | 'gestao-contratos' | 'csm' | 'cs' | 'cs-churn' | 'cs-metricas' | 'cs-nps' | 'cs-csat' | 'copy' | 'aprovacao' | 'analise-bench' | 'projetos-operacao' | 'projetos-clientes' | 'projetos-metricas' | 'performance' | 'preferencias-interface' | 'gestao-nps' | 'gestao-csat' | 'cs-cancelamento' | 'gestao-cancelamentos';
+type ActiveViewType = 'users' | 'profile' | 'gestao-projetos' | 'gestao-contratos' | 'csm' | 'crm-ops' | 'cs' | 'cs-churn' | 'cs-metricas' | 'cs-nps' | 'cs-csat' | 'copy' | 'aprovacao' | 'analise-bench' | 'projetos-operacao' | 'projetos-clientes' | 'projetos-metricas' | 'performance' | 'preferencias-interface' | 'gestao-nps' | 'gestao-csat' | 'cs-cancelamento' | 'gestao-cancelamentos';
 
-const VALID_VIEWS: ActiveViewType[] = ['users', 'profile', 'gestao-projetos', 'gestao-contratos', 'csm', 'cs', 'cs-churn', 'cs-metricas', 'cs-nps', 'cs-csat', 'copy', 'aprovacao', 'analise-bench', 'projetos-operacao', 'projetos-clientes', 'projetos-metricas', 'performance', 'preferencias-interface', 'gestao-nps', 'gestao-csat', 'cs-cancelamento', 'gestao-cancelamentos'];
+const VALID_VIEWS: ActiveViewType[] = ['users', 'profile', 'gestao-projetos', 'gestao-contratos', 'csm', 'crm-ops', 'cs', 'cs-churn', 'cs-metricas', 'cs-nps', 'cs-csat', 'copy', 'aprovacao', 'analise-bench', 'projetos-operacao', 'projetos-clientes', 'projetos-metricas', 'performance', 'preferencias-interface', 'gestao-nps', 'gestao-csat', 'cs-cancelamento', 'gestao-cancelamentos'];
 
 const Index = () => {
   const { profile, signOut } = useAuth();
@@ -155,6 +156,7 @@ const Index = () => {
       'gestao-projetos': 'gestao_projetos',
       'gestao-contratos': 'gestao_contratos',
       'csm': 'csm',
+      'crm-ops': 'csm',
       'cs': 'cs',
       'cs-churn': 'cs',
       'cs-metricas': 'cs',
@@ -195,6 +197,7 @@ const Index = () => {
       'gestao-projetos': 'gestao_projetos',
       'gestao-contratos': 'gestao_contratos',
       'csm': 'csm',
+      'crm-ops': 'csm',
       'cs': 'cs',
       'cs-churn': 'cs',
       'cs-metricas': 'cs',
@@ -267,6 +270,8 @@ const Index = () => {
     switch (activeView) {
       case 'csm':
         return <CSMKanban openCardId={openCardId} openCardKey={openCardKey} />
+      case 'crm-ops':
+        return <CRMOpsKanban />
       case 'gestao-projetos':
         return <GestaoProjetosOperacao />
       case 'gestao-contratos':
@@ -313,15 +318,15 @@ const Index = () => {
         onNavigate={handleViewChange}
       />
       <SidebarProvider defaultOpen={true}>
-        <div className={activeView === 'csm' ? 'fixed inset-0 bg-gradient-to-br from-background via-background to-muted/30 flex w-full' : 'min-h-screen bg-gradient-to-br from-background via-background to-muted/30 flex w-full'}>
+        <div className={(activeView === 'csm' || activeView === 'crm-ops') ? 'fixed inset-0 bg-gradient-to-br from-background via-background to-muted/30 flex w-full' : 'min-h-screen bg-gradient-to-br from-background via-background to-muted/30 flex w-full'}>
           <AppSidebar 
             activeView={activeView as any}
             onViewChange={handleViewChange}
           />
           <div className="flex-1 flex h-svh min-h-0 flex-col min-w-0">
-            {activeView !== 'csm' && <MobileSidebarTrigger />}
+            {activeView !== 'csm' && activeView !== 'crm-ops' && <MobileSidebarTrigger />}
             <SidebarInset className="flex-1 min-h-0">
-              <main className={activeView === 'csm' ? 'flex h-full min-h-0 flex-col overflow-hidden' : 'container py-6 md:py-8 space-y-6 md:space-y-8'}>
+              <main className={(activeView === 'csm' || activeView === 'crm-ops') ? 'flex h-full min-h-0 flex-col overflow-hidden' : 'container py-6 md:py-8 space-y-6 md:space-y-8'}>
                 {renderContent()}
               </main>
             </SidebarInset>
