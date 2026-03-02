@@ -19,7 +19,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { PerformanceManager } from './PerformanceManager';
-import { UpsellManager } from './UpsellManager';
+
 import { VariableManager } from './VariableManager';
 import { CSMCard, CSMStage } from '@/types/kanban';
 import { EditableField } from '../crm/EditableField';
@@ -106,22 +106,6 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
     }
   }, [card, open, onClose]);
   
-  // Estados para histórico de upsells
-  const [upsellHistory, setUpsellHistory] = useState<Array<{
-    id: string;
-    upsell_value: number;
-    upsell_month: number;
-    upsell_year: number;
-    created_at: string;
-    notes?: string;
-  }>>([]);
-  const [newUpsellValue, setNewUpsellValue] = useState<number>(0);
-  const [newUpsellMonth, setNewUpsellMonth] = useState<number>(new Date().getMonth() + 1);
-  const [newUpsellYear, setNewUpsellYear] = useState<number>(new Date().getFullYear());
-  const [newUpsellNotes, setNewUpsellNotes] = useState<string>('');
-  const [newUpsellType, setNewUpsellType] = useState<'upsell' | 'crosssell'>('upsell');
-  const [newPaymentType, setNewPaymentType] = useState<'recorrente' | 'unico' | 'parcelado'>('recorrente');
-  const [newInstallments, setNewInstallments] = useState<number | null>(null);
   
   // Estados para histórico de variáveis
   const [variableHistory, setVariableHistory] = useState<Array<{
@@ -152,7 +136,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
     metricas: false,
     utm: false,
     briefing: false,
-    upsells: false,
+    
     variables: false,
     variablesSales: false,
     performance: false,
@@ -350,28 +334,6 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
     fetchCsmStages();
   }, [selectedCsmPipeline]);
 
-  // Buscar histórico de upsells
-  React.useEffect(() => {
-    if (!card || !open) return;
-
-    const fetchUpsellHistory = async () => {
-      const { data, error } = await supabase
-        .from('csm_card_upsell_history')
-        .select('*')
-        .eq('card_id', card.id)
-        .order('upsell_year', { ascending: false })
-        .order('upsell_month', { ascending: false });
-
-      if (error) {
-        console.error('Erro ao buscar histórico de upsells:', error);
-        return;
-      }
-
-      setUpsellHistory(data || []);
-    };
-
-    fetchUpsellHistory();
-  }, [card, open]);
 
   // Buscar histórico de variáveis
   React.useEffect(() => {
@@ -1460,85 +1422,6 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
     }
   };
 
-  // Função para salvar novo upsell no histórico
-  const handleSaveUpsell = async () => {
-    if (!card || !newUpsellValue || newUpsellValue <= 0) {
-      toast.error('Informe um valor válido');
-      return;
-    }
-
-    if (newPaymentType === 'parcelado' && (!newInstallments || newInstallments < 2)) {
-      toast.error('Informe o número de parcelas (mínimo 2)');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) throw new Error('Usuário não autenticado');
-
-      const { error } = await supabase
-        .from('csm_card_upsell_history')
-        .insert({
-          card_id: card.id,
-          upsell_value: newUpsellValue,
-          upsell_month: newUpsellMonth,
-          upsell_year: newUpsellYear,
-          notes: newUpsellNotes || null,
-          recorded_by: user.user.id,
-          upsell_type: newUpsellType,
-          payment_type: newPaymentType,
-          installments: newPaymentType === 'parcelado' ? newInstallments : null,
-          start_month: newPaymentType === 'recorrente' ? newUpsellMonth : null,
-          start_year: newPaymentType === 'recorrente' ? newUpsellYear : null,
-        });
-
-      if (error) throw error;
-
-      // Registrar atividade
-      const typeLabel = newUpsellType === 'upsell' ? 'Upsell' : 'Crosssell';
-      const paymentLabel = newPaymentType === 'recorrente' ? 'Recorrente' : 
-                          newPaymentType === 'parcelado' ? `Parcelado (${newInstallments}x)` : 
-                          'Pagamento Único';
-      
-      await supabase
-        .from('csm_activities')
-        .insert({
-          card_id: card.id,
-          activity_type: 'comment',
-          title: `${typeLabel} registrado`,
-          description: `${typeLabel} de R$ ${newUpsellValue.toFixed(2)} - ${paymentLabel} - ${new Date(newUpsellYear, newUpsellMonth - 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}. ${newUpsellNotes ? `Notas: ${newUpsellNotes}` : ''}`,
-          status: 'completed',
-          created_by: user.user.id,
-        });
-
-      toast.success(`${typeLabel} registrado com sucesso!`);
-      
-      // Recarregar histórico
-      const { data: updatedHistory } = await supabase
-        .from('csm_card_upsell_history')
-        .select('*')
-        .eq('card_id', card.id)
-        .order('upsell_year', { ascending: false })
-        .order('upsell_month', { ascending: false });
-
-      setUpsellHistory(updatedHistory || []);
-      
-      // Limpar campos
-      setNewUpsellValue(0);
-      setNewUpsellNotes('');
-      setNewUpsellType('upsell');
-      setNewPaymentType('recorrente');
-      setNewInstallments(null);
-      
-      onUpdate?.();
-    } catch (error) {
-      console.error('Erro ao salvar:', error);
-      toast.error('Erro ao salvar registro');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Função para salvar novo registro de variável
   const handleSaveVariable = async () => {
@@ -1614,37 +1497,6 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
     }
   };
 
-  // Função para deletar upsell do histórico
-  const handleDeleteUpsell = async (upsellId: string) => {
-    if (!confirm('Tem certeza que deseja excluir este registro de upsell?')) {
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('csm_card_upsell_history')
-        .delete()
-        .eq('id', upsellId);
-
-      if (error) throw error;
-
-      toast.success('Registro de upsell excluído');
-      
-      // Recarregar histórico
-      const { data: updatedHistory } = await supabase
-        .from('csm_card_upsell_history')
-        .select('*')
-        .eq('card_id', card.id)
-        .order('upsell_year', { ascending: false })
-        .order('upsell_month', { ascending: false });
-
-      setUpsellHistory(updatedHistory || []);
-      onUpdate?.();
-    } catch (error) {
-      console.error('Erro ao excluir upsell:', error);
-      toast.error('Erro ao excluir upsell');
-    }
-  };
 
   // Função para mesclar cards
   const handleMergeCards = async () => {
@@ -2737,24 +2589,6 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                       </Collapsible>
                     )}
 
-                    {/* UPSELL/CROSSELL - CSM */}
-                    {moduleType === 'csm' && (
-                      <Collapsible open={sectionStates.upsells} onOpenChange={() => toggleSection('upsells')}>
-                        <div className="space-y-2 p-3 bg-muted/10 rounded-md border border-border/40">
-                          <CollapsibleTrigger asChild>
-                            <Button variant="ghost" className="w-full justify-between p-0 h-auto hover:bg-transparent mb-1">
-                              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
-                                UPSELL/CROSSELL
-                                {sectionStates.upsells ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-                              </h4>
-                            </Button>
-                          </CollapsibleTrigger>
-                          <CollapsibleContent>
-                            <UpsellManager cardId={card.id} upsellHistory={upsellHistory} />
-                          </CollapsibleContent>
-                        </div>
-                      </Collapsible>
-                    )}
 
                     {/* Variável Investimento - CSM */}
                     {moduleType === 'csm' && (
@@ -3326,88 +3160,35 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                       />
                     </div>
 
-                    {/* UPSELL/CROSSELL e Variável - apenas para CSM */}
+                    {/* Variável Inv./Vendas - apenas para CSM */}
                     {moduleType === 'csm' && (() => {
-                      const currentMonth = new Date().getMonth() + 1;
-                      const currentYear = new Date().getFullYear();
-
-                      // Calculate active upsell/crossell value
-                      const calculateActiveUpsellValue = () => {
-                        if (!upsellHistory || upsellHistory.length === 0) return 0;
-                        
-                        return upsellHistory.reduce((total, upsell: any) => {
-                          if (upsell.payment_type === 'recorrente') {
-                            const startDate = new Date(upsell.start_year || 0, (upsell.start_month || 1) - 1);
-                            const currentDate = new Date(currentYear, currentMonth - 1);
-                            if (currentDate > startDate) {
-                              return total + (upsell.upsell_value || 0);
-                            }
-                          } else if (upsell.payment_type === 'parcelado' && upsell.installments) {
-                            const startDate = new Date(upsell.start_year || 0, (upsell.start_month || 1) - 1);
-                            const endDate = new Date(upsell.start_year || 0, (upsell.start_month || 1) - 1 + upsell.installments);
-                            const currentDate = new Date(currentYear, currentMonth - 1);
-                            if (currentDate >= startDate && currentDate < endDate) {
-                              return total + (upsell.upsell_value || 0) / upsell.installments;
-                            }
-                          }
-                          return total;
-                        }, 0);
-                      };
-
-                      // Calculate total variable value
                       const calculateTotalVariableValue = () => {
                         if (!variableHistory || variableHistory.length === 0) return 0;
                         return variableHistory.reduce((total: number, variable: any) => total + (variable.variable_value || 0), 0);
                       };
 
-                      const activeUpsellValue = calculateActiveUpsellValue();
                       const totalVariableValue = calculateTotalVariableValue();
 
-                      return (
+                      return totalVariableValue > 0 ? (
                         <>
-                          {activeUpsellValue > 0 && (
-                            <>
-                              <Separator className="my-1" />
-                              <div className="space-y-0">
-                                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                                  <TrendingUp className="h-3 w-3 text-blue-600" />
-                                  <span>UPSELL/CROSSELL</span>
-                                </div>
-                                <div className="flex items-center gap-1 px-1.5 py-1 rounded-md bg-background border border-border">
-                                  <DollarSign className="h-3 w-3 text-muted-foreground" />
-                                  <span className="text-[10px] font-medium">
-                                    {new Intl.NumberFormat('pt-BR', {
-                                      style: 'currency',
-                                      currency: 'BRL'
-                                    }).format(activeUpsellValue)}
-                                  </span>
-                                </div>
-                              </div>
-                            </>
-                          )}
-
-                          {totalVariableValue > 0 && (
-                            <>
-                              <Separator className="my-1" />
-                              <div className="space-y-0">
-                                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                                  <BarChart3 className="h-3 w-3 text-purple-600" />
-                                  <span>Variável Inv./Vendas</span>
-                                </div>
-                                <div className="flex items-center gap-1 px-1.5 py-1 rounded-md bg-background border border-border">
-                                  <DollarSign className="h-3 w-3 text-muted-foreground" />
-                                  <span className="text-[10px] font-medium">
-                                    {new Intl.NumberFormat('pt-BR', {
-                                      style: 'currency',
-                                      currency: 'BRL'
-                                    }).format(totalVariableValue)}
-                                  </span>
-                                </div>
-                              </div>
-                            </>
-                          )}
+                          <Separator className="my-1" />
+                          <div className="space-y-0">
+                            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                              <BarChart3 className="h-3 w-3 text-purple-600" />
+                              <span>Variável Inv./Vendas</span>
+                            </div>
+                            <div className="flex items-center gap-1 px-1.5 py-1 rounded-md bg-background border border-border">
+                              <DollarSign className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-[10px] font-medium">
+                                {new Intl.NumberFormat('pt-BR', {
+                                  style: 'currency',
+                                  currency: 'BRL'
+                                }).format(totalVariableValue)}
+                              </span>
+                            </div>
+                          </div>
                         </>
-                      );
+                      ) : null;
                     })()}
 
                     {moduleType !== 'csm' && (
@@ -3903,25 +3684,6 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
               </Collapsible>
               )}
 
-              {/* Seção: UPSELL/CROSSELL - Colapsável - Apenas CSM */}
-              {moduleType === 'csm' && (
-              <Collapsible open={sectionStates.upsells} onOpenChange={() => toggleSection('upsells')}>
-                <div className="space-y-2 p-3 bg-muted/10 rounded-md border border-border/40">
-                  <CollapsibleTrigger asChild>
-                    <Button variant="ghost" className="w-full justify-between p-0 h-auto hover:bg-transparent mb-1">
-                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
-                        UPSELL/CROSSELL
-                        {sectionStates.upsells ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-                      </h4>
-                    </Button>
-                  </CollapsibleTrigger>
-                  
-                  <CollapsibleContent>
-                    <UpsellManager cardId={card.id} upsellHistory={upsellHistory} />
-                  </CollapsibleContent>
-                </div>
-              </Collapsible>
-              )}
 
               {/* Seção: Variável sobre investimento - Colapsável - Apenas CSM */}
               {moduleType === 'csm' && (
