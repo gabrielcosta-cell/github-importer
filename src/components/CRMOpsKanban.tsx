@@ -246,24 +246,13 @@ export const CRMOpsKanban: React.FC = () => {
 
         {/* Right side: Configurações, Pipeline, Edit, Filtros */}
         <div className="flex items-center gap-2">
-          {/* Configurações (Stage Manager) */}
-          {isAdmin && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowStageManager(true)}
-              className="gap-1.5 h-9 text-sm"
-            >
-              <Settings className="h-4 w-4" />
-              Configurações
-            </Button>
-          )}
-
-          {/* Pipeline Selector */}
-          <div className="flex items-center gap-1.5 border border-border rounded-md px-2 h-9 bg-background">
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          {/* Pipeline Selector + Edit button (matching reference) */}
+          <div className="flex items-center gap-0 border border-border rounded-md h-9 bg-background">
+            <div className="flex items-center px-2">
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            </div>
             <Select value={selectedPipeline} onValueChange={setSelectedPipeline}>
-              <SelectTrigger className="h-7 w-[150px] text-sm border-0 shadow-none p-0 focus:ring-0">
+              <SelectTrigger className="h-9 w-[140px] text-sm border-0 shadow-none px-1 focus:ring-0 rounded-none">
                 <SelectValue placeholder="Pipeline" />
               </SelectTrigger>
               <SelectContent>
@@ -273,6 +262,19 @@ export const CRMOpsKanban: React.FC = () => {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Pencil - Edit stages */}
+          {isAdmin && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setShowStageManager(true)}
+              className="h-9 w-9"
+              title="Editar etapas"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
 
           {/* Date Filter */}
           <CRMOpsDateFilter
