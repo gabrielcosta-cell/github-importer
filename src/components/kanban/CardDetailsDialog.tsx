@@ -2463,7 +2463,8 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
               {/* Dados Tab */}
               <TabsContent value="dados" className="flex-1 overflow-y-auto m-0 p-0">
                 <div className="p-3 pb-20">
-                  {/* Stage select */}
+                  {/* Stage select - hidden for Clientes Ativos (auto-managed) */}
+                  {!pipelineName?.toLowerCase().includes('ativos') && (
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-xs font-medium">Etapa:</span>
                     <Select value={card.stage_id} onValueChange={changeStage} disabled={loading}>
@@ -2477,6 +2478,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                       </SelectContent>
                     </Select>
                   </div>
+                  )}
 
                   <div className="space-y-1 text-[0.75rem]">
                     {/* Reuse all the same collapsible sections from desktop left column */}
@@ -3104,9 +3106,9 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                   return (
                     <div 
                       key={stage.id}
-                      className="relative flex-1 min-w-[80px] cursor-pointer group"
-                      onClick={() => changeStage(stage.id)}
-                      title={`Clique para mover para: ${stage.name}`}
+                      className={`relative flex-1 min-w-[80px] ${pipelineName?.toLowerCase().includes('ativos') ? '' : 'cursor-pointer'} group`}
+                      onClick={() => { if (!pipelineName?.toLowerCase().includes('ativos')) changeStage(stage.id); }}
+                      title={pipelineName?.toLowerCase().includes('ativos') ? stage.name : `Clique para mover para: ${stage.name}`}
                       style={{
                         clipPath: isLast 
                           ? 'polygon(0 0, 100% 0, 100% 100%, 0 100%, 8px 50%)' 
@@ -3123,7 +3125,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                       >
                         <div className="flex flex-col items-center gap-0.5 w-full">
                           <span className="text-xs font-bold leading-tight">
-                            {daysInStage > 0 ? `${daysInStage} dias` : '0 dias'}
+                            {isCurrentStage ? `Dia ${Math.max(daysInStage, 1)}` : isPastStage ? '30 dias' : '-'}
                           </span>
                           <span className="text-[10px] leading-tight opacity-90 truncate max-w-full px-1">
                             {stage.name}
@@ -3136,6 +3138,8 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
               )}
             </div>
             
+            {/* Estágio atual - hidden for Clientes Ativos */}
+            {!pipelineName?.toLowerCase().includes('ativos') && (
             <div className="flex items-center gap-3 mt-2">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-medium">Estágio atual:</span>
@@ -3211,6 +3215,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                 </>
               )}
             </div>
+            )}
           </div>
         </DialogHeader>
         

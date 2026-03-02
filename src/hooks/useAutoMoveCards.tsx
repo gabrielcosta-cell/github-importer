@@ -47,9 +47,8 @@ export const useAutoMoveCards = ({
         return;
       }
 
-      // 3. Verificar quais cards estão há 30+ dias
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      // 3. Verificar quais cards completaram 30 dias na etapa atual
+      const now = new Date();
 
       const cardsToMove: Array<{ 
         cardId: string; 
@@ -62,13 +61,14 @@ export const useAutoMoveCards = ({
 
       for (const history of activeHistory) {
         const enteredAt = new Date(history.entered_at);
+        const daysInStage = Math.floor((now.getTime() - enteredAt.getTime()) / (1000 * 60 * 60 * 24));
         
-        // Se está há 30+ dias
-        if (enteredAt <= thirtyDaysAgo) {
+        // Se completou 30 dias (dia 31+), mover para próxima etapa
+        if (daysInStage >= 30) {
           // Buscar dados do card
           const { data: card, error: cardError } = await supabase
             .from('csm_cards')
-            .select('id, stage_id, title, pipeline_id')
+            .select('id, stage_id, title, pipeline_id, client_status')
             .eq('id', history.card_id)
             .eq('pipeline_id', pipelineId)
             .single();
@@ -77,10 +77,15 @@ export const useAutoMoveCards = ({
             continue;
           }
 
+          // Só mover cards ativos
+          if (card.client_status === 'cancelado') {
+            continue;
+          }
+
           // Encontrar próxima etapa
           const currentStageIndex = stages.findIndex(s => s.id === card.stage_id);
           
-          // Se não encontrou etapa ou já está na última, pular
+          // Se não encontrou etapa ou já está na última (Retenção), pular
           if (currentStageIndex === -1 || currentStageIndex === stages.length - 1) {
             continue;
           }
@@ -97,37 +102,56 @@ export const useAutoMoveCards = ({
             nextStageName: nextStage.name
           });
 
-          console.log(`📌 Card "${card.title}" será movido: ${currentStage.name} → ${nextStage.name}`);
+          console.log(`📌 Card "${card.title}" será movido: ${currentStage.name} → ${nextStage.name} (${daysInStage} dias)`);
         }
       }
 
       // 4. Mover os cards
       if (cardsToMove.length > 0) {
         let movedCount = 0;
+        const moveTimestamp = new Date().toISOString();
 
         for (const move of cardsToMove) {
+          // Atualizar stage_id do card
           const { error: updateError } = await supabase
             .from('csm_cards')
             .update({ 
               stage_id: move.nextStageId,
-              updated_at: new Date().toISOString()
+              updated_at: moveTimestamp
             })
             .eq('id', move.cardId);
 
           if (updateError) {
             console.error(`❌ Erro ao mover card ${move.cardId}:`, updateError);
-          } else {
-            movedCount++;
-            console.log(`✅ Card "${move.cardTitle}" movido: ${move.currentStageName} → ${move.nextStageName}`);
+            continue;
           }
+
+          // Fechar registro anterior no histórico
+          await supabase
+            .from('csm_card_stage_history')
+            .update({ exited_at: moveTimestamp })
+            .eq('card_id', move.cardId)
+            .is('exited_at', null);
+
+          // Criar novo registro no histórico (dia 1 da nova etapa)
+          await supabase
+            .from('csm_card_stage_history')
+            .insert({
+              card_id: move.cardId,
+              stage_id: move.nextStageId,
+              entered_at: moveTimestamp,
+              moved_by: null, // Movimentação automática
+            });
+
+          movedCount++;
+          console.log(`✅ Card "${move.cardTitle}" movido: ${move.currentStageName} → ${move.nextStageName}`);
         }
 
         if (movedCount > 0) {
           toast.success(`${movedCount} ${movedCount === 1 ? 'card movido' : 'cards movidos'} automaticamente`, {
-            description: 'Cards que estavam há mais de 30 dias na mesma etapa foram avançados.'
+            description: 'Cards que completaram 30 dias na etapa foram avançados.'
           });
 
-          // Notificar componente pai para atualizar
           if (onCardsUpdated) {
             onCardsUpdated();
           }
@@ -152,7 +176,7 @@ export const useAutoMoveCards = ({
     // Executar verificação a cada 5 minutos
     const interval = setInterval(() => {
       checkAndMoveCards();
-    }, 5 * 60 * 1000); // 5 minutos
+    }, 5 * 60 * 1000);
 
     return () => {
       clearTimeout(initialTimeout);

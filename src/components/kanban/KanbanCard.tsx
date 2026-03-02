@@ -24,9 +24,10 @@ interface CardTask {
 interface KanbanCardProps {
   card: CSMCard;
   onClick?: () => void;
+  disableDrag?: boolean;
 }
 
-export const KanbanCard: React.FC<KanbanCardProps> = ({ card, onClick }) => {
+export const KanbanCard: React.FC<KanbanCardProps> = ({ card, onClick, disableDrag = false }) => {
   const [squadIcon, setSquadIcon] = useState<string>('Users');
   const [cardTags, setCardTags] = useState<Tag[]>([]);
   const [cardTasks, setCardTasks] = useState<CardTask[]>([]);
@@ -38,6 +39,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ card, onClick }) => {
     isDragging,
   } = useDraggable({
     id: card.id,
+    disabled: disableDrag,
   });
 
   const style = {
