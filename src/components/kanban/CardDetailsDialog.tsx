@@ -1316,85 +1316,33 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
     }
   };
 
-  // Função para excluir o card (move para funil "Leads Excluídos")
+  // Função para excluir o card permanentemente (apenas admins)
   const handleDeleteCard = async () => {
     if (!card) return;
     
-    if (!confirm('Tem certeza que deseja excluir este lead? Ele será movido para o funil "Leads Excluídos".')) {
+    // Verificar permissão no client-side (RLS protege no servidor)
+    if (!profile?.is_global_admin && profile?.role !== 'admin') {
+      toast.error('Apenas administradores podem excluir leads.');
+      return;
+    }
+    
+    if (!confirm('Tem certeza que deseja excluir este lead permanentemente? Esta ação não pode ser desfeita.')) {
       return;
     }
 
-    const cardIdToMove = card.id;
-    // Determinar qual pipeline usar baseado no módulo
-    const deletedPipelineName = moduleType === 'csm' ? 'Leads Excluídos CSM' : 'Leads Excluídos';
-    
     setLoading(true);
     try {
-      // Buscar o pipeline "Leads Excluídos" apropriado
-      const { data: deletedPipeline } = await supabase
-        .from('csm_pipelines')
-        .select('id')
-        .eq('name', deletedPipelineName)
-        .maybeSingle();
+      const { error: deleteError } = await supabase
+        .from('csm_cards')
+        .delete()
+        .eq('id', card.id);
 
-      if (deletedPipeline) {
-        // Pipeline existe: mover o card para lá
-        const { data: deletedStage } = await supabase
-          .from('csm_stages')
-          .select('id')
-          .eq('pipeline_id', deletedPipeline.id)
-          .order('position', { ascending: true })
-          .limit(1)
-          .maybeSingle();
+      if (deleteError) throw deleteError;
 
-        if (deletedStage) {
-          const { error: updateError } = await supabase
-            .from('csm_cards')
-            .update({ 
-              pipeline_id: deletedPipeline.id,
-              stage_id: deletedStage.id,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', cardIdToMove);
-
-          if (updateError) throw updateError;
-
-          // Registrar no histórico
-          await supabase
-            .from('csm_card_stage_history')
-            .insert({
-              card_id: cardIdToMove,
-              stage_id: deletedStage.id,
-              entered_at: new Date().toISOString(),
-              moved_by: (await supabase.auth.getUser()).data.user?.id,
-              notes: `Lead movido para ${deletedPipelineName}`,
-              event_type: 'deleted'
-            });
-
-          toast.success(`Lead movido para "${deletedPipelineName}"`);
-        } else {
-          // Sem estágio no pipeline de excluídos: deletar permanentemente
-          const { error: deleteError } = await supabase
-            .from('csm_cards')
-            .delete()
-            .eq('id', cardIdToMove);
-          if (deleteError) throw deleteError;
-          toast.success('Lead excluído permanentemente');
-        }
-      } else {
-        // Pipeline de excluídos não existe: deletar permanentemente
-        const { error: deleteError } = await supabase
-          .from('csm_cards')
-          .delete()
-          .eq('id', cardIdToMove);
-        if (deleteError) throw deleteError;
-        toast.success('Lead excluído permanentemente');
-      }
+      toast.success('Lead excluído permanentemente');
       
-      // CRÍTICO: Fechar o dialog IMEDIATAMENTE
       onClose();
       
-      // Delay para garantir que o dialog fechou
       setTimeout(() => {
         onUpdate?.();
       }, 200);
