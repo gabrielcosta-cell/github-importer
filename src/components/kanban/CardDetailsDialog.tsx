@@ -2495,7 +2495,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                           {/* Status do cliente (somente leitura) */}
                           {moduleType === 'csm' && (
                             <>
-                              <div className="space-y-0">
+                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                                   <AlertTriangle className="h-3 w-3 text-yellow-500" />
                                   <span>Status do Cliente</span>
@@ -3238,7 +3238,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                     {/* Status do cliente (somente leitura) */}
                     {moduleType === 'csm' && (
                       <>
-                        <div className="space-y-0">
+                        <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                             <AlertTriangle className="h-3 w-3 text-yellow-500" />
                             <span>Status do Cliente</span>
