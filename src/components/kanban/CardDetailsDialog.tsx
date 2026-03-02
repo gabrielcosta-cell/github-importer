@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -37,6 +37,34 @@ import { usePipelineAutomations } from '@/hooks/usePipelineAutomations';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { sortTags } from '@/utils/tagSorting';
+import { differenceInMonths, parseISO } from 'date-fns';
+import { formatCurrency } from '@/utils/formatCurrency';
+
+const ETAPA_OPTIONS = [
+  'Onboarding', 'Implementação', 'Refinamento', 'Escala',
+  'Expansão', 'Renovação', 'Retenção', 'Cancelamento'
+];
+
+const getEtapaFormal = (dataInicio?: string | null): string => {
+  if (!dataInicio) return '-';
+  try {
+    const months = differenceInMonths(new Date(), parseISO(dataInicio));
+    if (months <= 0) return 'Onboarding';
+    const map: Record<number, string> = {
+      1: 'Onboarding', 2: 'Implementação', 3: 'Refinamento',
+      4: 'Escala', 5: 'Expansão', 6: 'Renovação'
+    };
+    return map[months] || 'Retenção';
+  } catch { return '-'; }
+};
+
+const getTempoDot = (dataInicio?: string | null): string => {
+  if (!dataInicio) return '-';
+  try {
+    const months = differenceInMonths(new Date(), parseISO(dataInicio));
+    return months <= 0 ? 'Menos de 1 mês' : `${months} ${months === 1 ? 'mês' : 'meses'}`;
+  } catch { return '-'; }
+};
 
 interface CardDetailsDialogProps {
   card: CSMCard | null;
@@ -2598,6 +2626,57 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                               <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground"><DollarSign className="h-4 w-4 text-yellow-600" /><span>Limite de investimento</span></div>
                               <MRRInput value={(card as any).limite_investimento} onChange={(value) => updateCardField('limite_investimento', value)} placeholder="Ex: R$ 10.000,00" />
                             </div>
+                            {/* Etapa Formal (calculada) */}
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground"><Flag className="h-4 w-4 text-indigo-600" /><span>Etapa Formal</span></div>
+                              <Badge variant="outline" className="text-xs">{getEtapaFormal(card.data_inicio)}</Badge>
+                            </div>
+                            {/* Etapa Real */}
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground"><Flag className="h-4 w-4 text-red-600" /><span>Etapa Real</span></div>
+                              <Select value={(card as any).etapa_real || 'none'} onValueChange={(value) => updateCardField('etapa_real', value === 'none' ? null : value)}>
+                                <SelectTrigger className="w-full"><SelectValue placeholder="Selecione a etapa" /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">Nenhum</SelectItem>
+                                  {ETAPA_OPTIONS.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            {/* Valor de Contrato */}
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground"><DollarSign className="h-4 w-4 text-green-600" /><span>Valor de Contrato</span></div>
+                              <MRRInput value={(card as any).valor_contrato} onChange={(value) => updateCardField('valor_contrato', value)} placeholder="R$ 0,00" />
+                            </div>
+                            {/* Tempo de DOT (calculado) */}
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground"><Calendar className="h-4 w-4 text-cyan-600" /><span>Tempo de DOT</span></div>
+                              <Badge variant="outline" className="text-xs">{getTempoDot(card.data_inicio)}</Badge>
+                            </div>
+                            {/* Existe Comissão */}
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground"><DollarSign className="h-4 w-4 text-emerald-600" /><span>Existe alguma comissão?</span></div>
+                              <Select value={((card as any).existe_comissao ? 'sim' : 'nao')} onValueChange={(value) => updateCardField('existe_comissao', value === 'sim')}>
+                                <SelectTrigger className="w-full"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="nao">Não</SelectItem>
+                                  <SelectItem value="sim">Sim</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            {/* Observação Comissão */}
+                            {(card as any).existe_comissao && (
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground"><Pencil className="h-4 w-4 text-emerald-600" /><span>Observação da comissão</span></div>
+                                <EditableField
+                                  value={(card as any).observacao_comissao || ''}
+                                  onSave={(value) => updateCardField('observacao_comissao', value)}
+                                  type="textarea"
+                                  label=""
+                                  icon={null}
+                                  placeholder="Ex: 1ª franquia das uni"
+                                />
+                              </div>
+                            )}
                           </CollapsibleContent>
                         </div>
                       </Collapsible>
@@ -3707,6 +3786,75 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                         </SelectContent>
                       </Select>
                     </div>
+
+                    {/* Etapa Formal (calculada) */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                        <Flag className="h-4 w-4 text-indigo-600" />
+                        <span>Etapa Formal</span>
+                      </div>
+                      <Badge variant="outline" className="text-xs">{getEtapaFormal(card.data_inicio)}</Badge>
+                    </div>
+
+                    {/* Etapa Real */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                        <Flag className="h-4 w-4 text-red-600" />
+                        <span>Etapa Real</span>
+                      </div>
+                      <Select 
+                        value={(card as any).etapa_real || 'none'} 
+                        onValueChange={(value) => updateCardField('etapa_real', value === 'none' ? null : value)}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Selecione a etapa" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Nenhum</SelectItem>
+                          {ETAPA_OPTIONS.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Valor de Contrato */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                        <DollarSign className="h-4 w-4 text-green-600" />
+                        <span>Valor de Contrato</span>
+                      </div>
+                      <MRRInput 
+                        value={(card as any).valor_contrato} 
+                        onChange={(value) => updateCardField('valor_contrato', value)} 
+                        placeholder="R$ 0,00" 
+                      />
+                    </div>
+
+                    {/* Tempo de DOT (calculado) */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                        <Calendar className="h-4 w-4 text-cyan-600" />
+                        <span>Tempo de DOT</span>
+                      </div>
+                      <Badge variant="outline" className="text-xs">{getTempoDot(card.data_inicio)}</Badge>
+                    </div>
+
+                    {/* Observação Comissão */}
+                    {(card as any).existe_comissao && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                          <Pencil className="h-4 w-4 text-emerald-600" />
+                          <span>Observação da comissão</span>
+                        </div>
+                        <EditableField
+                          value={(card as any).observacao_comissao || ''}
+                          onSave={(value) => updateCardField('observacao_comissao', value)}
+                          type="textarea"
+                          label=""
+                          icon={null}
+                          placeholder="Ex: 1ª franquia das uni"
+                        />
+                      </div>
+                    )}
                   </CollapsibleContent>
                 </div>
               </Collapsible>
