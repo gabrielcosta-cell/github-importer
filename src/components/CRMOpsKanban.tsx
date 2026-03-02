@@ -57,7 +57,8 @@ export const CRMOpsKanban: React.FC = () => {
       setPipelines(crmPipelines);
 
       if (crmPipelines.length > 0 && !selectedPipeline) {
-        setSelectedPipeline(crmPipelines[0].id);
+        const sdrPipeline = crmPipelines.find(p => p.name === 'SDR | Principal');
+        setSelectedPipeline(sdrPipeline?.id || crmPipelines[0].id);
       }
     } catch (error) {
       console.error('Erro ao carregar pipelines CRM Ops:', error);
