@@ -1016,10 +1016,10 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
               variant="destructive"
               size="sm"
               onClick={async () => {
-                if (!confirm('Importar 7 clientes ativos Apollo?')) return;
-                const { importActiveClientsApollo } = await import('@/utils/importActiveClientsApollo');
-                toast.loading('Importando clientes ativos Apollo...');
-                const res = await importActiveClientsApollo();
+                if (!confirm('Importar 13 clientes ativos Ares?')) return;
+                const { importActiveClientsAres } = await import('@/utils/importActiveClientsAres');
+                toast.loading('Importando clientes ativos Ares...');
+                const res = await importActiveClientsAres();
                 toast.dismiss();
                 if (res.errors.length > 0) {
                   toast.error(`Erros: ${res.errors.join(', ')}`);
@@ -1030,7 +1030,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
               }}
               className="h-8 px-3 gap-2"
             >
-              🚀 Importar 7 Ativos Apollo
+              🚀 Importar 13 Ativos Ares
             </Button>
           )}
 
