@@ -202,5 +202,16 @@ export async function importActiveClientsApollo(): Promise<{ success: number; sk
     }
   }
 
+  // Bulk update: set categoria for ALL cards in the pipeline
+  const { error: bulkError } = await supabase
+    .from('csm_cards')
+    .update({ categoria: 'MRR recorrente' } as any)
+    .eq('pipeline_id', PIPELINE_ID)
+    .is('categoria', null);
+
+  if (bulkError) {
+    result.errors.push(`Erro ao atualizar categoria em lote: ${bulkError.message}`);
+  }
+
   return result;
 }
