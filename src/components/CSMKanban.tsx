@@ -534,10 +534,10 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
   useEffect(() => {
     if (hasRunStageSetup.current) return;
     if (!selectedPipeline) return;
-    // Apenas rodar no pipeline Clientes Ativos
     if (selectedPipeline !== '749ccdc2-5127-41a1-997b-3dcb47979555') return;
     
     hasRunStageSetup.current = true;
+    const PIPELINE_ID = '749ccdc2-5127-41a1-997b-3dcb47979555';
     
     const setupStages = async () => {
       console.log('🔧 Configurando 7 etapas para Clientes Ativos...');
@@ -557,7 +557,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
         const { data: currentStages } = await supabase
           .from('csm_stages')
           .select('id, name, position')
-          .eq('pipeline_id', '749ccdc2-5127-41a1-997b-3dcb47979555')
+          .eq('pipeline_id', PIPELINE_ID)
           .order('position');
         
         const currentNames = (currentStages || []).map(s => s.name);
@@ -571,45 +571,74 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
         
         console.log('📊 Etapas atuais:', currentNames);
         
-        // Deletar etapas existentes
-        await supabase
-          .from('csm_stages')
-          .delete()
-          .eq('pipeline_id', '749ccdc2-5127-41a1-997b-3dcb47979555');
-        
-        // Inserir novas etapas
-        const { data: newStages, error } = await supabase
+        // 1. Criar as novas etapas primeiro
+        const { data: newStages, error: insertError } = await supabase
           .from('csm_stages')
           .insert(DEFAULT_STAGES.map(s => ({
-            pipeline_id: '749ccdc2-5127-41a1-997b-3dcb47979555',
+            pipeline_id: PIPELINE_ID,
             name: s.name,
             color: s.color,
-            position: s.position,
+            position: s.position + 100, // offset temporário para evitar conflito
             is_active: true,
           })))
           .select();
         
-        if (error) throw error;
+        if (insertError || !newStages) {
+          console.error('❌ Erro ao criar novas etapas:', insertError);
+          throw insertError;
+        }
         
-        // Mover cards órfãos para 1º Mês
-        if (newStages && newStages.length > 0) {
-          const firstStageId = newStages.find(s => s.position === 0)?.id;
-          if (firstStageId) {
-            const newStageIds = newStages.map(s => s.id);
+        console.log('✅ Novas etapas criadas:', newStages.map(s => s.name));
+        
+        // 2. Mover todos os cards das etapas antigas para a primeira nova etapa
+        const firstNewStageId = newStages.find(s => s.name === '1º Mês')?.id;
+        const oldStageIds = (currentStages || []).map(s => s.id);
+        
+        if (firstNewStageId && oldStageIds.length > 0) {
+          const { error: moveError } = await supabase
+            .from('csm_cards')
+            .update({ stage_id: firstNewStageId })
+            .eq('pipeline_id', PIPELINE_ID)
+            .in('stage_id', oldStageIds);
+          
+          if (moveError) {
+            console.error('⚠️ Erro ao mover cards:', moveError);
+          } else {
+            console.log('✅ Cards movidos para 1º Mês');
+          }
+        }
+        
+        // 3. Deletar etapas antigas (agora sem cards vinculados)
+        if (oldStageIds.length > 0) {
+          const { error: deleteError } = await supabase
+            .from('csm_stages')
+            .delete()
+            .in('id', oldStageIds);
+          
+          if (deleteError) {
+            console.error('⚠️ Erro ao deletar etapas antigas:', deleteError);
+          } else {
+            console.log('✅ Etapas antigas deletadas');
+          }
+        }
+        
+        // 4. Atualizar positions das novas etapas para os valores corretos
+        for (const stage of newStages) {
+          const targetStage = DEFAULT_STAGES.find(s => s.name === stage.name);
+          if (targetStage) {
             await supabase
-              .from('csm_cards')
-              .update({ stage_id: firstStageId })
-              .eq('pipeline_id', '749ccdc2-5127-41a1-997b-3dcb47979555')
-              .not('stage_id', 'in', `(${newStageIds.join(',')})`);
+              .from('csm_stages')
+              .update({ position: targetStage.position })
+              .eq('id', stage.id);
           }
         }
         
         console.log('✅ Etapas configuradas com sucesso!');
         toast.success('Etapas do funil atualizadas: 1º a 6º Mês + Retenção');
         
-        // Recarregar etapas e cards
-        fetchStages('749ccdc2-5127-41a1-997b-3dcb47979555');
-        fetchCards('749ccdc2-5127-41a1-997b-3dcb47979555');
+        // Recarregar
+        fetchStages(PIPELINE_ID);
+        fetchCards(PIPELINE_ID);
       } catch (err) {
         console.error('❌ Erro ao configurar etapas:', err);
         toast.error('Erro ao configurar etapas do funil');
