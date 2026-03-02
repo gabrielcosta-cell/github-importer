@@ -1331,54 +1331,65 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
     setLoading(true);
     try {
       // Buscar o pipeline "Leads Excluídos" apropriado
-      const { data: deletedPipeline, error: pipelineError } = await supabase
+      const { data: deletedPipeline } = await supabase
         .from('csm_pipelines')
         .select('id')
         .eq('name', deletedPipelineName)
-        .single();
+        .maybeSingle();
 
-      if (pipelineError || !deletedPipeline) {
-        throw new Error(`Funil "${deletedPipelineName}" não encontrado`);
+      if (deletedPipeline) {
+        // Pipeline existe: mover o card para lá
+        const { data: deletedStage } = await supabase
+          .from('csm_stages')
+          .select('id')
+          .eq('pipeline_id', deletedPipeline.id)
+          .order('position', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+
+        if (deletedStage) {
+          const { error: updateError } = await supabase
+            .from('csm_cards')
+            .update({ 
+              pipeline_id: deletedPipeline.id,
+              stage_id: deletedStage.id,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', cardIdToMove);
+
+          if (updateError) throw updateError;
+
+          // Registrar no histórico
+          await supabase
+            .from('csm_card_stage_history')
+            .insert({
+              card_id: cardIdToMove,
+              stage_id: deletedStage.id,
+              entered_at: new Date().toISOString(),
+              moved_by: (await supabase.auth.getUser()).data.user?.id,
+              notes: `Lead movido para ${deletedPipelineName}`,
+              event_type: 'deleted'
+            });
+
+          toast.success(`Lead movido para "${deletedPipelineName}"`);
+        } else {
+          // Sem estágio no pipeline de excluídos: deletar permanentemente
+          const { error: deleteError } = await supabase
+            .from('csm_cards')
+            .delete()
+            .eq('id', cardIdToMove);
+          if (deleteError) throw deleteError;
+          toast.success('Lead excluído permanentemente');
+        }
+      } else {
+        // Pipeline de excluídos não existe: deletar permanentemente
+        const { error: deleteError } = await supabase
+          .from('csm_cards')
+          .delete()
+          .eq('id', cardIdToMove);
+        if (deleteError) throw deleteError;
+        toast.success('Lead excluído permanentemente');
       }
-
-      // Buscar o primeiro estágio do funil
-      const { data: deletedStage, error: stageError } = await supabase
-        .from('csm_stages')
-        .select('id')
-        .eq('pipeline_id', deletedPipeline.id)
-        .order('position', { ascending: true })
-        .limit(1)
-        .single();
-
-      if (stageError || !deletedStage) {
-        throw new Error(`Estágio do funil "${deletedPipelineName}" não encontrado`);
-      }
-
-      // Mover o card para o funil de leads excluídos
-      const { error: updateError } = await supabase
-        .from('csm_cards')
-        .update({ 
-          pipeline_id: deletedPipeline.id,
-          stage_id: deletedStage.id,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', cardIdToMove);
-
-      if (updateError) throw updateError;
-
-      // Registrar no histórico
-      await supabase
-        .from('csm_card_stage_history')
-        .insert({
-          card_id: cardIdToMove,
-          stage_id: deletedStage.id,
-          entered_at: new Date().toISOString(),
-          moved_by: (await supabase.auth.getUser()).data.user?.id,
-          notes: `Lead movido para ${deletedPipelineName}`,
-          event_type: 'deleted'
-        });
-
-      toast.success(`Lead movido para "${deletedPipelineName}"`);
       
       // CRÍTICO: Fechar o dialog IMEDIATAMENTE
       onClose();
