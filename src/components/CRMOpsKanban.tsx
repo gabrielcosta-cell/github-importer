@@ -246,13 +246,13 @@ export const CRMOpsKanban: React.FC = () => {
 
         {/* Right side: Configurações, Pipeline, Edit, Filtros */}
         <div className="flex items-center gap-2">
-          {/* Pipeline Selector + Edit button (matching reference) */}
-          <div className="flex items-center gap-0 border border-border rounded-md h-9 bg-background">
-            <div className="flex items-center px-2">
+          {/* Pipeline Selector + Edit button as single group */}
+          <div className="flex items-center h-9 border border-border rounded-md overflow-hidden bg-background">
+            <div className="flex items-center px-2.5 border-r border-border">
               <BarChart3 className="h-4 w-4 text-muted-foreground" />
             </div>
             <Select value={selectedPipeline} onValueChange={setSelectedPipeline}>
-              <SelectTrigger className="h-9 w-[140px] text-sm border-0 shadow-none px-1 focus:ring-0 rounded-none">
+              <SelectTrigger className="h-9 w-[140px] text-sm border-0 shadow-none px-2 focus:ring-0 rounded-none">
                 <SelectValue placeholder="Pipeline" />
               </SelectTrigger>
               <SelectContent>
@@ -261,20 +261,16 @@ export const CRMOpsKanban: React.FC = () => {
                 ))}
               </SelectContent>
             </Select>
+            {isAdmin && (
+              <button
+                onClick={() => setShowStageManager(true)}
+                className="flex items-center justify-center h-9 w-9 border-l border-border hover:bg-muted transition-colors"
+                title="Editar etapas"
+              >
+                <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+              </button>
+            )}
           </div>
-
-          {/* Pencil - Edit stages */}
-          {isAdmin && (
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setShowStageManager(true)}
-              className="h-9 w-9"
-              title="Editar etapas"
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-          )}
 
           {/* Date Filter */}
           <CRMOpsDateFilter
