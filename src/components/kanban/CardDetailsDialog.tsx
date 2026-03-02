@@ -2185,9 +2185,6 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <h2 className="text-base font-semibold text-foreground truncate flex-1">
-                {card.display_id != null && (
-                  <span className="text-muted-foreground font-normal text-sm mr-1">#{String(card.display_id).padStart(4, '0')}</span>
-                )}
                 {card.company_name || card.title}
               </h2>
             </div>
@@ -2375,6 +2372,18 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                           </Button>
                         </CollapsibleTrigger>
                         <CollapsibleContent className="space-y-1">
+                          {/* ID do card */}
+                          {moduleType === 'csm' && card.display_id != null && (
+                            <>
+                              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                <span className="font-medium">ID</span>
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-mono">
+                                  #{String(card.display_id).padStart(4, '0')}
+                                </Badge>
+                              </div>
+                              <Separator className="my-1" />
+                            </>
+                          )}
                           {/* Status do cliente (somente leitura) */}
                           {moduleType === 'csm' && (
                             <>
@@ -2762,9 +2771,6 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-0">
             <div className="flex-1 md:mr-4">
               <h2 className="text-base md:text-lg font-semibold text-foreground line-clamp-2 md:line-clamp-1">
-                {card.display_id != null && (
-                  <span className="text-muted-foreground font-normal text-sm mr-1.5">#{String(card.display_id).padStart(4, '0')}</span>
-                )}
                 {card.title}
               </h2>
             </div>
@@ -3107,6 +3113,18 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                   </CollapsibleTrigger>
                   
                   <CollapsibleContent className="space-y-1">
+                    {/* ID do card */}
+                    {moduleType === 'csm' && card.display_id != null && (
+                      <>
+                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                          <span className="font-medium">ID</span>
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-mono">
+                            #{String(card.display_id).padStart(4, '0')}
+                          </Badge>
+                        </div>
+                        <Separator className="my-1" />
+                      </>
+                    )}
                     {/* Status do cliente (somente leitura) */}
                     {moduleType === 'csm' && (
                       <>
