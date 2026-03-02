@@ -26,6 +26,7 @@ import { readCSMKanbanCache, writeCSMKanbanCache } from '@/utils/csmKanbanSessio
 import { MobileGlobalSearch, DesktopGlobalSearch } from './kanban/MobileGlobalSearch';
 import { MobileStageSwiper } from './kanban/MobileStageSwiper';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CSMKanbanProps {
   openCardId?: string | null;
@@ -35,6 +36,8 @@ interface CSMKanbanProps {
 export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const isMobile = useIsMobile();
+  const { profile } = useAuth();
+  const isAdmin = profile?.role === 'admin' || profile?.is_global_admin;
 
   const MAX_CACHE_AGE_MS = 1000 * 60 * 60; // 1h
   const [initialCache] = useState(() => readCSMKanbanCache(MAX_CACHE_AGE_MS));
@@ -862,14 +865,16 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
           />
         </div>
         
-        {/* Right: Add button (green) */}
-        <Button
-          size="icon"
-          onClick={handleAddSimpleCard}
-          className="h-10 w-10 flex-shrink-0 bg-green-600 hover:bg-green-700 text-white rounded-lg"
-        >
-          <Plus className="h-5 w-5" />
-        </Button>
+        {/* Right: Add button (green) - only for admins */}
+        {isAdmin && (
+          <Button
+            size="icon"
+            onClick={handleAddSimpleCard}
+            className="h-10 w-10 flex-shrink-0 bg-green-600 hover:bg-green-700 text-white rounded-lg"
+          >
+            <Plus className="h-5 w-5" />
+          </Button>
+        )}
       </div>
 
       {/* ===== DESKTOP HEADER (unchanged) ===== */}
@@ -981,16 +986,18 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
             </Button>
           )}
           
-          {/* Botão adicionar cliente */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleAddSimpleCard}
-            className="h-8 px-3 gap-2 transition-all duration-200 hover:scale-105"
-          >
-            <UserPlus className="h-4 w-4" />
-            <span className="hidden sm:inline">Adicionar cliente</span>
-          </Button>
+          {/* Botão adicionar cliente - only for admins */}
+          {isAdmin && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAddSimpleCard}
+              className="h-8 px-3 gap-2 transition-all duration-200 hover:scale-105"
+            >
+              <UserPlus className="h-4 w-4" />
+              <span className="hidden sm:inline">Adicionar cliente</span>
+            </Button>
+          )}
 
           <PipelineSelector
             pipelines={pipelines}
