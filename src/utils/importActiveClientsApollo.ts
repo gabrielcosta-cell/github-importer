@@ -148,7 +148,24 @@ export async function importActiveClientsApollo(): Promise<{ success: number; sk
       .limit(1);
 
     if (existing && existing.length > 0) {
-      result.skipped++;
+      const { error } = await supabase
+        .from('csm_cards')
+        .update({
+          stage_id: clientStageId,
+          squad: 'Apollo',
+          plano: client.plano,
+          monthly_revenue: client.monthly_revenue,
+          servico_contratado: client.servico_contratado,
+          fase_projeto: client.fase_projeto,
+          niche: client.niche,
+        } as any)
+        .eq('id', existing[0].id);
+
+      if (error) {
+        result.errors.push(`Erro ao atualizar ${client.company_name}: ${error.message}`);
+      } else {
+        result.skipped++;
+      }
       continue;
     }
 
