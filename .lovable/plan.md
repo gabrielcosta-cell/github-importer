@@ -1,56 +1,28 @@
 
+# Remove Upsell/Crosssell from CSM Cards
 
-## Plano: Nova logica de Churn no CSM com campo Status
+## Summary
+Remove the Upsell/Crosssell tab/section from CSM card details, since all upsell and crosssell records should be managed in the CRM module instead.
 
-### Resumo
+## Changes
 
-Atualmente, quando um cliente e marcado como "churn", o card e movido para um pipeline separado ("Clientes Perdidos"). A nova logica unifica tudo em um unico pipeline, usando um campo `status` ("Ativo" / "Cancelado") no card para controlar a visualizacao. O seletor de pipeline passara a funcionar como um filtro por status.
+### File: `src/components/kanban/CardDetailsDialog.tsx`
 
-### Visualizacoes do Funil
+1. **Remove UpsellManager import** (line 22)
 
-O seletor que hoje mostra pipelines diferentes passara a mostrar 3 opcoes de visualizacao, todas sobre o **mesmo pipeline** "Clientes Ativos":
+2. **Remove upsell-related state variables** (lines ~110-124): `upsellHistory`, `newUpsellValue`, `newUpsellMonth`, `newUpsellYear`, `newUpsellNotes`, `newUpsellType`, `newPaymentType`, `newInstallments`
 
-1. **Clientes Ativos** (padrao) - Mostra apenas cards com `status = 'ativo'`
-2. **Todos os Clientes** - Mostra cards com qualquer status
-3. **Clientes Cancelados** - Mostra apenas cards com `status = 'cancelado'`
+3. **Remove `upsells` from `sectionStates`** (line ~155)
 
-### Mudancas Detalhadas
+4. **Remove upsell history fetch useEffect** (lines ~353-374)
 
-#### 1. Migracao de banco de dados
-- Adicionar coluna `client_status` na tabela `csm_cards` com valor padrao `'ativo'`
-- Atualizar cards existentes que estejam com `churn = true` para `client_status = 'cancelado'`
-- Atualizar todos os demais cards para `client_status = 'ativo'`
+5. **Remove `handleSaveUpsell` function** (lines ~1463-1532+)
 
-#### 2. Tipo CSMCard (`src/types/kanban.ts`)
-- Adicionar campo `client_status?: 'ativo' | 'cancelado'`
+6. **Remove `handleDeleteUpsell` function** (lines ~1617+)
 
-#### 3. Campo Status na aba Resumo (`src/components/kanban/CardDetailsDialog.tsx`)
-- Adicionar um campo "Status" na secao Resumo mostrando badge "Ativo" (verde) ou "Cancelado" (vermelho)
-- O campo sera somente leitura - o usuario nao pode alterar manualmente
-- Quando o botao "Churn" for clicado, alem da logica existente, o campo `client_status` sera atualizado para `'cancelado'`
-- O card **permanece no mesmo pipeline** (nao sera mais movido para "Clientes Perdidos")
+7. **Remove 3 JSX sections** that render Upsell/Crosssell UI:
+   - Desktop collapsible section (~lines 2740-2756)
+   - Summary display in sidebar (~lines 3329-3377+)
+   - Mobile collapsible section (~lines 3906-3922+)
 
-#### 4. Logica de Churn atualizada (`src/components/kanban/CardDetailsDialog.tsx`)
-- Modificar `handleConfirmLost` para que, no contexto CSM:
-  - Atualize `client_status` para `'cancelado'` no card
-  - **Nao mova** o card para outro pipeline
-  - Mantenha o registro de historico e atividade
-
-#### 5. Seletor de visualizacao no CSMKanban (`src/components/CSMKanban.tsx`)
-- Substituir o `PipelineSelector` (para o contexto CSM) por um seletor de visualizacao com 3 opcoes: "Clientes Ativos", "Todos os Clientes", "Clientes Cancelados"
-- Adicionar estado `viewFilter` com valores `'ativo' | 'todos' | 'cancelado'`
-- No `filteredCardsData`, adicionar filtro por `client_status` baseado na visualizacao selecionada
-- A query `fetchCards` continuara trazendo todos os cards do pipeline "Clientes Ativos"; o filtro sera aplicado no frontend
-
-#### 6. Botao de Reabrir cliente
-- Para cards com status "Cancelado", permitir reabrir (mudar `client_status` de volta para `'ativo'`, limpar campos de perda)
-
-### Arquivos Modificados
-
-| Arquivo | Mudanca |
-|---------|---------|
-| Nova migracao SQL | Adicionar coluna `client_status` |
-| `src/types/kanban.ts` | Adicionar campo `client_status` |
-| `src/components/kanban/CardDetailsDialog.tsx` | Campo status no resumo + logica churn atualizada |
-| `src/components/CSMKanban.tsx` | Seletor de visualizacao ao inves de pipeline selector |
-
+This is a removal-only change with no new functionality needed.
