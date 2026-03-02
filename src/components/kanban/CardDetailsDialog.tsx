@@ -1726,9 +1726,9 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
     }
   };
 
-  // Função para converter para lead (mover para SDR Principal)
+  // Função para converter para lead (cria uma CÓPIA no SDR Principal, card original permanece no CSM)
   const handleConvertToLead = async () => {
-    if (!confirm('Tem certeza que deseja converter este card para lead e movê-lo para o funil SDR Principal?')) {
+    if (!confirm('Tem certeza que deseja criar uma cópia deste card como lead no funil SDR Principal?')) {
       return;
     }
 
@@ -1764,51 +1764,59 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
         return;
       }
 
-      // Finalizar histórico da etapa atual
-      await supabase
-        .from('csm_card_stage_history')
-        .update({ exited_at: new Date().toISOString() })
-        .eq('card_id', card.id)
-        .is('exited_at', null);
+      const userId = (await supabase.auth.getUser()).data.user?.id;
 
-      // Mover o card para o pipeline SDR Principal
-      const { error: updateError } = await supabase
+      // Criar uma CÓPIA do card no pipeline SDR Principal
+      const { data: newCard, error: insertError } = await supabase
         .from('csm_cards')
-        .update({
+        .insert({
+          title: card.title,
+          company_name: card.company_name,
+          contact_name: card.contact_name,
+          contact_email: card.contact_email,
+          contact_phone: card.contact_phone,
+          faturamento_display: card.faturamento_display,
+          monthly_revenue: card.monthly_revenue,
+          value: card.value || 0,
+          niche: card.niche,
+          description: card.description,
           pipeline_id: sdrPipeline.id,
           stage_id: firstStage.id,
           position: 0,
+          created_by: userId || card.created_by,
         })
-        .eq('id', card.id);
+        .select('id')
+        .single();
 
-      if (updateError) throw updateError;
+      if (insertError) throw insertError;
 
-      // Criar histórico da nova etapa
-      await supabase
-        .from('csm_card_stage_history')
-        .insert({
-          card_id: card.id,
-          stage_id: firstStage.id,
-          entered_at: new Date().toISOString(),
-          moved_by: (await supabase.auth.getUser()).data.user?.id,
-          reason: 'Convertido para lead',
-        });
+      // Criar histórico da etapa para o novo card
+      if (newCard) {
+        await supabase
+          .from('csm_card_stage_history')
+          .insert({
+            card_id: newCard.id,
+            stage_id: firstStage.id,
+            entered_at: new Date().toISOString(),
+            moved_by: userId,
+            reason: 'Convertido para lead a partir do CSM',
+          });
+      }
 
-      // Registrar atividade
+      // Registrar atividade no card ORIGINAL do CSM
       await supabase
         .from('csm_activities')
         .insert({
           card_id: card.id,
           activity_type: 'comment',
-          title: 'Convertido para lead',
-          description: `Card foi convertido para lead e movido para o funil "SDR | Principal"`,
+          title: 'Lead criado no CRM Ops',
+          description: `Uma cópia deste card foi criada como lead no funil "SDR | Principal"`,
           status: 'completed',
-          created_by: (await supabase.auth.getUser()).data.user?.id,
+          created_by: userId,
         });
 
-      toast.success('Card convertido para lead com sucesso!');
+      toast.success('Lead criado no CRM Ops com sucesso!');
       onUpdate?.();
-      onClose();
     } catch (error) {
       console.error('Erro ao converter para lead:', error);
       toast.error('Erro ao converter para lead');
