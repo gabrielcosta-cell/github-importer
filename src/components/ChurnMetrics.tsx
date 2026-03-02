@@ -717,8 +717,8 @@ export const ChurnMetrics = () => {
      churn: squad.revenueChurnLiquido
    })).sort((a, b) => a.churn - b.churn);
 
-  const bestSquad = squadComparison[0];
-  const worstSquad = squadComparison[squadComparison.length - 1];
+  const bestSquad = squadComparison.length > 0 ? squadComparison[0] : { squad: '-', churn: 0 };
+  const worstSquad = squadComparison.length > 0 ? squadComparison[squadComparison.length - 1] : { squad: '-', churn: 0 };
 
   // Função para popular histórico de meses anteriores (admin)
   const handlePopulateHistory = async () => {
