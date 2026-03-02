@@ -107,7 +107,6 @@ export interface CSMCard {
   // ID sequencial único visível
   display_id?: number;
   // Campos adicionais do contrato
-  etapa_real?: string;
   valor_contrato?: number;
   observacao_comissao?: string;
 }
