@@ -22,6 +22,7 @@ import { CSMPipeline, CSMStage, CSMCard } from '@/types/kanban';
 import { useAutoMoveCards } from '@/hooks/useAutoMoveCards';
 
 import { DotLogo } from '@/components/DotLogo';
+import { MonthYearPicker } from '@/components/MonthYearPicker';
 import { readCSMKanbanCache, writeCSMKanbanCache } from '@/utils/csmKanbanSessionCache';
 import { MobileGlobalSearch, DesktopGlobalSearch } from './kanban/MobileGlobalSearch';
 import { MobileStageSwiper } from './kanban/MobileStageSwiper';
@@ -80,6 +81,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
     initialCache?.selectedPipeline ?? initialCache?.pipelines?.[0]?.id ?? ''
   );
   const [viewFilter, setViewFilter] = useState<'ativo' | 'todos' | 'cancelado'>('ativo');
+  const [selectedChurnMonth, setSelectedChurnMonth] = useState<{ month: number; year: number }[]>([]);
   const [stages, setStages] = useState<CSMStage[]>(initialCache?.stages ?? []);
   const [cards, setCards] = useState<CSMCard[]>(initialCache?.cards ?? []);
   const [cardTagsMap, setCardTagsMap] = useState<Record<string, string[]>>(initialCache?.cardTagsMap ?? {});
@@ -175,6 +177,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
     setSelectedNiche('todos');
     setSelectedFlag('todos');
     setSelectedTagsFilter([]);
+    setSelectedChurnMonth([]);
     updateFiltersInUrl({ squad: null, plano: null, motivo: null, niche: null, flag: null, tags: null });
   }, [updateFiltersInUrl]);
 
@@ -220,7 +223,15 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
         (card.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (card.company_name || '').toLowerCase().includes(searchTerm.toLowerCase());
       
-      return matchesStatus && matchesSquad && matchesPlano && matchesMotivo && matchesNiche && matchesFlag && matchesTags && matchesSearch;
+      // Filtrar por mês de cancelamento (data_perda)
+      const matchesChurnMonth = selectedChurnMonth.length === 0 || (() => {
+        if (!card.data_perda) return false;
+        const perdaDate = new Date(card.data_perda);
+        const selMonth = selectedChurnMonth[0];
+        return perdaDate.getFullYear() === selMonth.year && perdaDate.getMonth() === selMonth.month;
+      })();
+
+      return matchesStatus && matchesSquad && matchesPlano && matchesMotivo && matchesNiche && matchesFlag && matchesTags && matchesSearch && matchesChurnMonth;
     });
 
     // Ordenar cards
@@ -246,7 +257,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
       count: sorted.length,
       totalMRR
     };
-  }, [cards, selectedSquad, selectedPlano, selectedMotivo, selectedNiche, selectedTagsFilter, sortBy, searchTerm, cardTagsMap, viewFilter]);
+  }, [cards, selectedSquad, selectedPlano, selectedMotivo, selectedNiche, selectedTagsFilter, sortBy, searchTerm, cardTagsMap, viewFilter, selectedChurnMonth]);
 
   // Carregar sugestões de colunas (usa o pipeline selecionado como referência)
   const fetchSuggestedStages = async (pipelineId: string) => {
@@ -1023,6 +1034,15 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
               <SelectItem value="todos">Todos os Clientes</SelectItem>
             </SelectContent>
           </Select>
+          {viewFilter === 'cancelado' && (
+            <MonthYearPicker
+              selectedPeriods={selectedChurnMonth}
+              onPeriodsChange={setSelectedChurnMonth}
+              singleSelect
+              minYear={2025}
+              minMonth={0}
+            />
+          )}
         </div>
       </div>
 
