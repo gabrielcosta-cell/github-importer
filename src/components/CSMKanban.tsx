@@ -529,6 +529,97 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
   }, [stages, cards]);
   // ===== FIM DO CÓDIGO TEMPORÁRIO =====
 
+  // ===== CÓDIGO TEMPORÁRIO: Configurar 7 etapas no pipeline Clientes Ativos =====
+  const hasRunStageSetup = useRef(false);
+  useEffect(() => {
+    if (hasRunStageSetup.current) return;
+    if (!selectedPipeline) return;
+    // Apenas rodar no pipeline Clientes Ativos
+    if (selectedPipeline !== '749ccdc2-5127-41a1-997b-3dcb47979555') return;
+    
+    hasRunStageSetup.current = true;
+    
+    const setupStages = async () => {
+      console.log('🔧 Configurando 7 etapas para Clientes Ativos...');
+      
+      const DEFAULT_STAGES = [
+        { name: '1º Mês', color: '#3B82F6', position: 0 },
+        { name: '2º Mês', color: '#6366F1', position: 1 },
+        { name: '3º Mês', color: '#8B5CF6', position: 2 },
+        { name: '4º Mês', color: '#A855F7', position: 3 },
+        { name: '5º Mês', color: '#D946EF', position: 4 },
+        { name: '6º Mês', color: '#EC4899', position: 5 },
+        { name: 'Retenção', color: '#10B981', position: 6 },
+      ];
+      
+      try {
+        // Buscar estágios atuais
+        const { data: currentStages } = await supabase
+          .from('csm_stages')
+          .select('id, name, position')
+          .eq('pipeline_id', '749ccdc2-5127-41a1-997b-3dcb47979555')
+          .order('position');
+        
+        const currentNames = (currentStages || []).map(s => s.name);
+        const targetNames = DEFAULT_STAGES.map(s => s.name);
+        
+        // Se já tem exatamente as 7 etapas certas, pular
+        if (currentNames.length === 7 && targetNames.every((n, i) => currentNames[i] === n)) {
+          console.log('✅ Etapas já configuradas corretamente.');
+          return;
+        }
+        
+        console.log('📊 Etapas atuais:', currentNames);
+        
+        // Deletar etapas existentes
+        await supabase
+          .from('csm_stages')
+          .delete()
+          .eq('pipeline_id', '749ccdc2-5127-41a1-997b-3dcb47979555');
+        
+        // Inserir novas etapas
+        const { data: newStages, error } = await supabase
+          .from('csm_stages')
+          .insert(DEFAULT_STAGES.map(s => ({
+            pipeline_id: '749ccdc2-5127-41a1-997b-3dcb47979555',
+            name: s.name,
+            color: s.color,
+            position: s.position,
+            is_active: true,
+          })))
+          .select();
+        
+        if (error) throw error;
+        
+        // Mover cards órfãos para 1º Mês
+        if (newStages && newStages.length > 0) {
+          const firstStageId = newStages.find(s => s.position === 0)?.id;
+          if (firstStageId) {
+            const newStageIds = newStages.map(s => s.id);
+            await supabase
+              .from('csm_cards')
+              .update({ stage_id: firstStageId })
+              .eq('pipeline_id', '749ccdc2-5127-41a1-997b-3dcb47979555')
+              .not('stage_id', 'in', `(${newStageIds.join(',')})`);
+          }
+        }
+        
+        console.log('✅ Etapas configuradas com sucesso!');
+        toast.success('Etapas do funil atualizadas: 1º a 6º Mês + Retenção');
+        
+        // Recarregar etapas e cards
+        fetchStages('749ccdc2-5127-41a1-997b-3dcb47979555');
+        fetchCards('749ccdc2-5127-41a1-997b-3dcb47979555');
+      } catch (err) {
+        console.error('❌ Erro ao configurar etapas:', err);
+        toast.error('Erro ao configurar etapas do funil');
+      }
+    };
+    
+    setupStages();
+  }, [selectedPipeline]);
+  // ===== FIM DO CÓDIGO TEMPORÁRIO: Setup Etapas =====
+
   // Efeito para abrir card específico quando openCardId ou cardIdFromUrl for passado
   // Se o card já foi aberto a partir do cache, pula a busca assíncrona para evitar flicker
   useEffect(() => {
