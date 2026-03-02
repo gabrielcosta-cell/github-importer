@@ -1010,6 +1010,30 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
             </Button>
           )}
 
+          {/* BOTÃO TEMPORÁRIO - REMOVER APÓS USO */}
+          {isAdmin && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={async () => {
+                if (!confirm('Importar 7 clientes ativos Apollo?')) return;
+                const { importActiveClientsApollo } = await import('@/utils/importActiveClientsApollo');
+                toast.loading('Importando clientes ativos Apollo...');
+                const res = await importActiveClientsApollo();
+                toast.dismiss();
+                if (res.errors.length > 0) {
+                  toast.error(`Erros: ${res.errors.join(', ')}`);
+                } else {
+                  toast.success(`${res.success} importados, ${res.skipped} já existiam!`);
+                  if (selectedPipeline) fetchCards(selectedPipeline);
+                }
+              }}
+              className="h-8 px-3 gap-2"
+            >
+              🚀 Importar 7 Ativos Apollo
+            </Button>
+          )}
+
           
 
           <Select value={viewFilter} onValueChange={(v) => setViewFilter(v as 'ativo' | 'todos' | 'cancelado')}>
