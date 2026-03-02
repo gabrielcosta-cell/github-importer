@@ -865,8 +865,8 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ativo">Clientes Ativos</SelectItem>
-              <SelectItem value="todos">Todos os Clientes</SelectItem>
               <SelectItem value="cancelado">Clientes Cancelados</SelectItem>
+              <SelectItem value="todos">Todos os Clientes</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -1011,8 +1011,8 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ativo">Clientes Ativos</SelectItem>
-              <SelectItem value="todos">Todos os Clientes</SelectItem>
               <SelectItem value="cancelado">Clientes Cancelados</SelectItem>
+              <SelectItem value="todos">Todos os Clientes</SelectItem>
             </SelectContent>
           </Select>
         </div>
