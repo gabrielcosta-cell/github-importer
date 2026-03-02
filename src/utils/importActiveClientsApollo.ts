@@ -207,6 +207,7 @@ export async function importActiveClientsApollo(): Promise<{ success: number; sk
     .from('csm_cards')
     .update({ categoria: 'MRR recorrente' } as any)
     .eq('pipeline_id', PIPELINE_ID)
+    .eq('client_status', 'ativo')
     .is('categoria', null);
 
   if (bulkError) {
