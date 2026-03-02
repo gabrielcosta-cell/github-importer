@@ -39,145 +39,10 @@ interface ChurnData {
   logoChurnComercialCalc?: number; // % de logo churn comercial
 }
 
-// Valores corretos do MRR base por squad (fornecidos manualmente)
-const CORRECT_MRR_BASE_BY_SQUAD = {
-  Athena: 45716,
-  Artemis: 53926,
-  Aurora: 33976,
-  Ares: 31900,
-  Apollo: 55000,
-};
-
-const CORRECT_MRR_BASE_TOTAL = 220518;
-const MRR_PERDIDO_TOTAL = 48266.07;
-const MRR_VENDIDO = 15000;
-const UPSELL_TOTAL = 1100; // Aquiraz - Squad Athena
-
-// Dados históricos para gráfico de tendência (últimos 6 meses)
-const historicalData = [
-  { month: "Jul", Athena: 18.5, Artemis: 19.2, Aurora: 2.1, Ares: 1.8, Apollo: 0.5 },
-  { month: "Ago", Athena: 19.2, Artemis: 20.1, Aurora: 1.5, Ares: 1.2, Apollo: 0.3 },
-  { month: "Set", Athena: 20.1, Artemis: 21.0, Aurora: 0.8, Ares: 0.9, Apollo: 0.2 },
-  { month: "Out", Athena: 19.8, Artemis: 20.5, Aurora: 0.5, Ares: 0.6, Apollo: 0.1 },
-  { month: "Nov", Athena: 20.63, Artemis: 21.72, Aurora: 0.0, Ares: 0.0, Apollo: 0.0 },
-];
-
-// Dados de quantidade de churns por mês
-const churnQuantityByMonth = [
-  { month: "Jul", Athena_MRR: 85000, Artemis_MRR: 92000, Aurora_MRR: 12000, Ares_MRR: 8500, Apollo_MRR: 3200, Athena_Logo: 2, Artemis_Logo: 3, Aurora_Logo: 1, Ares_Logo: 1, Apollo_Logo: 0 },
-  { month: "Ago", Athena_MRR: 88000, Artemis_MRR: 95000, Aurora_MRR: 8500, Ares_MRR: 6200, Apollo_MRR: 1800, Athena_Logo: 2, Artemis_Logo: 2, Aurora_Logo: 1, Ares_Logo: 0, Apollo_Logo: 0 },
-  { month: "Set", Athena_MRR: 91000, Artemis_MRR: 98000, Aurora_MRR: 5200, Ares_MRR: 4800, Apollo_MRR: 1200, Athena_Logo: 3, Artemis_Logo: 3, Aurora_Logo: 0, Ares_Logo: 1, Apollo_Logo: 0 },
-  { month: "Out", Athena_MRR: 89500, Artemis_MRR: 96500, Aurora_MRR: 3500, Ares_MRR: 3200, Apollo_MRR: 800, Athena_Logo: 2, Artemis_Logo: 2, Aurora_Logo: 0, Ares_Logo: 0, Apollo_Logo: 0 },
-  { month: "Nov", Athena_MRR: 93200, Artemis_MRR: 102000, Aurora_MRR: 0, Ares_MRR: 0, Apollo_MRR: 0, Athena_Logo: 2, Artemis_Logo: 1, Aurora_Logo: 0, Ares_Logo: 0, Apollo_Logo: 0 },
-];
-
-const churnData: ChurnData[] = [
-  {
-    squad: "Athena",
-    revenueChurnBruto: 20.63,
-    revenueChurnLiquido: 20.63,
-    churnLiquidoUpsell: 20.09,
-    logoChurnTotal: 15.38,
-    nChurnTotal: 2,
-    nChurnComercial: 0,
-    nChurnOperacional: 2,
-    logoChurnFinal: 15.38,
-    upsellMRR: 5.2,
-    churnMRRComercial: 0.00,
-    mrrPerdidoOperacional: 0.00,
-    mrrPerdidoTotal: 0.00,
-    logoChurnComercial: 0.00,
-    mrrBaseTotal: 0,
-    churnMRRBrutoPercentual: 0,
-    churnMRRFinalPercentual: 0,
-    churnNRR: 0,
-    totalUpsellValue: 0,
-  },
-  {
-    squad: "Artemis",
-    revenueChurnBruto: 21.72,
-    revenueChurnLiquido: 21.72,
-    churnLiquidoUpsell: 21.72,
-    logoChurnTotal: 7.69,
-    nChurnTotal: 1,
-    nChurnComercial: 0,
-    nChurnOperacional: 1,
-    logoChurnFinal: 7.69,
-    upsellMRR: 0.00,
-    churnMRRComercial: 0.00,
-    mrrPerdidoOperacional: 0.00,
-    mrrPerdidoTotal: 0.00,
-    logoChurnComercial: 0.00,
-    mrrBaseTotal: 0,
-    churnMRRBrutoPercentual: 0,
-    churnMRRFinalPercentual: 0,
-    churnNRR: 0,
-    totalUpsellValue: 0,
-  },
-  {
-    squad: "Aurora",
-    revenueChurnBruto: 0.00,
-    revenueChurnLiquido: 0.00,
-    churnLiquidoUpsell: 0.00,
-    logoChurnTotal: 0.00,
-    nChurnTotal: 0,
-    nChurnComercial: 0,
-    nChurnOperacional: 0,
-    logoChurnFinal: 0.00,
-    upsellMRR: 0.00,
-    churnMRRComercial: 0.00,
-    mrrPerdidoOperacional: 0.00,
-    mrrPerdidoTotal: 0.00,
-    logoChurnComercial: 0.00,
-    mrrBaseTotal: 0,
-    churnMRRBrutoPercentual: 0,
-    churnMRRFinalPercentual: 0,
-    churnNRR: 0,
-    totalUpsellValue: 0,
-  },
-  {
-    squad: "Ares",
-    revenueChurnBruto: 0.00,
-    revenueChurnLiquido: 0.00,
-    churnLiquidoUpsell: 0.00,
-    logoChurnTotal: 0.00,
-    nChurnTotal: 0,
-    nChurnComercial: 0,
-    nChurnOperacional: 0,
-    logoChurnFinal: 0.00,
-    upsellMRR: 0.00,
-    churnMRRComercial: 0.00,
-    mrrPerdidoOperacional: 0.00,
-    mrrPerdidoTotal: 0.00,
-    logoChurnComercial: 0.00,
-    mrrBaseTotal: 0,
-    churnMRRBrutoPercentual: 0,
-    churnMRRFinalPercentual: 0,
-    churnNRR: 0,
-    totalUpsellValue: 0,
-  },
-  {
-    squad: "Apollo",
-    revenueChurnBruto: 0.00,
-    revenueChurnLiquido: 0.00,
-    churnLiquidoUpsell: 0.00,
-    logoChurnTotal: 0.00,
-    nChurnTotal: 0,
-    nChurnComercial: 0,
-    nChurnOperacional: 0,
-    logoChurnFinal: 0.00,
-    upsellMRR: 0.00,
-    churnMRRComercial: 0.00,
-    mrrPerdidoOperacional: 0.00,
-    mrrPerdidoTotal: 0.00,
-    logoChurnComercial: 0.00,
-    mrrBaseTotal: 0,
-    churnMRRBrutoPercentual: 0,
-    churnMRRFinalPercentual: 0,
-    churnNRR: 0,
-    totalUpsellValue: 0,
-  },
-];
+// Pipeline IDs corretos
+const PIPELINE_CLIENTES_ATIVOS = '749ccdc2-5127-41a1-997b-3dcb47979555';
+const PIPELINE_CLIENTES_PERDIDOS = '38ce6be3-a9ee-450a-89be-2afe762bf50f';
+const ALL_CSM_PIPELINES = [PIPELINE_CLIENTES_ATIVOS, PIPELINE_CLIENTES_PERDIDOS];
 
 // Função para determinar cor e animação baseada no percentual
 const getChurnColorClass = (value: number) => {
@@ -257,7 +122,7 @@ export const ChurnMetrics = () => {
         const { data: activeCards, error: activeError } = await supabase
           .from('csm_cards')
           .select('monthly_revenue, squad, categoria')
-          .eq('pipeline_id', '1242a985-2f74-4b4a-bc0e-c045a3951d65')
+          .eq('pipeline_id', PIPELINE_CLIENTES_ATIVOS)
           .eq('churn', false);
 
         if (activeError) throw activeError;
@@ -271,7 +136,7 @@ export const ChurnMetrics = () => {
         const { data: baseChurns, error: baseChurnError } = await supabase
           .from('csm_cards')
           .select('squad, categoria')
-          .in('pipeline_id', ['1242a985-2f74-4b4a-bc0e-c045a3951d65', '5dfc98f3-9614-419a-af65-1b87c8372aeb'])
+          .in('pipeline_id', ALL_CSM_PIPELINES)
           .eq('churn', true)
           .gte('data_perda', `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`);
 
@@ -307,7 +172,7 @@ export const ChurnMetrics = () => {
         const { data: baseClientsData, error: baseError } = await supabase
           .from('csm_cards')
           .select('squad, monthly_revenue, categoria, churn, data_perda')
-          .in('pipeline_id', ['1242a985-2f74-4b4a-bc0e-c045a3951d65', '5dfc98f3-9614-419a-af65-1b87c8372aeb'])
+          .in('pipeline_id', ALL_CSM_PIPELINES)
           .or(`churn.eq.false,data_perda.gte.${startOfMonth}`);
 
         if (baseError) throw baseError;
@@ -369,7 +234,7 @@ export const ChurnMetrics = () => {
         const { data: cardsWithUpsellOrVariable } = await supabase
           .from('csm_cards')
           .select('id, squad, title')
-          .in('pipeline_id', ['1242a985-2f74-4b4a-bc0e-c045a3951d65', '5dfc98f3-9614-419a-af65-1b87c8372aeb'])
+          .in('pipeline_id', ALL_CSM_PIPELINES)
           .in('id', cardIds);
 
         // Mapear squad por card_id
@@ -416,7 +281,7 @@ export const ChurnMetrics = () => {
           const { data: churnCards, error } = await supabase
             .from('csm_cards')
             .select('*')
-            .in('pipeline_id', ['1242a985-2f74-4b4a-bc0e-c045a3951d65', '5dfc98f3-9614-419a-af65-1b87c8372aeb'])
+            .in('pipeline_id', ALL_CSM_PIPELINES)
             .eq('churn', true)
             .gte('data_perda', `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`)
             .lt('data_perda', `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`);
@@ -462,7 +327,7 @@ export const ChurnMetrics = () => {
 
           // Usar valores calculados do MRR base por squad (do banco de dados)
           Object.keys(squadData).forEach(squadName => {
-            squadData[squadName].mrrBaseTotal = mrrBaseBySquad[squadName] || CORRECT_MRR_BASE_BY_SQUAD[squadName] || 0;
+            squadData[squadName].mrrBaseTotal = mrrBaseBySquad[squadName] || 0;
           });
 
           // Calcular upsells por squad
@@ -487,7 +352,7 @@ export const ChurnMetrics = () => {
                 mrrPerdidoOperacional: 0,
                 mrrPerdidoTotal: 0,
                 logoChurnComercial: 0,
-                mrrBaseTotal: mrrBaseBySquad[squad] || CORRECT_MRR_BASE_BY_SQUAD[squad] || 0,
+                mrrBaseTotal: mrrBaseBySquad[squad] || 0,
                 churnMRRBrutoPercentual: 0,
                 churnMRRFinalPercentual: 0,
                 churnNRR: 0,
@@ -532,7 +397,7 @@ export const ChurnMetrics = () => {
                 mrrPerdidoOperacional: 0,
                 mrrPerdidoTotal: 0,
                 logoChurnComercial: 0,
-                mrrBaseTotal: mrrBaseBySquad[squad] || CORRECT_MRR_BASE_BY_SQUAD[squad] || 0,
+                mrrBaseTotal: mrrBaseBySquad[squad] || 0,
                 churnMRRBrutoPercentual: 0,
                 churnMRRFinalPercentual: 0,
                 churnNRR: 0,
@@ -568,8 +433,9 @@ export const ChurnMetrics = () => {
             }
           });
 
-          // Usar valor correto do MRR base total
-          setMrrBaseTotal(CORRECT_MRR_BASE_TOTAL);
+           // Calcular MRR base total a partir dos dados reais
+           const calculatedMrrBaseTotal = Object.values(mrrBySquad).reduce((sum, v) => sum + v, 0);
+           setMrrBaseTotal(calculatedMrrBaseTotal);
 
           setChurnDataFromDB(Object.values(squadData));
         } else {
@@ -612,7 +478,7 @@ export const ChurnMetrics = () => {
 
           // Usar valores calculados do MRR base por squad (do banco de dados)
           Object.keys(squadData).forEach(squadName => {
-            squadData[squadName].mrrBaseTotal = mrrBaseBySquad[squadName] || CORRECT_MRR_BASE_BY_SQUAD[squadName] || 0;
+            squadData[squadName].mrrBaseTotal = mrrBaseBySquad[squadName] || 0;
           });
 
           // Calcular upsells por squad
@@ -655,7 +521,7 @@ export const ChurnMetrics = () => {
                 mrrPerdidoOperacional: 0,
                 mrrPerdidoTotal: 0,
                 logoChurnComercial: 0,
-                mrrBaseTotal: mrrBaseBySquad[squad] || CORRECT_MRR_BASE_BY_SQUAD[squad] || 0,
+                mrrBaseTotal: mrrBaseBySquad[squad] || 0,
                 churnMRRBrutoPercentual: 0,
                 churnMRRFinalPercentual: 0,
                 churnNRR: 0,
@@ -683,15 +549,16 @@ export const ChurnMetrics = () => {
             }
           });
 
-          // Usar valor correto do MRR base total
-          setMrrBaseTotal(CORRECT_MRR_BASE_TOTAL);
+           // Calcular MRR base total a partir dos dados reais
+           const calculatedMrrBaseTotalHist = Object.values(mrrBySquad).reduce((sum, v) => sum + v, 0);
+           setMrrBaseTotal(calculatedMrrBaseTotalHist);
 
           setChurnDataFromDB(Object.values(squadData));
         }
       } catch (error) {
         console.error('Erro ao buscar dados de churn:', error);
         toast.error('Erro ao carregar dados de churn');
-        setChurnDataFromDB(churnData);
+        setChurnDataFromDB([]);
       } finally {
         setLoading(false);
       }
@@ -700,8 +567,8 @@ export const ChurnMetrics = () => {
     fetchChurnData();
   }, [selectedMonth, selectedYear]);
 
-  // Filter data by selected squad - usar dados do DB se disponíveis
-  const dataToUse = churnDataFromDB.length > 0 ? churnDataFromDB : churnData;
+   // Filter data by selected squad
+   const dataToUse = churnDataFromDB;
   const filteredData = selectedSquad === "Todos" 
     ? dataToUse 
     : dataToUse.filter(d => d.squad === selectedSquad);
@@ -844,11 +711,11 @@ export const ChurnMetrics = () => {
 
   const metrics = calculateMetrics();
 
-  // Calcular melhor e pior squad
-  const squadComparison = churnData.map(squad => ({
-    squad: squad.squad,
-    churn: squad.revenueChurnLiquido
-  })).sort((a, b) => a.churn - b.churn);
+   // Calcular melhor e pior squad
+   const squadComparison = churnDataFromDB.map(squad => ({
+     squad: squad.squad,
+     churn: squad.revenueChurnLiquido
+   })).sort((a, b) => a.churn - b.churn);
 
   const bestSquad = squadComparison[0];
   const worstSquad = squadComparison[squadComparison.length - 1];
@@ -1177,87 +1044,9 @@ export const ChurnMetrics = () => {
             </Card>
           )}
 
-          {/* Gráfico de Tendência Temporal */}
-          {selectedSquad === "Todos" && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5" />
-                  Evolução do Churn (Últimos 5 Meses)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={historicalData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <ChartTooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="Athena" stroke="#ef4444" strokeWidth={2} />
-                    <Line type="monotone" dataKey="Artemis" stroke="#f97316" strokeWidth={2} />
-                    <Line type="monotone" dataKey="Aurora" stroke="#22c55e" strokeWidth={2} />
-                    <Line type="monotone" dataKey="Ares" stroke="#3b82f6" strokeWidth={2} />
-                    <Line type="monotone" dataKey="Apollo" stroke="#8b5cf6" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          )}
+          {/* Gráfico de Tendência Temporal - TODO: alimentar com dados reais da tabela churn_monthly_history */}
 
-          {/* Quantidade de Churns por Mês - MRR */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                Quantidade de Churn MRR por Mês e Squad
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={350}>
-                <BarChart data={churnQuantityByMonth}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <ChartTooltip 
-                    formatter={(value: number) => `R$ ${value.toLocaleString('pt-BR')}`}
-                  />
-                  <Legend />
-                  <Bar dataKey="Athena_MRR" name="Athena" fill="#ef4444" />
-                  <Bar dataKey="Artemis_MRR" name="Artemis" fill="#f97316" />
-                  <Bar dataKey="Aurora_MRR" name="Aurora" fill="#22c55e" />
-                  <Bar dataKey="Ares_MRR" name="Ares" fill="#3b82f6" />
-                  <Bar dataKey="Apollo_MRR" name="Apollo" fill="#8b5cf6" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Quantidade de Churns por Mês - Logo */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                Quantidade de Logo Churn por Mês e Squad
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={350}>
-                <BarChart data={churnQuantityByMonth}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <ChartTooltip />
-                  <Legend />
-                  <Bar dataKey="Athena_Logo" name="Athena" fill="#ef4444" />
-                  <Bar dataKey="Artemis_Logo" name="Artemis" fill="#f97316" />
-                  <Bar dataKey="Aurora_Logo" name="Aurora" fill="#22c55e" />
-                  <Bar dataKey="Ares_Logo" name="Ares" fill="#3b82f6" />
-                  <Bar dataKey="Apollo_Logo" name="Apollo" fill="#8b5cf6" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+          {/* Gráficos de Churn por Mês - TODO: alimentar com dados reais da tabela churn_monthly_history */}
         </TabsContent>
       </Tabs>
     </div>
