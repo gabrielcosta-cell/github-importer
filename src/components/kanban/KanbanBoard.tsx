@@ -274,18 +274,11 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
     }
   };
 
-  // Gerar displayNames com prefixo "Xº Mês"
+  // Gerar displayNames — usa o nome da etapa diretamente
   const stageDisplayNames = React.useMemo(() => {
     const names: Record<string, string> = {};
-    let monthCounter = 1;
     for (const stage of stages) {
-      const isRetencao = stage.name.toLowerCase().includes('retenção') || stage.name.toLowerCase().includes('retencao');
-      if (isRetencao) {
-        names[stage.id] = stage.name;
-      } else {
-        names[stage.id] = `${monthCounter}º Mês - ${stage.name}`;
-        monthCounter++;
-      }
+      names[stage.id] = stage.name;
     }
     return names;
   }, [stages]);
