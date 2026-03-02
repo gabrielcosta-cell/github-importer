@@ -5,14 +5,26 @@ interface CancelledClient {
   squad: 'Apollo' | 'Artemis' | 'Athena' | 'Ares';
   plano: 'Starter' | 'Business' | 'Pro' | 'Conceito' | 'Social';
   monthly_revenue: number;
-  data_contrato: string; // ISO date
+  data_contrato: string;
   tempo_contrato: string;
   valor_contrato: number;
   niche: string;
   existe_comissao: boolean;
   observacao_comissao?: string;
   fase_projeto: string;
+  etapa_formal: string; // Etapa Formal → mapeia para stage do kanban
 }
+
+// Mapeamento: Etapa Formal → Nome da stage no kanban
+const ETAPA_TO_STAGE: Record<string, string> = {
+  'Onboarding': '1º Mês',
+  'Implementação': '2º Mês',
+  'Refinamento': '3º Mês',
+  'Escala': '4º Mês',
+  'Expansão': '5º Mês',
+  'Renovação': '6º Mês',
+  'Retenção': 'Retenção',
+};
 
 const CANCELLED_CLIENTS: CancelledClient[] = [
   {
@@ -27,6 +39,7 @@ const CANCELLED_CLIENTS: CancelledClient[] = [
     existe_comissao: true,
     observacao_comissao: '1e franquia das uni',
     fase_projeto: 'Cancelamento',
+    etapa_formal: 'Renovação',
   },
   {
     company_name: 'Rede Fooch',
@@ -39,6 +52,7 @@ const CANCELLED_CLIENTS: CancelledClient[] = [
     niche: 'Serviço',
     existe_comissao: false,
     fase_projeto: 'Cancelamento',
+    etapa_formal: 'Renovação',
   },
   {
     company_name: 'Itália no Box',
@@ -51,6 +65,7 @@ const CANCELLED_CLIENTS: CancelledClient[] = [
     niche: 'Franquia',
     existe_comissao: false,
     fase_projeto: 'Cancelamento',
+    etapa_formal: 'Renovação',
   },
   {
     company_name: 'Aluga Aí',
@@ -64,6 +79,7 @@ const CANCELLED_CLIENTS: CancelledClient[] = [
     existe_comissao: true,
     observacao_comissao: 'uando bater a meta',
     fase_projeto: 'Cancelamento',
+    etapa_formal: 'Renovação',
   },
   {
     company_name: 'Master Crio',
@@ -77,6 +93,7 @@ const CANCELLED_CLIENTS: CancelledClient[] = [
     existe_comissao: true,
     observacao_comissao: '2,5% sobre vendas',
     fase_projeto: 'Cancelamento',
+    etapa_formal: 'Onboarding',
   },
   {
     company_name: 'Belafer',
@@ -89,6 +106,7 @@ const CANCELLED_CLIENTS: CancelledClient[] = [
     niche: 'Produto',
     existe_comissao: false,
     fase_projeto: 'Cancelamento',
+    etapa_formal: 'Escala',
   },
   {
     company_name: 'Unigama',
@@ -102,6 +120,7 @@ const CANCELLED_CLIENTS: CancelledClient[] = [
     existe_comissao: true,
     observacao_comissao: 'nsalidade gerada pe',
     fase_projeto: 'Cancelamento',
+    etapa_formal: 'Refinamento',
   },
 ];
 
@@ -117,23 +136,31 @@ export async function importCancelledClients(): Promise<{ success: number; skipp
     return result;
   }
 
-  // Get first stage of the pipeline to assign cards
+  // Get ALL stages of the pipeline to map by name
   const { data: stages, error: stagesError } = await supabase
     .from('csm_stages')
-    .select('id')
+    .select('id, name')
     .eq('pipeline_id', PIPELINE_ID)
     .eq('is_active', true)
-    .order('position', { ascending: true })
-    .limit(1);
+    .order('position', { ascending: true });
 
   if (stagesError || !stages?.length) {
     result.errors.push('Não foi possível encontrar stages do pipeline');
     return result;
   }
 
-  const stageId = stages[0].id;
+  // Build name→id map for stage lookup
+  const stageMap: Record<string, string> = {};
+  for (const s of stages) {
+    if (!stageMap[s.name]) stageMap[s.name] = s.id; // keep first (avoid duplicates)
+  }
+  const fallbackStageId = stages[0].id;
 
   for (const client of CANCELLED_CLIENTS) {
+    // Resolve stage from etapa_formal
+    const targetStageName = ETAPA_TO_STAGE[client.etapa_formal] || '1º Mês';
+    const clientStageId = stageMap[targetStageName] || fallbackStageId;
+
     // Check if already exists
     const { data: existing } = await supabase
       .from('csm_cards')
@@ -147,6 +174,7 @@ export async function importCancelledClients(): Promise<{ success: number; skipp
       const { error } = await supabase
         .from('csm_cards')
         .update({
+          stage_id: clientStageId,
           client_status: 'cancelado',
           churn: true,
           data_perda: '2026-01-30',
@@ -177,7 +205,7 @@ export async function importCancelledClients(): Promise<{ success: number; skipp
         .insert({
           title: client.company_name,
           company_name: client.company_name,
-          stage_id: stageId,
+          stage_id: clientStageId,
           pipeline_id: PIPELINE_ID,
           squad: client.squad,
           plano: client.plano,
