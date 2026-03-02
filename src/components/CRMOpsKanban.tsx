@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Plus, LayoutGrid, Search } from 'lucide-react';
+import { Plus, Search, Settings, Pencil, SlidersHorizontal, BarChart3 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,12 +10,13 @@ import { KanbanBoard } from './kanban/KanbanBoard';
 import { CardDetailsDialog } from './kanban/CardDetailsDialog';
 import { CRMOpsDateFilter } from './crm-ops/CRMOpsDateFilter';
 import { CRMOpsCardForm } from './crm-ops/CRMOpsCardForm';
+import { StageManager } from './kanban/StageManager';
 import { CSMPipeline, CSMStage, CSMCard } from '@/types/kanban';
 import { setupCRMOpsPipelines, CRM_OPS_PIPELINE_NAMES } from '@/utils/setupCRMOpsPipelines';
 import { DotLogo } from '@/components/DotLogo';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/contexts/AuthContext';
-import { startOfDay, endOfDay, isWithinInterval } from 'date-fns';
+import { startOfDay, endOfDay } from 'date-fns';
 
 export const CRMOpsKanban: React.FC = () => {
   const isMobile = useIsMobile();
@@ -31,6 +32,7 @@ export const CRMOpsKanban: React.FC = () => {
   const [selectedCard, setSelectedCard] = useState<CSMCard | null>(null);
   const [showCardDetails, setShowCardDetails] = useState(false);
   const [showCardForm, setShowCardForm] = useState(false);
+  const [showStageManager, setShowStageManager] = useState(false);
 
   // Date filter
   const [dateStart, setDateStart] = useState<Date | undefined>();
@@ -39,7 +41,6 @@ export const CRMOpsKanban: React.FC = () => {
   // Load CRM Ops pipelines
   const fetchPipelines = async () => {
     try {
-      // Ensure pipelines exist
       await setupCRMOpsPipelines();
 
       const { data, error } = await supabase
@@ -122,7 +123,6 @@ export const CRMOpsKanban: React.FC = () => {
   // Filtered cards
   const filteredCards = useMemo(() => {
     return cards.filter(card => {
-      // Search filter
       if (searchTerm) {
         const term = searchTerm.toLowerCase();
         const matchesSearch =
@@ -132,7 +132,6 @@ export const CRMOpsKanban: React.FC = () => {
         if (!matchesSearch) return false;
       }
 
-      // Date filter
       if (dateStart || dateEnd) {
         const cardDate = new Date(card.created_at);
         if (dateStart && cardDate < startOfDay(dateStart)) return false;
@@ -164,6 +163,13 @@ export const CRMOpsKanban: React.FC = () => {
   const handleDateClear = () => {
     setDateStart(undefined);
     setDateEnd(undefined);
+  };
+
+  const handleStagesUpdate = () => {
+    if (selectedPipeline) {
+      fetchStages(selectedPipeline);
+      fetchCards(selectedPipeline);
+    }
   };
 
   if (loading) {
@@ -208,33 +214,65 @@ export const CRMOpsKanban: React.FC = () => {
         )}
       </div>
 
-      {/* Desktop Header */}
-      <div className="hidden md:flex md:items-center justify-between w-full mb-4 flex-shrink-0 gap-3 relative z-10">
-        <div className="flex items-center gap-3 flex-1">
+      {/* Desktop Header - Reference Style Toolbar */}
+      <div className="hidden md:flex md:items-center w-full mb-3 flex-shrink-0 gap-2 relative z-10">
+        {/* Left side: Add + Search */}
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <Button
+              size="sm"
+              onClick={handleAddCard}
+              className="gap-1.5 h-9 bg-green-600 hover:bg-green-700 text-white font-medium"
+            >
+              <Plus className="h-4 w-4" />
+              Adicionar
+            </Button>
+          )}
+
           {/* Search */}
-          <div className="relative w-64">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <div className="relative w-56">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar leads..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 h-8 text-xs"
+              className="pl-9 h-9 text-sm"
             />
           </div>
         </div>
 
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Right side: Configurações, Pipeline, Edit, Filtros */}
         <div className="flex items-center gap-2">
+          {/* Configurações (Stage Manager) */}
+          {isAdmin && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowStageManager(true)}
+              className="gap-1.5 h-9 text-sm"
+            >
+              <Settings className="h-4 w-4" />
+              Configurações
+            </Button>
+          )}
+
           {/* Pipeline Selector */}
-          <Select value={selectedPipeline} onValueChange={setSelectedPipeline}>
-            <SelectTrigger className="h-8 w-[180px] text-xs">
-              <SelectValue placeholder="Pipeline" />
-            </SelectTrigger>
-            <SelectContent>
-              {pipelines.map(p => (
-                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-1.5 border border-border rounded-md px-2 h-9 bg-background">
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            <Select value={selectedPipeline} onValueChange={setSelectedPipeline}>
+              <SelectTrigger className="h-7 w-[150px] text-sm border-0 shadow-none p-0 focus:ring-0">
+                <SelectValue placeholder="Pipeline" />
+              </SelectTrigger>
+              <SelectContent>
+                {pipelines.map(p => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           {/* Date Filter */}
           <CRMOpsDateFilter
@@ -243,18 +281,6 @@ export const CRMOpsKanban: React.FC = () => {
             onApply={handleDateApply}
             onClear={handleDateClear}
           />
-
-          {/* Add Card */}
-          {isAdmin && (
-            <Button
-              size="sm"
-              onClick={handleAddCard}
-              className="gap-1.5 h-8 bg-green-600 hover:bg-green-700 text-white"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Adicionar
-            </Button>
-          )}
         </div>
       </div>
 
@@ -291,6 +317,18 @@ export const CRMOpsKanban: React.FC = () => {
           open={showCardForm}
           onClose={() => setShowCardForm(false)}
           onRefresh={refreshCards}
+        />
+      )}
+
+      {/* Stage Manager */}
+      {showStageManager && selectedPipelineData && (
+        <StageManager
+          pipelineId={selectedPipeline}
+          pipelineName={selectedPipelineData.name}
+          stages={stages}
+          open={showStageManager}
+          onClose={() => setShowStageManager(false)}
+          onRefresh={handleStagesUpdate}
         />
       )}
     </div>
