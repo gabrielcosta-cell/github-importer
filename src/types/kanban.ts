@@ -104,4 +104,6 @@ export interface CSMCard {
   briefing_answers?: any;
   // Status do cliente (ativo/cancelado)
   client_status?: 'ativo' | 'cancelado';
+  // ID sequencial único visível
+  display_id?: number;
 }

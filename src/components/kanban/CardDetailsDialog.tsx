@@ -2184,7 +2184,12 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
               <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0 shrink-0">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
-              <h2 className="text-base font-semibold text-foreground truncate flex-1">{card.company_name || card.title}</h2>
+              <h2 className="text-base font-semibold text-foreground truncate flex-1">
+                {card.display_id != null && (
+                  <span className="text-muted-foreground font-normal text-sm mr-1">#{String(card.display_id).padStart(4, '0')}</span>
+                )}
+                {card.company_name || card.title}
+              </h2>
             </div>
 
             {/* Mobile Action Bar */}
@@ -2756,7 +2761,12 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
         <DialogHeader className="p-3 md:p-4 pb-2 md:pb-3 border-b border-border bg-muted/20">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-0">
             <div className="flex-1 md:mr-4">
-              <h2 className="text-base md:text-lg font-semibold text-foreground line-clamp-2 md:line-clamp-1">{card.title}</h2>
+              <h2 className="text-base md:text-lg font-semibold text-foreground line-clamp-2 md:line-clamp-1">
+                {card.display_id != null && (
+                  <span className="text-muted-foreground font-normal text-sm mr-1.5">#{String(card.display_id).padStart(4, '0')}</span>
+                )}
+                {card.title}
+              </h2>
             </div>
             <div className="flex flex-wrap gap-2 items-center">
               {/* Proprietário */}
