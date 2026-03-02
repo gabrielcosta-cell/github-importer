@@ -2533,7 +2533,6 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                                     <SelectItem value="Expansão">Expansão</SelectItem>
                                     <SelectItem value="Renovação">Renovação</SelectItem>
                                     <SelectItem value="Retenção">Retenção</SelectItem>
-                                    <SelectItem value="Cancelamento">Cancelamento</SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
@@ -3464,7 +3463,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                               <SelectItem value="Expansão">Expansão</SelectItem>
                               <SelectItem value="Renovação">Renovação</SelectItem>
                               <SelectItem value="Retenção">Retenção</SelectItem>
-                              <SelectItem value="Cancelamento">Cancelamento</SelectItem>
+                              
                             </SelectContent>
                           </Select>
                         </div>
