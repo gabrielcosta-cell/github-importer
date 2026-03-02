@@ -102,4 +102,6 @@ export interface CSMCard {
   qual_clareza_objetivos?: number | null;
   // Campo de briefing
   briefing_answers?: any;
+  // Status do cliente (ativo/cancelado)
+  client_status?: 'ativo' | 'cancelado';
 }
