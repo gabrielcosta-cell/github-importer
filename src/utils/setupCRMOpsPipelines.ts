@@ -23,6 +23,38 @@ const CLOSER_STAGES = [
   { name: 'Em assinatura', color: '#10B981', position: 6 },
 ];
 
+// Remove duplicate pipelines, keeping only the oldest one
+async function deduplicatePipelines(pipelineName: string): Promise<string | null> {
+  const { data: allPipelines } = await supabase
+    .from('csm_pipelines')
+    .select('id, created_at')
+    .eq('name', pipelineName)
+    .order('created_at', { ascending: true });
+
+  if (!allPipelines || allPipelines.length <= 1) {
+    return allPipelines?.[0]?.id || null;
+  }
+
+  // Keep the first (oldest), delete the rest
+  const keepId = allPipelines[0].id;
+  const deleteIds = allPipelines.slice(1).map(p => p.id);
+
+  // Delete stages of duplicate pipelines first
+  for (const id of deleteIds) {
+    await supabase.from('csm_stages').delete().eq('pipeline_id', id);
+    await supabase.from('csm_cards').delete().eq('pipeline_id', id);
+  }
+
+  // Delete duplicate pipelines
+  await supabase
+    .from('csm_pipelines')
+    .delete()
+    .in('id', deleteIds);
+
+  console.log(`Deduplicação: manteve ${keepId}, removeu ${deleteIds.length} duplicatas de "${pipelineName}"`);
+  return keepId;
+}
+
 async function ensurePipelineWithStages(
   pipelineName: string,
   stages: typeof SDR_STAGES,
@@ -30,24 +62,20 @@ async function ensurePipelineWithStages(
   position: number
 ): Promise<string | null> {
   try {
-    // Check if pipeline exists
-    const { data: existing } = await supabase
-      .from('csm_pipelines')
-      .select('id')
-      .eq('name', pipelineName)
-      .maybeSingle();
+    // First deduplicate any existing duplicates
+    const existingId = await deduplicatePipelines(pipelineName);
 
-    if (existing) {
+    if (existingId) {
       // Ensure stages exist
       const { data: existingStages } = await supabase
         .from('csm_stages')
         .select('id')
-        .eq('pipeline_id', existing.id);
+        .eq('pipeline_id', existingId);
 
       if (!existingStages || existingStages.length === 0) {
         await supabase.from('csm_stages').insert(
           stages.map(s => ({
-            pipeline_id: existing.id,
+            pipeline_id: existingId,
             name: s.name,
             color: s.color,
             position: s.position,
@@ -55,7 +83,7 @@ async function ensurePipelineWithStages(
           }))
         );
       }
-      return existing.id;
+      return existingId;
     }
 
     // Create pipeline
