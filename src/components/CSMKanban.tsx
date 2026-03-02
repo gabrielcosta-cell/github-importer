@@ -79,6 +79,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
   const [selectedPipeline, setSelectedPipeline] = useState<string>(
     initialCache?.selectedPipeline ?? initialCache?.pipelines?.[0]?.id ?? ''
   );
+  const [viewFilter, setViewFilter] = useState<'ativo' | 'todos' | 'cancelado'>('ativo');
   const [stages, setStages] = useState<CSMStage[]>(initialCache?.stages ?? []);
   const [cards, setCards] = useState<CSMCard[]>(initialCache?.cards ?? []);
   const [cardTagsMap, setCardTagsMap] = useState<Record<string, string[]>>(initialCache?.cardTagsMap ?? {});
@@ -180,6 +181,10 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
   // Calcular cards filtrados e métricas
   const filteredCardsData = useMemo(() => {
     const filtered = cards.filter(card => {
+      // Filtrar por status do cliente
+      const clientStatus = (card as any).client_status || 'ativo';
+      const matchesStatus = viewFilter === 'todos' ? true : clientStatus === viewFilter;
+
       const matchesSquad = selectedSquad === 'todos' 
         ? true 
         : selectedSquad === 'sem_squad' 
@@ -215,7 +220,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
         (card.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (card.company_name || '').toLowerCase().includes(searchTerm.toLowerCase());
       
-      return matchesSquad && matchesPlano && matchesMotivo && matchesNiche && matchesFlag && matchesTags && matchesSearch;
+      return matchesStatus && matchesSquad && matchesPlano && matchesMotivo && matchesNiche && matchesFlag && matchesTags && matchesSearch;
     });
 
     // Ordenar cards
@@ -241,7 +246,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
       count: sorted.length,
       totalMRR
     };
-  }, [cards, selectedSquad, selectedPlano, selectedMotivo, selectedNiche, selectedTagsFilter, sortBy, searchTerm, cardTagsMap]);
+  }, [cards, selectedSquad, selectedPlano, selectedMotivo, selectedNiche, selectedTagsFilter, sortBy, searchTerm, cardTagsMap, viewFilter]);
 
   // Carregar sugestões de colunas (usa o pipeline selecionado como referência)
   const fetchSuggestedStages = async (pipelineId: string) => {
@@ -852,17 +857,18 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
           className="h-10 w-10 flex-shrink-0 bg-background/80 backdrop-blur border border-border shadow-sm hover:bg-background"
         />
         
-        {/* Center: Pipeline Selector */}
+        {/* Center: View Filter */}
         <div className="flex-1 min-w-0 flex justify-center px-2">
-          <PipelineSelector
-            pipelines={pipelines}
-            selectedPipeline={selectedPipeline}
-            onPipelineChange={setSelectedPipeline}
-            onCreatePipeline={createPipeline}
-            onManageStages={() => setShowStageManager(true)}
-            onManageOrder={() => setShowPipelineOrderManager(true)}
-            suggestedStages={suggestedStages}
-          />
+          <Select value={viewFilter} onValueChange={(v) => setViewFilter(v as 'ativo' | 'todos' | 'cancelado')}>
+            <SelectTrigger className="w-full max-w-[200px] h-10">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ativo">Clientes Ativos</SelectItem>
+              <SelectItem value="todos">Todos os Clientes</SelectItem>
+              <SelectItem value="cancelado">Clientes Cancelados</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         
         {/* Right: Add button (green) - only for admins */}
@@ -999,15 +1005,16 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
             </Button>
           )}
 
-          <PipelineSelector
-            pipelines={pipelines}
-            selectedPipeline={selectedPipeline}
-            onPipelineChange={setSelectedPipeline}
-            onCreatePipeline={createPipeline}
-            onManageStages={() => setShowStageManager(true)}
-            onManageOrder={() => setShowPipelineOrderManager(true)}
-            suggestedStages={suggestedStages}
-          />
+          <Select value={viewFilter} onValueChange={(v) => setViewFilter(v as 'ativo' | 'todos' | 'cancelado')}>
+            <SelectTrigger className="h-8 w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ativo">Clientes Ativos</SelectItem>
+              <SelectItem value="todos">Todos os Clientes</SelectItem>
+              <SelectItem value="cancelado">Clientes Cancelados</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

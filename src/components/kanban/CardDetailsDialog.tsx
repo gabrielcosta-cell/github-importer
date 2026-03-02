@@ -1147,108 +1147,185 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
   const handleConfirmLost = async (motivo: string, comentarios: string) => {
     setLoading(true);
     try {
-      // Buscar o pipeline de perdidos apropriado
-      const lostPipelineName = isCSMPipeline ? 'Clientes Perdidos' : 'Leads Perdidos';
-      
-      const { data: pipelines, error: pipelineError } = await supabase
-        .from('csm_pipelines')
-        .select('id, name')
-        .ilike('name', lostPipelineName)
-        .limit(1);
-
-      if (pipelineError) {
-        console.error('Erro ao buscar pipeline:', pipelineError);
-        throw pipelineError;
-      }
-
-      if (!pipelines || pipelines.length === 0) {
-        toast.error(`Pipeline "${lostPipelineName}" não encontrado. Por favor, atualize a página.`);
-        return;
-      }
-
-      const lostPipelineId = pipelines[0].id;
-
-      // Buscar a primeira etapa do pipeline de perdidos (ordenada por position)
-      const { data: lostStages, error: lostStageError } = await supabase
-        .from('csm_stages')
-        .select('id')
-        .eq('pipeline_id', lostPipelineId)
-        .order('position', { ascending: true })
-        .limit(1);
-
-      if (lostStageError) {
-        console.error('Erro ao buscar etapa no pipeline perdidos:', lostStageError);
-        toast.error('Erro ao encontrar etapa no pipeline perdidos');
-        return;
-      }
-
-      if (!lostStages || lostStages.length === 0) {
-        toast.error('Nenhuma etapa encontrada no pipeline perdidos');
-        return;
-      }
-
-      const lostStage = lostStages[0];
-
       const dataPerda = new Date();
-
-      // Atualizar o card com motivo, comentários, data de perda e mover para pipeline perdidos
-      const { error: updateError } = await supabase
-        .from('csm_cards')
-        .update({
-          motivo_perda: motivo,
-          comentarios_perda: comentarios,
-          data_perda: dataPerda.toISOString(),
-          pipeline_id: lostPipelineId,
-          stage_id: lostStage.id,
-          churn: isCSMPipeline, // Marca como churn apenas se for pipeline CSM
-        })
-        .eq('id', card.id);
-
-      if (updateError) throw updateError;
-
       const userId = (await supabase.auth.getUser()).data.user?.id;
 
-      // Registrar no histórico de etapas
-      await supabase
-        .from('csm_card_stage_history')
-        .insert({
-          card_id: card.id,
-          stage_id: lostStage.id,
-          entered_at: dataPerda.toISOString(),
-          moved_by: userId,
-          notes: `${isCSMPipeline ? 'Cliente marcado como churn' : 'Lead marcado como perdido'} - Motivo: ${motivo}${comentarios ? ` - ${comentarios}` : ''}`,
-          event_type: isCSMPipeline ? 'churn' : 'lost'
-        });
+      if (isCSMPipeline) {
+        // CSM: Apenas atualizar status para cancelado, NÃO mover de pipeline
+        const { error: updateError } = await supabase
+          .from('csm_cards')
+          .update({
+            motivo_perda: motivo,
+            comentarios_perda: comentarios,
+            data_perda: dataPerda.toISOString(),
+            churn: true,
+            client_status: 'cancelado',
+          })
+          .eq('id', card.id);
 
-      // Criar atividade no histórico com o comentário da perda
-      const { error: activityError } = await supabase
-        .from('csm_activities')
-        .insert({
-          card_id: card.id,
-          activity_type: 'comment',
-          title: `${isCSMPipeline ? 'Cliente marcado como churn' : 'Lead marcado como perdido'} - ${motivo}`,
-          description: comentarios,
-          status: 'completed',
-          completed_date: dataPerda.toISOString(),
-          created_by: userId,
-        });
+        if (updateError) throw updateError;
 
-      if (activityError) {
-        console.error('Erro ao criar atividade:', activityError);
-        // Não bloquear o fluxo se falhar ao criar atividade
+        // Registrar no histórico de etapas
+        await supabase
+          .from('csm_card_stage_history')
+          .insert({
+            card_id: card.id,
+            stage_id: card.stage_id,
+            entered_at: dataPerda.toISOString(),
+            moved_by: userId,
+            notes: `Cliente marcado como churn - Motivo: ${motivo}${comentarios ? ` - ${comentarios}` : ''}`,
+            event_type: 'churn'
+          });
+
+        // Criar atividade
+        await supabase
+          .from('csm_activities')
+          .insert({
+            card_id: card.id,
+            activity_type: 'comment',
+            title: `Cliente marcado como churn - ${motivo}`,
+            description: comentarios,
+            status: 'completed',
+            completed_date: dataPerda.toISOString(),
+            created_by: userId,
+          });
+
+        toast.success('Cliente marcado como cancelado (churn)!');
+      } else {
+        // Pipelines não-CSM: mover para pipeline de perdidos (lógica original)
+        const lostPipelineName = 'Leads Perdidos';
+        
+        const { data: pipelines, error: pipelineError } = await supabase
+          .from('csm_pipelines')
+          .select('id, name')
+          .ilike('name', lostPipelineName)
+          .limit(1);
+
+        if (pipelineError) throw pipelineError;
+
+        if (!pipelines || pipelines.length === 0) {
+          toast.error(`Pipeline "${lostPipelineName}" não encontrado.`);
+          return;
+        }
+
+        const lostPipelineId = pipelines[0].id;
+
+        const { data: lostStages, error: lostStageError } = await supabase
+          .from('csm_stages')
+          .select('id')
+          .eq('pipeline_id', lostPipelineId)
+          .order('position', { ascending: true })
+          .limit(1);
+
+        if (lostStageError || !lostStages || lostStages.length === 0) {
+          toast.error('Nenhuma etapa encontrada no pipeline perdidos');
+          return;
+        }
+
+        const lostStage = lostStages[0];
+
+        const { error: updateError } = await supabase
+          .from('csm_cards')
+          .update({
+            motivo_perda: motivo,
+            comentarios_perda: comentarios,
+            data_perda: dataPerda.toISOString(),
+            pipeline_id: lostPipelineId,
+            stage_id: lostStage.id,
+          })
+          .eq('id', card.id);
+
+        if (updateError) throw updateError;
+
+        await supabase
+          .from('csm_card_stage_history')
+          .insert({
+            card_id: card.id,
+            stage_id: lostStage.id,
+            entered_at: dataPerda.toISOString(),
+            moved_by: userId,
+            notes: `Lead marcado como perdido - Motivo: ${motivo}${comentarios ? ` - ${comentarios}` : ''}`,
+            event_type: 'lost'
+          });
+
+        await supabase
+          .from('csm_activities')
+          .insert({
+            card_id: card.id,
+            activity_type: 'comment',
+            title: `Lead marcado como perdido - ${motivo}`,
+            description: comentarios,
+            status: 'completed',
+            completed_date: dataPerda.toISOString(),
+            created_by: userId,
+          });
+
+        toast.success(`Lead marcado como perdido e movido para "${lostPipelineName}"!`);
       }
-
-      toast.success(`${isCSMPipeline ? 'Cliente' : 'Lead'} marcado como ${isCSMPipeline ? 'churn' : 'perdido'} e movido para o pipeline "${lostPipelineName}"!`);
       
       // Executar automação se configurada
       await executeAutomation(card.pipeline_id, 'lost', card.id);
       
       setShowLostReasonDialog(false);
-      onUpdate?.(); // Chamar apenas uma vez no final
+      onUpdate?.();
       onClose();
     } catch (error) {
       console.error(`Erro ao marcar como ${isCSMPipeline ? 'churn' : 'perdido'}:`, error);
       toast.error(`Erro ao marcar como ${isCSMPipeline ? 'churn' : 'perdido'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Função para reabrir cliente cancelado (CSM)
+  const handleReopenClient = async () => {
+    if (!card) return;
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('csm_cards')
+        .update({
+          client_status: 'ativo',
+          churn: false,
+          motivo_perda: null,
+          comentarios_perda: null,
+          data_perda: null,
+        })
+        .eq('id', card.id);
+
+      if (error) throw error;
+
+      const userId = (await supabase.auth.getUser()).data.user?.id;
+
+      await supabase
+        .from('csm_card_stage_history')
+        .insert({
+          card_id: card.id,
+          stage_id: card.stage_id,
+          entered_at: new Date().toISOString(),
+          moved_by: userId,
+          notes: 'Cliente reaberto - status alterado de Cancelado para Ativo',
+          event_type: 'field_update'
+        });
+
+      await supabase
+        .from('csm_activities')
+        .insert({
+          card_id: card.id,
+          activity_type: 'comment',
+          title: 'Cliente reaberto',
+          description: 'Status alterado de Cancelado para Ativo. Campos de perda limpos.',
+          status: 'completed',
+          completed_date: new Date().toISOString(),
+          created_by: userId,
+        });
+
+      toast.success('Cliente reaberto com sucesso!');
+      onUpdate?.();
+      onClose();
+    } catch (error) {
+      console.error('Erro ao reabrir cliente:', error);
+      toast.error('Erro ao reabrir cliente');
     } finally {
       setLoading(false);
     }
@@ -2318,8 +2395,21 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                   Reabrir
                 </Button>
               )}
-              {/* Botão Perdido/Churn */}
-              {!pipelineName?.toLowerCase().includes('perdidos') && (
+              {/* Botão Reabrir Cliente (CSM cancelado) */}
+              {isCSMPipeline && (card as any).client_status === 'cancelado' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReopenClient}
+                  className="bg-green-600 text-white hover:bg-green-700 border-green-600 h-8 shrink-0"
+                  disabled={loading}
+                >
+                  <TrendingUp className="h-4 w-4 mr-1" />
+                  Reabrir
+                </Button>
+              )}
+              {/* Botão Perdido/Churn - ocultar se já cancelado no CSM */}
+              {!pipelineName?.toLowerCase().includes('perdidos') && !(isCSMPipeline && (card as any).client_status === 'cancelado') && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -2407,6 +2497,29 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                           </Button>
                         </CollapsibleTrigger>
                         <CollapsibleContent className="space-y-1">
+                          {/* Status do cliente (somente leitura) */}
+                          {moduleType === 'csm' && (
+                            <>
+                              <div className="space-y-0">
+                                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                                  <AlertTriangle className="h-3 w-3" />
+                                  <span>Status</span>
+                                </div>
+                                <Badge 
+                                  variant="outline" 
+                                  className={cn(
+                                    "text-[10px] px-1.5 py-0",
+                                    (card as any).client_status === 'cancelado' 
+                                      ? 'bg-destructive/10 border-destructive/30 text-destructive' 
+                                      : 'bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-400'
+                                  )}
+                                >
+                                  {(card as any).client_status === 'cancelado' ? 'Cancelado' : 'Ativo'}
+                                </Badge>
+                              </div>
+                              <Separator className="my-1" />
+                            </>
+                          )}
                           <EditableField value={card.company_name} onSave={(value) => updateCardField('company_name', value)} label="Nome da empresa" icon={<Building2 className="h-3 w-3 text-primary" />} placeholder="Nome da empresa" compact />
                           <div className="space-y-0">
                             <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
@@ -2901,8 +3014,21 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                   Reabrir
                 </Button>
               )}
-              {/* Botão Perdido/Churn - ocultar apenas em "Clientes Perdidos" */}
-              {!pipelineName?.toLowerCase().includes('perdidos') && (
+              {/* Botão Reabrir Cliente (CSM cancelado) */}
+              {isCSMPipeline && (card as any).client_status === 'cancelado' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReopenClient}
+                  className="bg-green-600 text-white hover:bg-green-700 border-green-600 h-8"
+                  disabled={loading}
+                >
+                  <TrendingUp className="h-4 w-4 mr-1" />
+                  Reabrir
+                </Button>
+              )}
+              {/* Botão Perdido/Churn - ocultar se já cancelado no CSM */}
+              {!pipelineName?.toLowerCase().includes('perdidos') && !(isCSMPipeline && (card as any).client_status === 'cancelado') && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -3114,6 +3240,29 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                   </CollapsibleTrigger>
                   
                   <CollapsibleContent className="space-y-1">
+                    {/* Status do cliente (somente leitura) */}
+                    {moduleType === 'csm' && (
+                      <>
+                        <div className="space-y-0">
+                          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                            <AlertTriangle className="h-3 w-3" />
+                            <span>Status</span>
+                          </div>
+                          <Badge 
+                            variant="outline" 
+                            className={cn(
+                              "text-[10px] px-1.5 py-0",
+                              (card as any).client_status === 'cancelado' 
+                                ? 'bg-destructive/10 border-destructive/30 text-destructive' 
+                                : 'bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-400'
+                            )}
+                          >
+                            {(card as any).client_status === 'cancelado' ? 'Cancelado' : 'Ativo'}
+                          </Badge>
+                        </div>
+                        <Separator className="my-1" />
+                      </>
+                    )}
                     {/* Nome da empresa */}
                     <EditableField
                       value={card.company_name}
