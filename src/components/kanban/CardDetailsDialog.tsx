@@ -2335,7 +2335,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
               {/* Menu 3 pontos */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0" disabled={loading}>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0">
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -2922,7 +2922,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                     variant="ghost"
                     size="sm"
                     className="h-8 w-8 p-0"
-                    disabled={loading}
+                    disabled={false}
                   >
                     <MoreVertical className="h-4 w-4" />
                   </Button>
