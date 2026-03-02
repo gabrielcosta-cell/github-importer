@@ -2532,6 +2532,8 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                                     <SelectItem value="Escala">Escala</SelectItem>
                                     <SelectItem value="Expansão">Expansão</SelectItem>
                                     <SelectItem value="Renovação">Renovação</SelectItem>
+                                    <SelectItem value="Retenção">Retenção</SelectItem>
+                                    <SelectItem value="Cancelamento">Cancelamento</SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
@@ -2630,17 +2632,6 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                             <div className="space-y-2">
                               <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground"><Flag className="h-4 w-4 text-indigo-600" /><span>Etapa Formal</span></div>
                               <Badge variant="outline" className="text-xs">{getEtapaFormal(card.data_inicio)}</Badge>
-                            </div>
-                            {/* Etapa Real */}
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground"><Flag className="h-4 w-4 text-red-600" /><span>Etapa Real</span></div>
-                              <Select value={(card as any).etapa_real || 'none'} onValueChange={(value) => updateCardField('etapa_real', value === 'none' ? null : value)}>
-                                <SelectTrigger className="w-full"><SelectValue placeholder="Selecione a etapa" /></SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">Nenhum</SelectItem>
-                                  {ETAPA_OPTIONS.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
-                                </SelectContent>
-                              </Select>
                             </div>
                             {/* Valor de Contrato */}
                             <div className="space-y-2">
@@ -3472,6 +3463,8 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                               <SelectItem value="Escala">Escala</SelectItem>
                               <SelectItem value="Expansão">Expansão</SelectItem>
                               <SelectItem value="Renovação">Renovação</SelectItem>
+                              <SelectItem value="Retenção">Retenção</SelectItem>
+                              <SelectItem value="Cancelamento">Cancelamento</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -3794,26 +3787,6 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                         <span>Etapa Formal</span>
                       </div>
                       <Badge variant="outline" className="text-xs">{getEtapaFormal(card.data_inicio)}</Badge>
-                    </div>
-
-                    {/* Etapa Real */}
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                        <Flag className="h-4 w-4 text-red-600" />
-                        <span>Etapa Real</span>
-                      </div>
-                      <Select 
-                        value={(card as any).etapa_real || 'none'} 
-                        onValueChange={(value) => updateCardField('etapa_real', value === 'none' ? null : value)}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Selecione a etapa" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Nenhum</SelectItem>
-                          {ETAPA_OPTIONS.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
                     </div>
 
                     {/* Valor de Contrato */}
