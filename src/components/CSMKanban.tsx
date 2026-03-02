@@ -22,8 +22,6 @@ import { CSMPipeline, CSMStage, CSMCard } from '@/types/kanban';
 import { useAutoMoveCards } from '@/hooks/useAutoMoveCards';
 
 import { DotLogo } from '@/components/DotLogo';
-import { importCancelledClientsFeb } from '@/utils/importCancelledClientsFeb';
-import { importCancelledClients } from '@/utils/importCancelledClients';
 import { readCSMKanbanCache, writeCSMKanbanCache } from '@/utils/csmKanbanSessionCache';
 import { MobileGlobalSearch, DesktopGlobalSearch } from './kanban/MobileGlobalSearch';
 import { MobileStageSwiper } from './kanban/MobileStageSwiper';
@@ -1027,49 +1025,6 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
         </div>
       </div>
 
-      {/* BOTÕES TEMPORÁRIOS - REMOVER APÓS USO */}
-      {isAdmin && (
-        <div className="w-full mb-2 flex justify-center gap-2">
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={async () => {
-              if (!confirm('Mover Aluga Aí e Itália no Box para Retenção?')) return;
-              toast.loading('Atualizando clientes...');
-              const result = await importCancelledClients();
-              toast.dismiss();
-              if (result.errors.length > 0) {
-                toast.error(`Erros: ${result.errors.join(', ')}`);
-              } else {
-                toast.success(`${result.success} clientes atualizados!`);
-                if (selectedPipeline) fetchCards(selectedPipeline);
-              }
-            }}
-            className="h-10 px-6 gap-2 text-sm font-semibold"
-          >
-            🔄 Mover 2 Clientes → Retenção
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={async () => {
-              if (!confirm('Importar 9 clientes cancelados (Fev/2026)?')) return;
-              toast.loading('Importando clientes cancelados (Fev)...');
-              const result = await importCancelledClientsFeb();
-              toast.dismiss();
-              if (result.errors.length > 0) {
-                toast.error(`Erros: ${result.errors.join(', ')}`);
-              } else {
-                toast.success(`${result.success} clientes importados com sucesso!`);
-                if (selectedPipeline) fetchCards(selectedPipeline);
-              }
-            }}
-            className="h-10 px-6 gap-2 text-sm font-semibold"
-          >
-            🚀 Importar 9 Clientes Cancelados (Fev)
-          </Button>
-        </div>
-      )}
 
       {/* Content area */}
       <div className="min-h-0 flex-1 h-full overflow-x-auto overflow-y-auto relative">
