@@ -39,7 +39,7 @@ export const FinancialMetrics = () => {
         supabase
           .from('csm_cards')
           .select('monthly_revenue, plano')
-          .eq('pipeline_id', '1242a985-2f74-4b4a-bc0e-c045a3951d65')
+          .eq('pipeline_id', '749ccdc2-5127-41a1-997b-3dcb47979555')
           .eq('churn', false)
           .eq('categoria', 'MRR recorrente'),
         supabase
