@@ -64,8 +64,8 @@ const CANCELLED_CLIENTS: CancelledClient[] = [
     valor_contrato: 18000,
     niche: 'Franquia',
     existe_comissao: false,
-    fase_projeto: 'Renovação',
-    etapa_formal: 'Renovação',
+    fase_projeto: 'Retenção',
+    etapa_formal: 'Retenção',
   },
   {
     company_name: 'Aluga Aí',
@@ -78,8 +78,8 @@ const CANCELLED_CLIENTS: CancelledClient[] = [
     niche: 'Franquia',
     existe_comissao: true,
     observacao_comissao: 'uando bater a meta',
-    fase_projeto: 'Renovação',
-    etapa_formal: 'Renovação',
+    fase_projeto: 'Retenção',
+    etapa_formal: 'Retenção',
   },
   {
     company_name: 'Master Crio',
