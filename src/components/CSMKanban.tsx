@@ -22,6 +22,7 @@ import { CSMPipeline, CSMStage, CSMCard } from '@/types/kanban';
 import { useAutoMoveCards } from '@/hooks/useAutoMoveCards';
 
 import { DotLogo } from '@/components/DotLogo';
+import { importCancelledClients } from '@/utils/importCancelledClients';
 import { readCSMKanbanCache, writeCSMKanbanCache } from '@/utils/csmKanbanSessionCache';
 import { MobileGlobalSearch, DesktopGlobalSearch } from './kanban/MobileGlobalSearch';
 import { MobileStageSwiper } from './kanban/MobileStageSwiper';
@@ -1002,6 +1003,29 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
             >
               <UserPlus className="h-4 w-4" />
               <span className="hidden sm:inline">Adicionar cliente</span>
+            </Button>
+          )}
+
+          {/* BOTÃO TEMPORÁRIO: Importar 7 clientes cancelados - REMOVER APÓS USO */}
+          {isAdmin && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={async () => {
+                if (!confirm('Importar 7 clientes cancelados? Esta ação não pode ser desfeita facilmente.')) return;
+                toast.loading('Importando clientes cancelados...');
+                const result = await importCancelledClients();
+                toast.dismiss();
+                if (result.errors.length > 0) {
+                  toast.error(`Erros: ${result.errors.join(', ')}`);
+                } else {
+                  toast.success(`${result.success} clientes importados com sucesso! (${result.skipped} já existiam)`);
+                  if (selectedPipeline) fetchCards(selectedPipeline);
+                }
+              }}
+              className="h-8 px-3 gap-2"
+            >
+              Importar Cancelados
             </Button>
           )}
 
