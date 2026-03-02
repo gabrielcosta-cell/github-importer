@@ -1,49 +1,26 @@
 
-
-## Importar 7 Clientes Ativos (Squad Apollo) no Pipeline "Clientes Ativos"
+## Filtro de Mes de Cancelamento para Clientes Cancelados
 
 ### Objetivo
-Inserir 7 cards de clientes ativos do Squad Apollo no pipeline "Clientes Ativos" (ID: `749ccdc2-5127-41a1-997b-3dcb47979555`), mapeando cada um para a etapa correta do kanban.
+Adicionar um seletor de mes/ano que aparece apenas quando o filtro "Clientes Cancelados" esta ativo, permitindo filtrar cards pela `data_perda` (data de cancelamento) em um mes especifico.
 
-### Clientes a Inserir
+### Como vai funcionar
+- Quando o usuario seleciona "Clientes Cancelados" no dropdown de status, um seletor de mes/ano aparece ao lado dos filtros existentes
+- O seletor usa o componente `MonthYearPicker` ja existente no projeto, configurado em modo `singleSelect`
+- O filtro compara o campo `data_perda` do card com o mes/ano selecionado
+- Meses disponiveis: todos de 2025 em diante (sem limite superior, funciona para meses futuros)
+- Quando nenhum mes esta selecionado, mostra todos os cancelados (comportamento atual)
 
-| # | Empresa (title) | Fee (MRR) | Plano | Etapa Formal | Fase Projeto | Servico | Assinatura | Tempo DOT | Tempo Contrato | Valor Contrato | Nicho |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | PluggTo | 2.450 | Pro | Renovacao | Escala | Gestao de Trafego | 2025-08-01 | 5 | 6 | 14.700 | SaaS |
-| 2 | Lebes | 19.900 | Conceito | Onboarding | Mes Teste | Gestao de Trafego | 2026-01-01 | 1 | 6 | 119.400 | Varejo |
-| 3 | Versatil Banheiras (Social Media) | 2.450 | Business | Renovacao | Escala | Social Media | 2025-03-01 | 11 | 6 | 14.700 | Produto |
-| 4 | Versatil Banheiras (Gestao de Trafego) | 2.450 | Business | Renovacao | Escala | Gestao de Trafego | 2025-03-01 | 11 | 6 | 14.700 | Produto |
-| 5 | Oslo Group | 4.300 | Pro | Escala | Escala | Gestao de Trafego | 2025-09-01 | 4 | 6 | 25.800 | Mercado Financeiro |
-| 6 | Sul Solar | 3.500 | Business | Escala | Refinamento | Gestao de Trafego | 2025-09-01 | 4 | 6 | 21.000 | Produto |
-| 7 | Linx | 2.450 | Pro | Renovacao | Escala | Gestao de Trafego | 2025-08-01 | 5 | 6 | 14.700 | SaaS |
+### Alteracoes tecnicas
 
-### Mapeamento Etapa Formal para Stage
+**1. `src/components/CSMKanban.tsx`**
+- Adicionar estado `selectedChurnMonth` do tipo `{ month: number; year: number }[]` (array para compatibilidade com MonthYearPicker, mas singleSelect=true)
+- Na logica de `filteredCardsData`, quando `viewFilter === 'cancelado'` e ha um mes selecionado, filtrar cards cuja `data_perda` esteja dentro do mes/ano escolhido
+- Renderizar o `MonthYearPicker` ao lado do dropdown de status, visivel apenas quando `viewFilter === 'cancelado'`
+- Incluir o filtro de mes na funcao `handleClearFilters`
+- Adicionar `selectedChurnMonth` nas dependencias do `useMemo`
 
-Usando o mesmo mapeamento existente:
-- Onboarding -> "1 Mes"
-- Escala -> "4 Mes"
-- Renovacao -> "6 Mes"
-
-### Campos Comuns
-- `pipeline_id` = `749ccdc2-5127-41a1-997b-3dcb47979555` (Clientes Ativos)
-- `squad` = 'Apollo'
-- `client_status` = 'ativo'
-- `created_at` = '2026-02-01T12:00:00.000Z'
-
-### Nota sobre "Versatil Banheiras"
-Ha dois cards com nomes diferentes: "Versatil Banheiras (Social Media)" e "Versatil Banheiras (Gestao de Trafego)". Serao inseridos como cards separados com `title` e `company_name` distintos.
-
-### Implementacao Tecnica
-
-1. **Criar arquivo** `src/utils/importActiveClientsApollo.ts`
-   - Seguir o padrao de `importCancelledClients.ts`
-   - Pipeline ID fixo: `749ccdc2-5127-41a1-997b-3dcb47979555`
-   - Usar mapeamento ETAPA_TO_STAGE para resolver stage_id
-   - Verificar duplicatas por `company_name` + `pipeline_id`
-   - Campos: squad, plano, monthly_revenue, value, servico_contratado, data_contrato, data_inicio, tempo_contrato, valor_contrato, niche, fase_projeto, client_status='ativo'
-
-2. **Modificar** `src/components/CSMKanban.tsx`
-   - Adicionar botao temporario "Importar 7 Clientes Ativos Apollo" visivel apenas para admins
-   - Botao chama a funcao e exibe toast com resultado
-   - Sera removido apos uso
-
+**2. Logica de filtragem**
+- Extrair ano e mes da `data_perda` do card (formato `YYYY-MM-DD`)
+- Comparar com o mes/ano selecionado no picker
+- Cards sem `data_perda` nao aparecem quando o filtro de mes esta ativo
