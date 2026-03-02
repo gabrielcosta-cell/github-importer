@@ -2528,13 +2528,14 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                               <span>Categoria de MRR</span>
                             </div>
                             <Select value={card.categoria || 'none'} onValueChange={(value) => updateCardField('categoria', value === 'none' ? null : value)}>
-                              <SelectTrigger className={`w-full h-6 text-[10px] ${card.categoria === 'MRR Vendido' ? 'bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-400' : card.categoria === 'MRR Recorrente' ? 'bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400' : ''}`}>
+                               <SelectTrigger className={`w-full h-6 text-[10px] ${card.categoria === 'MRR Vendido' ? 'bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-400' : card.categoria === 'MRR Recorrente' ? 'bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400' : card.categoria === 'MRR Operação' ? 'bg-orange-500/10 border-orange-500/30 text-orange-600 dark:text-orange-400' : ''}`}>
                                 <SelectValue placeholder="Selecione a categoria" />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="none">Nenhum</SelectItem>
                                 <SelectItem value="MRR Vendido">MRR Vendido</SelectItem>
                                 <SelectItem value="MRR Recorrente">MRR Recorrente</SelectItem>
+                                <SelectItem value="MRR Operação">MRR Operação</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -3415,6 +3416,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                         <SelectTrigger className={`w-full h-6 text-[10px] ${
                           card.categoria === 'MRR Vendido' ? 'bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-400' :
                           card.categoria === 'MRR Recorrente' ? 'bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400' :
+                          card.categoria === 'MRR Operação' ? 'bg-orange-500/10 border-orange-500/30 text-orange-600 dark:text-orange-400' :
                           ''
                         }`}>
                           <SelectValue placeholder="Selecione a categoria" />
@@ -3423,6 +3425,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                           <SelectItem value="none">Nenhum</SelectItem>
                           <SelectItem value="MRR Vendido" className="text-green-600">MRR Vendido</SelectItem>
                           <SelectItem value="MRR Recorrente" className="text-blue-600">MRR Recorrente</SelectItem>
+                          <SelectItem value="MRR Operação" className="text-orange-600">MRR Operação</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

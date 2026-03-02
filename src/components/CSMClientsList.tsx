@@ -360,9 +360,10 @@ export function CSMClientsList({
                       value={cliente.categoria}
                       onValueChange={(value) => updateCategoria(cliente.id, value)}
                     >
-                      <SelectTrigger className={`w-full ${
+                       <SelectTrigger className={`w-full ${
                         cliente.categoria === 'MRR recorrente' ? 'bg-muted/50 border-border text-foreground' :
                         cliente.categoria === 'MRR Vendido' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400' :
+                        cliente.categoria === 'MRR Operação' ? 'bg-orange-500/10 border-orange-500/30 text-orange-600 dark:text-orange-400' :
                         ''
                       }`}>
                         <SelectValue />
@@ -370,6 +371,7 @@ export function CSMClientsList({
                       <SelectContent>
                         <SelectItem value="MRR recorrente">MRR recorrente</SelectItem>
                         <SelectItem value="MRR Vendido">MRR Vendido</SelectItem>
+                        <SelectItem value="MRR Operação">MRR Operação</SelectItem>
                       </SelectContent>
                     </Select>
                   </td>
