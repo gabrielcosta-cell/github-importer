@@ -2498,7 +2498,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                               <div className="space-y-0">
                                 <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                                   <AlertTriangle className="h-3 w-3" />
-                                  <span>Status</span>
+                                  <span>Status do Cliente</span>
                                 </div>
                                 <Badge 
                                   variant="outline" 
@@ -3241,7 +3241,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                         <div className="space-y-0">
                           <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                             <AlertTriangle className="h-3 w-3" />
-                            <span>Status</span>
+                            <span>Status do Cliente</span>
                           </div>
                           <Badge 
                             variant="outline" 
