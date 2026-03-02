@@ -22,7 +22,7 @@ import { CSMPipeline, CSMStage, CSMCard } from '@/types/kanban';
 import { useAutoMoveCards } from '@/hooks/useAutoMoveCards';
 
 import { DotLogo } from '@/components/DotLogo';
-import { importCancelledClients } from '@/utils/importCancelledClients';
+import { importCancelledClientsFeb } from '@/utils/importCancelledClientsFeb';
 import { readCSMKanbanCache, writeCSMKanbanCache } from '@/utils/csmKanbanSessionCache';
 import { MobileGlobalSearch, DesktopGlobalSearch } from './kanban/MobileGlobalSearch';
 import { MobileStageSwiper } from './kanban/MobileStageSwiper';
@@ -1026,16 +1026,16 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
         </div>
       </div>
 
-      {/* BOTÃO TEMPORÁRIO: Importar 7 clientes cancelados - REMOVER APÓS USO */}
+      {/* BOTÃO TEMPORÁRIO: Importar 9 clientes cancelados Fev - REMOVER APÓS USO */}
       {isAdmin && (
         <div className="w-full mb-2 flex justify-center">
           <Button
             variant="destructive"
             size="sm"
             onClick={async () => {
-              if (!confirm('Importar 7 clientes cancelados? Esta ação não pode ser desfeita facilmente.')) return;
-              toast.loading('Importando clientes cancelados...');
-              const result = await importCancelledClients();
+              if (!confirm('Importar 9 clientes cancelados (Fev/2026)? Esta ação não pode ser desfeita facilmente.')) return;
+              toast.loading('Importando clientes cancelados (Fev)...');
+              const result = await importCancelledClientsFeb();
               toast.dismiss();
               if (result.errors.length > 0) {
                 toast.error(`Erros: ${result.errors.join(', ')}`);
@@ -1046,7 +1046,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
             }}
             className="h-10 px-6 gap-2 text-sm font-semibold"
           >
-            🚀 Importar 7 Clientes Cancelados
+            🚀 Importar 9 Clientes Cancelados (Fev)
           </Button>
         </div>
       )}
