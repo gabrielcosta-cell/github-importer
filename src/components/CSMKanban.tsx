@@ -1006,28 +1006,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
             </Button>
           )}
 
-          {/* BOTÃO TEMPORÁRIO: Importar 7 clientes cancelados - REMOVER APÓS USO */}
-          {isAdmin && (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={async () => {
-                if (!confirm('Importar 7 clientes cancelados? Esta ação não pode ser desfeita facilmente.')) return;
-                toast.loading('Importando clientes cancelados...');
-                const result = await importCancelledClients();
-                toast.dismiss();
-                if (result.errors.length > 0) {
-                  toast.error(`Erros: ${result.errors.join(', ')}`);
-                } else {
-                  toast.success(`${result.success} clientes importados com sucesso! (${result.skipped} já existiam)`);
-                  if (selectedPipeline) fetchCards(selectedPipeline);
-                }
-              }}
-              className="h-8 px-3 gap-2"
-            >
-              Importar Cancelados
-            </Button>
-          )}
+          
 
           <Select value={viewFilter} onValueChange={(v) => setViewFilter(v as 'ativo' | 'todos' | 'cancelado')}>
             <SelectTrigger className="h-8 w-[180px]">
@@ -1041,6 +1020,31 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
           </Select>
         </div>
       </div>
+
+      {/* BOTÃO TEMPORÁRIO: Importar 7 clientes cancelados - REMOVER APÓS USO */}
+      {isAdmin && (
+        <div className="w-full mb-2 flex justify-center">
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={async () => {
+              if (!confirm('Importar 7 clientes cancelados? Esta ação não pode ser desfeita facilmente.')) return;
+              toast.loading('Importando clientes cancelados...');
+              const result = await importCancelledClients();
+              toast.dismiss();
+              if (result.errors.length > 0) {
+                toast.error(`Erros: ${result.errors.join(', ')}`);
+              } else {
+                toast.success(`${result.success} clientes importados com sucesso! (${result.skipped} já existiam)`);
+                if (selectedPipeline) fetchCards(selectedPipeline);
+              }
+            }}
+            className="h-10 px-6 gap-2 text-sm font-semibold"
+          >
+            🚀 Importar 7 Clientes Cancelados
+          </Button>
+        </div>
+      )}
 
       {/* Content area */}
       <div className="min-h-0 flex-1 h-full overflow-x-auto overflow-y-auto relative">
