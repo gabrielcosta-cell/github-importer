@@ -12,7 +12,8 @@ interface CancelledClient {
   existe_comissao: boolean;
   observacao_comissao?: string;
   fase_projeto: string;
-  etapa_formal: string; // Etapa Formal → mapeia para stage do kanban
+  etapa_formal: string;
+  categoria?: string;
 }
 
 // Mapeamento: Etapa Formal → Nome da stage no kanban
@@ -122,6 +123,34 @@ const CANCELLED_CLIENTS: CancelledClient[] = [
     fase_projeto: 'Refinamento',
     etapa_formal: 'Refinamento',
   },
+  {
+    company_name: 'Style Brazil',
+    squad: 'Apollo',
+    plano: 'Pro',
+    monthly_revenue: 4900,
+    data_contrato: '2025-01-01',
+    tempo_contrato: '6',
+    valor_contrato: 29400,
+    niche: '',
+    existe_comissao: false,
+    fase_projeto: 'Onboarding',
+    etapa_formal: 'Onboarding',
+    categoria: 'MRR Vendido',
+  },
+  {
+    company_name: 'Rede Conecta',
+    squad: 'Artemis',
+    plano: 'Pro',
+    monthly_revenue: 4900,
+    data_contrato: '2025-01-01',
+    tempo_contrato: '6',
+    valor_contrato: 29400,
+    niche: '',
+    existe_comissao: false,
+    fase_projeto: 'Onboarding',
+    etapa_formal: 'Onboarding',
+    categoria: 'MRR Vendido',
+  },
 ];
 
 const PIPELINE_ID = '749ccdc2-5127-41a1-997b-3dcb47979555'; // Clientes Ativos
@@ -190,6 +219,7 @@ export async function importCancelledClients(): Promise<{ success: number; skipp
           valor_contrato: client.valor_contrato,
           existe_comissao: client.existe_comissao,
           observacao_comissao: client.observacao_comissao || null,
+          categoria: client.categoria || 'MRR Recorrente',
         } as any)
         .eq('id', existing[0].id);
 
@@ -219,6 +249,7 @@ export async function importCancelledClients(): Promise<{ success: number; skipp
           valor_contrato: client.valor_contrato,
           existe_comissao: client.existe_comissao,
           observacao_comissao: client.observacao_comissao || null,
+          categoria: client.categoria || 'MRR Recorrente',
           client_status: 'cancelado',
           churn: true,
           data_perda: '2026-01-30',
