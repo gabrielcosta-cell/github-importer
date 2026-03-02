@@ -15,6 +15,7 @@ interface ActiveClient {
 
 const ETAPA_TO_STAGE: Record<string, string> = {
   'Onboarding': '1º Mês',
+  'Implementação': '2º Mês',
   'Escala': '4º Mês',
   'Renovação': '6º Mês',
 };
@@ -36,7 +37,7 @@ const ACTIVE_CLIENTS: ActiveClient[] = [
     company_name: 'Lebes',
     plano: 'Conceito',
     monthly_revenue: 19900,
-    etapa_formal: 'Onboarding',
+    etapa_formal: 'Implementação',
     fase_projeto: 'Mês Teste',
     servico_contratado: 'Gestão de Tráfego',
     data_contrato: '2026-01-01',
