@@ -11,6 +11,9 @@ const SDR_STAGES = [
   { name: 'Dia 5 (descanso)', color: '#10B981', position: 4 },
   { name: 'Dia 6', color: '#10B981', position: 5 },
   { name: 'Dia 7 (descanso)', color: '#10B981', position: 6 },
+  { name: 'Dia 8 (descanso)', color: '#10B981', position: 7 },
+  { name: 'Dia 9', color: '#EF4444', position: 8 },
+  { name: 'Contato Futuro', color: '#EF4444', position: 9 },
 ];
 
 const CLOSER_STAGES = [
@@ -66,15 +69,18 @@ async function ensurePipelineWithStages(
     const existingId = await deduplicatePipelines(pipelineName);
 
     if (existingId) {
-      // Ensure stages exist
+      // Ensure all stages exist (sync missing ones)
       const { data: existingStages } = await supabase
         .from('csm_stages')
-        .select('id')
+        .select('name')
         .eq('pipeline_id', existingId);
 
-      if (!existingStages || existingStages.length === 0) {
+      const existingNames = new Set((existingStages || []).map(s => s.name));
+      const missingStages = stages.filter(s => !existingNames.has(s.name));
+
+      if (missingStages.length > 0) {
         await supabase.from('csm_stages').insert(
-          stages.map(s => ({
+          missingStages.map(s => ({
             pipeline_id: existingId,
             name: s.name,
             color: s.color,
