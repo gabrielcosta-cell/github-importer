@@ -1,5 +1,4 @@
 import React from 'react';
-import { supabase as lovableSupabase } from '@/integrations/supabase/client';
 import {
   DndContext,
   DragEndEvent,
@@ -230,14 +229,38 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
         }
       }
 
-      // Se o estágio mudou, atualizar via edge function (bypass RLS)
+      // Se o estágio mudou, atualizar diretamente no banco
       if (newStageId !== activeCard.stage_id) {
-        const { data, error } = await lovableSupabase.functions.invoke('move-card-stage', {
-          body: { cardId: activeId, newStageId },
-        });
+        // Atualizar o card
+        const { error: updateError } = await supabase
+          .from('csm_cards')
+          .update({ 
+            stage_id: newStageId,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', activeId);
 
-        if (error) throw error;
-        if (data?.error) throw new Error(data.error);
+        if (updateError) throw updateError;
+
+        // Registrar no histórico de estágios
+        const userId = (await supabase.auth.getUser()).data.user?.id;
+        
+        // Fechar registro anterior
+        await supabase
+          .from('csm_card_stage_history')
+          .update({ exited_at: new Date().toISOString() })
+          .eq('card_id', activeId)
+          .is('exited_at', null);
+
+        // Criar novo registro
+        await supabase
+          .from('csm_card_stage_history')
+          .insert({
+            card_id: activeId,
+            stage_id: newStageId,
+            entered_at: new Date().toISOString(),
+            moved_by: userId,
+          });
 
         toast('Card movido com sucesso!');
         onRefreshCards();
