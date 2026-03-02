@@ -2497,7 +2497,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                             <>
                               <div className="space-y-0">
                                 <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                                  <AlertTriangle className="h-3 w-3" />
+                                  <AlertTriangle className={cn("h-3 w-3", (card as any).client_status === 'cancelado' ? 'text-destructive' : 'text-green-500')} />
                                   <span>Status do Cliente</span>
                                 </div>
                                 <Badge 
@@ -3240,7 +3240,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                       <>
                         <div className="space-y-0">
                           <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                            <AlertTriangle className="h-3 w-3" />
+                            <AlertTriangle className={cn("h-3 w-3", (card as any).client_status === 'cancelado' ? 'text-destructive' : 'text-green-500')} />
                             <span>Status do Cliente</span>
                           </div>
                           <Badge 
