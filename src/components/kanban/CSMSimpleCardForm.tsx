@@ -77,9 +77,22 @@ export const CSMSimpleCardForm: React.FC<CSMSimpleCardFormProps> = ({
 
     setLoading(true);
     try {
+      // Verificar nome duplicado
+      const { count: duplicateCount } = await supabase
+        .from('csm_cards')
+        .select('*', { count: 'exact', head: true })
+        .ilike('company_name', clientName.trim());
+
+      if (duplicateCount && duplicateCount > 0) {
+        toast.error('Já existe um cliente com esse nome. Escolha um nome diferente.');
+        setLoading(false);
+        return;
+      }
+
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError || !userData.user) {
         toast.error('Você precisa estar logado para criar cards');
+        setLoading(false);
         return;
       }
 
