@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Plus, LayoutGrid, List, Rocket, Moon, Shield, Flame, Sunrise, DollarSign, Info, ArrowUpDown, UserPlus } from 'lucide-react';
+import { Plus, LayoutGrid, Rocket, Moon, Shield, Flame, Sunrise, DollarSign, Info, ArrowUpDown, UserPlus } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -20,7 +20,7 @@ import { CardDetailsDialog } from './kanban/CardDetailsDialog';
 import { FilterPopover } from './csm/FilterPopover';
 import { CSMPipeline, CSMStage, CSMCard } from '@/types/kanban';
 import { useAutoMoveCards } from '@/hooks/useAutoMoveCards';
-import { CSMClientsList } from './CSMClientsList';
+
 import { DotLogo } from '@/components/DotLogo';
 import { readCSMKanbanCache, writeCSMKanbanCache } from '@/utils/csmKanbanSessionCache';
 import { MobileGlobalSearch, DesktopGlobalSearch } from './kanban/MobileGlobalSearch';
@@ -71,7 +71,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
     return tagsParam ? tagsParam.split(',').filter(Boolean) : [];
   };
 
-  const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
+  
   const [pipelines, setPipelines] = useState<CSMPipeline[]>(initialCache?.pipelines ?? []);
   const [selectedPipeline, setSelectedPipeline] = useState<string>(
     initialCache?.selectedPipeline ?? initialCache?.pipelines?.[0]?.id ?? ''
@@ -756,30 +756,6 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
       <div className="hidden md:flex md:flex-row md:items-center justify-between w-full mb-4 flex-shrink-0 gap-0 relative z-10">
         {/* Left: Toggle + Search */}
         <div className="flex items-center gap-3 h-full flex-1">
-          {/* Toggle View Mode */}
-          <div className="flex gap-1 border rounded-lg p-1 flex-shrink-0">
-            <Button
-              variant={viewMode === 'kanban' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('kanban')}
-              className="h-8 px-2 transition-all duration-200"
-              style={viewMode === 'kanban' ? { backgroundColor: '#ec4a55', color: 'white' } : {}}
-            >
-              <LayoutGrid className="h-4 w-4 mr-2 transition-transform duration-200" />
-              <span>Kanban</span>
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('list')}
-              className="h-8 px-2 transition-all duration-200"
-              style={viewMode === 'list' ? { backgroundColor: '#ec4a55', color: 'white' } : {}}
-            >
-              <List className="h-4 w-4 mr-2 transition-transform duration-200" />
-              <span>Lista</span>
-            </Button>
-          </div>
-          
           {/* Desktop global search */}
           <DesktopGlobalSearch
             currentPipelineId={selectedPipeline}
@@ -910,42 +886,25 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
 
       {/* Content area */}
       <div className="min-h-0 flex-1 h-full overflow-x-auto overflow-y-auto relative">
-        {viewMode === 'kanban' ? (
-          selectedPipeline && (
-            <div className="animate-in fade-in-0 zoom-in-95 duration-300 h-full">
-              {/* Mobile: swipe-based stage view */}
-              {isMobile ? (
-                <MobileStageSwiper
-                  stages={stages}
-                  cardsByStage={stages.reduce((acc, stage) => {
-                    acc[stage.id] = filteredCardsData.cards.filter(c => c.stage_id === stage.id);
-                    return acc;
-                  }, {} as Record<string, CSMCard[]>)}
-                  onCardClick={handleCardClick}
-                />
-              ) : (
-                <KanbanBoard
-                  stages={stages}
-                  cards={filteredCardsData.cards}
-                  onRefreshCards={refreshCards}
-                  onCardClick={handleCardClick}
-                />
-              )}
-            </div>
-          )
-        ) : (
-          <div className="h-full overflow-y-auto px-4 pb-4 animate-in fade-in-0 zoom-in-95 duration-300">
-            <CSMClientsList 
-              pipelineName={selectedPipelineData?.name} 
-              pipelineId={selectedPipeline}
-              selectedSquad={selectedSquad}
-              selectedPlano={selectedPlano}
-              selectedMotivo={selectedMotivo}
-              selectedNiche={selectedNiche}
-              selectedFlag={selectedFlag}
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-            />
+        {selectedPipeline && (
+          <div className="animate-in fade-in-0 zoom-in-95 duration-300 h-full">
+            {isMobile ? (
+              <MobileStageSwiper
+                stages={stages}
+                cardsByStage={stages.reduce((acc, stage) => {
+                  acc[stage.id] = filteredCardsData.cards.filter(c => c.stage_id === stage.id);
+                  return acc;
+                }, {} as Record<string, CSMCard[]>)}
+                onCardClick={handleCardClick}
+              />
+            ) : (
+              <KanbanBoard
+                stages={stages}
+                cards={filteredCardsData.cards}
+                onRefreshCards={refreshCards}
+                onCardClick={handleCardClick}
+              />
+            )}
           </div>
         )}
       </div>
