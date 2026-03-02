@@ -538,7 +538,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
   }, [stages, cards]);
   // ===== FIM DO CÓDIGO TEMPORÁRIO =====
 
-  // ===== CÓDIGO TEMPORÁRIO: Configurar 7 etapas no pipeline Clientes Ativos =====
+  // ===== CÓDIGO TEMPORÁRIO: Limpar duplicatas e configurar 7 etapas =====
   const hasRunStageSetup = useRef(false);
   useEffect(() => {
     if (hasRunStageSetup.current) return;
@@ -548,113 +548,118 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
     hasRunStageSetup.current = true;
     const PIPELINE_ID = '749ccdc2-5127-41a1-997b-3dcb47979555';
     
-    const setupStages = async () => {
-      console.log('🔧 Configurando 7 etapas para Clientes Ativos...');
-      
-      const DEFAULT_STAGES = [
-        { name: '1º Mês', color: '#3B82F6', position: 0 },
-        { name: '2º Mês', color: '#6366F1', position: 1 },
-        { name: '3º Mês', color: '#8B5CF6', position: 2 },
-        { name: '4º Mês', color: '#A855F7', position: 3 },
-        { name: '5º Mês', color: '#D946EF', position: 4 },
-        { name: '6º Mês', color: '#EC4899', position: 5 },
-        { name: 'Retenção', color: '#10B981', position: 6 },
-      ];
-      
+    const DEFAULT_STAGES = [
+      { name: '1º Mês', color: '#3B82F6', position: 0 },
+      { name: '2º Mês', color: '#6366F1', position: 1 },
+      { name: '3º Mês', color: '#8B5CF6', position: 2 },
+      { name: '4º Mês', color: '#A855F7', position: 3 },
+      { name: '5º Mês', color: '#D946EF', position: 4 },
+      { name: '6º Mês', color: '#EC4899', position: 5 },
+      { name: 'Retenção', color: '#10B981', position: 6 },
+    ];
+    
+    const cleanupAndSetup = async () => {
       try {
-        // Buscar estágios atuais
-        const { data: currentStages } = await supabase
+        // 1. Buscar TODAS as stages deste pipeline
+        const { data: allStages } = await supabase
           .from('csm_stages')
-          .select('id, name, position')
+          .select('id, name, position, created_at')
           .eq('pipeline_id', PIPELINE_ID)
-          .order('position');
+          .eq('is_active', true)
+          .order('created_at', { ascending: true });
         
-        const currentNames = (currentStages || []).map(s => s.name);
-        const targetNames = DEFAULT_STAGES.map(s => s.name);
+        if (!allStages) return;
         
-        // Se já tem exatamente as 7 etapas certas, pular
-        if (currentNames.length === 7 && targetNames.every((n, i) => currentNames[i] === n)) {
-          console.log('✅ Etapas já configuradas corretamente.');
-          return;
+        // 2. Agrupar por nome, manter apenas a mais antiga de cada
+        const stagesByName: Record<string, typeof allStages> = {};
+        for (const stage of allStages) {
+          if (!stagesByName[stage.name]) stagesByName[stage.name] = [];
+          stagesByName[stage.name].push(stage);
         }
         
-        console.log('📊 Etapas atuais:', currentNames);
+        const keepIds: string[] = [];
+        const deleteIds: string[] = [];
         
-        // 1. Criar as novas etapas primeiro
-        const { data: newStages, error: insertError } = await supabase
-          .from('csm_stages')
-          .insert(DEFAULT_STAGES.map(s => ({
-            pipeline_id: PIPELINE_ID,
-            name: s.name,
-            color: s.color,
-            position: s.position + 100, // offset temporário para evitar conflito
-            is_active: true,
-          })))
-          .select();
-        
-        if (insertError || !newStages) {
-          console.error('❌ Erro ao criar novas etapas:', insertError);
-          throw insertError;
-        }
-        
-        console.log('✅ Novas etapas criadas:', newStages.map(s => s.name));
-        
-        // 2. Mover todos os cards das etapas antigas para a primeira nova etapa
-        const firstNewStageId = newStages.find(s => s.name === '1º Mês')?.id;
-        const oldStageIds = (currentStages || []).map(s => s.id);
-        
-        if (firstNewStageId && oldStageIds.length > 0) {
-          const { error: moveError } = await supabase
-            .from('csm_cards')
-            .update({ stage_id: firstNewStageId })
-            .eq('pipeline_id', PIPELINE_ID)
-            .in('stage_id', oldStageIds);
-          
-          if (moveError) {
-            console.error('⚠️ Erro ao mover cards:', moveError);
-          } else {
-            console.log('✅ Cards movidos para 1º Mês');
+        for (const [name, stagesGroup] of Object.entries(stagesByName)) {
+          // Manter a primeira (mais antiga), deletar as demais
+          keepIds.push(stagesGroup[0].id);
+          for (let i = 1; i < stagesGroup.length; i++) {
+            deleteIds.push(stagesGroup[i].id);
           }
         }
         
-        // 3. Deletar etapas antigas (agora sem cards vinculados)
-        if (oldStageIds.length > 0) {
-          const { error: deleteError } = await supabase
+        // 3. Mover cards das stages duplicadas para as que ficam
+        if (deleteIds.length > 0) {
+          console.log(`🧹 Limpando ${deleteIds.length} stages duplicadas...`);
+          
+          // Para cada stage a deletar, mover cards para a stage mantida com mesmo nome
+          for (const [name, stagesGroup] of Object.entries(stagesByName)) {
+            if (stagesGroup.length <= 1) continue;
+            const keepId = stagesGroup[0].id;
+            const dupeIds = stagesGroup.slice(1).map(s => s.id);
+            
+            await supabase
+              .from('csm_cards')
+              .update({ stage_id: keepId })
+              .eq('pipeline_id', PIPELINE_ID)
+              .in('stage_id', dupeIds);
+          }
+          
+          // Deletar stages duplicadas
+          await supabase
             .from('csm_stages')
             .delete()
-            .in('id', oldStageIds);
+            .in('id', deleteIds);
           
-          if (deleteError) {
-            console.error('⚠️ Erro ao deletar etapas antigas:', deleteError);
-          } else {
-            console.log('✅ Etapas antigas deletadas');
-          }
+          console.log(`✅ ${deleteIds.length} stages duplicadas removidas`);
         }
         
-        // 4. Atualizar positions das novas etapas para os valores corretos
-        for (const stage of newStages) {
-          const targetStage = DEFAULT_STAGES.find(s => s.name === stage.name);
-          if (targetStage) {
+        // 4. Verificar se temos exatamente as 7 etapas corretas
+        const keepNames = Object.keys(stagesByName);
+        const targetNames = DEFAULT_STAGES.map(s => s.name);
+        const allPresent = targetNames.every(n => keepNames.includes(n));
+        
+        if (allPresent && keepNames.length === 7) {
+          // Só corrigir posições
+          for (const [name, stagesGroup] of Object.entries(stagesByName)) {
+            const target = DEFAULT_STAGES.find(s => s.name === name);
+            if (target) {
+              await supabase
+                .from('csm_stages')
+                .update({ position: target.position, color: target.color })
+                .eq('id', stagesGroup[0].id);
+            }
+          }
+          console.log('✅ Etapas já corretas, posições ajustadas.');
+        } else {
+          // Criar etapas faltantes
+          const missing = DEFAULT_STAGES.filter(s => !keepNames.includes(s.name));
+          if (missing.length > 0) {
             await supabase
               .from('csm_stages')
-              .update({ position: targetStage.position })
-              .eq('id', stage.id);
+              .insert(missing.map(s => ({
+                pipeline_id: PIPELINE_ID,
+                name: s.name,
+                color: s.color,
+                position: s.position,
+                is_active: true,
+              })));
+            console.log(`✅ ${missing.length} etapas criadas`);
           }
         }
         
-        console.log('✅ Etapas configuradas com sucesso!');
-        toast.success('Etapas do funil atualizadas: 1º a 6º Mês + Retenção');
-        
         // Recarregar
+        if (deleteIds.length > 0) {
+          toast.success(`${deleteIds.length} etapas duplicadas removidas`);
+        }
         fetchStages(PIPELINE_ID);
         fetchCards(PIPELINE_ID);
       } catch (err) {
-        console.error('❌ Erro ao configurar etapas:', err);
-        toast.error('Erro ao configurar etapas do funil');
+        console.error('❌ Erro ao limpar/configurar etapas:', err);
       }
     };
     
-    setupStages();
+    cleanupAndSetup();
   }, [selectedPipeline]);
   // ===== FIM DO CÓDIGO TEMPORÁRIO: Setup Etapas =====
 
