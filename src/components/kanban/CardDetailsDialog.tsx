@@ -935,7 +935,8 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
         const faturamento = field === 'faturamento_display' ? processedValue : (card as any).faturamento_display;
         
         // Gerar novo título
-        const newTitle = `${companyName || 'Sem nome'} - ${faturamento || 'Sem faturamento'}`;
+        const namePart = companyName || 'Sem nome';
+        const newTitle = faturamento ? `${namePart} - ${faturamento}` : namePart;
         updates.title = newTitle;
       }
 
