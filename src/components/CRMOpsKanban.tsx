@@ -15,6 +15,7 @@ import { StageManager } from './kanban/StageManager';
 import { CSMPipeline, CSMStage, CSMCard } from '@/types/kanban';
 import { setupCRMOpsPipelines, CRM_OPS_PIPELINE_NAMES } from '@/utils/setupCRMOpsPipelines';
 import { DotLogo } from '@/components/DotLogo';
+import { importCloserWonFeb } from '@/utils/importCloserWonFeb';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/contexts/AuthContext';
 import { startOfDay, endOfDay } from 'date-fns';
@@ -328,6 +329,31 @@ export const CRMOpsKanban: React.FC = () => {
           />
         </div>
       </div>
+
+      {/* BOTÃO TEMPORÁRIO - REMOVER APÓS USO */}
+      {isAdmin && (
+        <div className="w-full mb-2 flex justify-center">
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={async () => {
+              if (!confirm('Importar 8 clientes ganhos no Closer (Fev/2026)?')) return;
+              toast.loading('Importando clientes ganhos...');
+              const result = await importCloserWonFeb();
+              toast.dismiss();
+              if (result.errors.length > 0) {
+                toast.error(`Erros: ${result.errors.join(', ')}`);
+              } else {
+                toast.success(`${result.success} clientes importados, ${result.skipped} já existiam!`);
+                if (selectedPipeline) fetchCards(selectedPipeline);
+              }
+            }}
+            className="h-10 px-6 gap-2 text-sm font-semibold"
+          >
+            🚀 Importar 8 Ganhos Closer (Fev)
+          </Button>
+        </div>
+      )}
 
       {/* Kanban Board */}
       <div className="flex-1 min-h-0 overflow-hidden">
