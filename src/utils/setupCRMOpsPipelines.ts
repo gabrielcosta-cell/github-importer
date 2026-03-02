@@ -69,18 +69,15 @@ async function ensurePipelineWithStages(
     const existingId = await deduplicatePipelines(pipelineName);
 
     if (existingId) {
-      // Ensure all stages exist (sync missing ones)
-      const { data: existingStages } = await supabase
+      // Only create stages if the pipeline has none at all
+      const { count } = await supabase
         .from('csm_stages')
-        .select('name')
+        .select('id', { count: 'exact', head: true })
         .eq('pipeline_id', existingId);
 
-      const existingNames = new Set((existingStages || []).map(s => s.name));
-      const missingStages = stages.filter(s => !existingNames.has(s.name));
-
-      if (missingStages.length > 0) {
+      if (!count || count === 0) {
         await supabase.from('csm_stages').insert(
-          missingStages.map(s => ({
+          stages.map(s => ({
             pipeline_id: existingId,
             name: s.name,
             color: s.color,
