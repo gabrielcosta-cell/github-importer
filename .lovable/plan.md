@@ -1,89 +1,38 @@
 
-# Reestruturar Hierarquia de Usuarios: 3 Niveis
 
-## Resumo
+# Corrigir Dashboard de Churn - Dados Hardcoded e Pipeline IDs Incorretos
 
-Criar uma hierarquia de 3 niveis no sistema:
+## Problema Identificado
 
-| Nivel | Nome | Quem |
-|-------|------|------|
-| 1 | **Admin Global** | Apenas Gabriel Costa (fixo, unico) |
-| 2 | **Administrador** | Usuarios promovidos pelo Admin Global |
-| 3 | **Usuario Comum** | Todos os demais (sem distincao de cargo tipo SDR, Closer, etc.) |
+O Dashboard de Churn exibe "3 Churns Operacionais" e "3 Churns Total" mesmo com o banco de dados vazio. Isso acontece por dois motivos:
 
-## Tabela de Permissoes
+1. **Pipeline IDs hardcoded incorretos**: O componente consulta pipelines antigos que nao existem mais (`1242a985-...` e `5dfc98f3-...`), fazendo as queries retornarem sempre vazio
+2. **Fallback para dados hardcoded**: Quando o banco retorna vazio, o sistema usa um array de dados antigos fixos no codigo (Athena: 2 churns, Artemis: 1 churn)
 
-| Acao | Admin Global | Admin | Comum |
-|------|:-----------:|:-----:|:-----:|
-| Ver aba de usuarios | Sim | Sim | **Nao** |
-| Adicionar usuario comum | Sim | Sim | Nao |
-| Adicionar usuario admin | Sim | **Nao** | Nao |
-| Promover comum para admin | Sim | **Nao** | Nao |
-| Rebaixar admin para comum | Sim | **Nao** | Nao |
-| Desativar usuario comum | Sim | Sim | Nao |
-| Desativar usuario admin | Sim | **Nao** | Nao |
-| **Excluir** usuario (permanente) | Sim | **Nao** | Nao |
-| Excluir cards/dados do CSM | Sim | Sim | **Nao** |
-| Criar/editar cards | Sim | Sim | Sim |
-| Visualizar modulos (conforme permissao) | Sim | Sim | Sim |
+## O Que Sera Feito
+
+### 1. Remover dados hardcoded de fallback
+- Remover o array `churnData` (linhas 74-180) com os valores fixos antigos
+- Remover as constantes hardcoded de MRR base (`CORRECT_MRR_BASE_BY_SQUAD`, `CORRECT_MRR_BASE_TOTAL`, `MRR_PERDIDO_TOTAL`, `MRR_VENDIDO`, `UPSELL_TOTAL`)
+- Remover os arrays `historicalData` e `churnQuantityByMonth` com dados fictícios
+
+### 2. Corrigir os Pipeline IDs
+- Substituir o pipeline ID antigo de "Clientes ativos" (`1242a985-2f74-4b4a-bc0e-c045a3951d65`) pelo correto (`749ccdc2-5127-41a1-997b-3dcb47979555`)
+- Substituir o pipeline ID antigo de "Clientes Perdidos" (`5dfc98f3-9614-419a-af65-1b87c8372aeb`) pelo correto (`38ce6be3-a9ee-450a-89be-2afe762bf50f`)
+- Buscar os pipeline IDs dinamicamente do banco em vez de hardcoded
+
+### 3. Ajustar logica de fallback
+- Quando nao houver dados no banco, mostrar zeros em vez de dados fictícios antigos
+- Remover a linha `const dataToUse = churnDataFromDB.length > 0 ? churnDataFromDB : churnData` e usar sempre os dados do banco
 
 ## Detalhes Tecnicos
 
-### 1. Adicionar campo `is_global_admin` na tabela `profiles`
+### Arquivo modificado
+- `src/components/ChurnMetrics.tsx`
 
-Criar uma migration adicionando uma coluna booleana `is_global_admin` (default `false`) na tabela `profiles`. Apenas o registro do Gabriel Costa tera `true`. Isso evita que qualquer admin se auto-promova -- apenas quem ja e global admin pode alterar esse campo.
+### Mudancas principais
+- Buscar pipelines CSM dinamicamente: `SELECT id, name FROM csm_pipelines WHERE is_active = true`
+- Usar os IDs retornados nas queries de churn em vez de constantes fixas
+- Calcular MRR base a partir dos dados reais do banco
+- Manter graficos de tendencia funcional, mas alimentados por dados reais (tabela `churn_monthly_history`)
 
-Tambem executar um UPDATE para marcar o usuario Gabriel Costa como `is_global_admin = true`.
-
-### 2. Simplificar roles: remover SDR/Closer como tipos distintos
-
-- O campo `role` na tabela `profiles` passara a ter apenas 2 valores: `'admin'` e `'user'`.
-- Remover as opcoes `sdr` e `closer` de todos os selects, tipos TypeScript e logica de negocio.
-- Usuarios que hoje sao `sdr` ou `closer` serao migrados para `role = 'user'`.
-- O tipo no `AuthContext` e `types/user.ts` sera atualizado para `'admin' | 'user'`.
-
-### 3. Atualizar `AuthContext.tsx`
-
-- Adicionar `is_global_admin` ao tipo `Profile`.
-- Carregar `is_global_admin` ao buscar perfil do usuario.
-- Expor `is_global_admin` no contexto para uso nos componentes.
-
-### 4. Atualizar `useModulePermissions.tsx`
-
-- Admin Global: acesso total (igual ao admin atual).
-- Admin: acesso total exceto excluir outros admins e gerenciar admins.
-- Usuario Comum: modulo `users` retorna `false` para todas as permissoes (nao ve a aba).
-- Usuario Comum: `can_delete` retorna `false` para modulos de cards/CSM/pipelines.
-
-### 5. Refatorar `UserManagement.tsx`
-
-- **Admin Global**: ve todos os usuarios, pode criar qualquer tipo, promover/rebaixar, excluir permanentemente.
-- **Admin**: ve apenas usuarios comuns, pode criar apenas usuarios comuns (select de role nao mostra "Admin"), pode desativar (nao excluir) apenas usuarios comuns.
-- **Usuario Comum**: bloqueado de acessar a tela (ja tratado pelo `checkModulePermission`).
-- Remover selects de SDR/Closer/Custom Roles do formulario de criacao -- agora o usuario e simplesmente "Comum" ou "Admin".
-- Botao "Excluir" (permanente) so aparece para Admin Global; Admins veem apenas "Desativar".
-
-### 6. Atualizar `ProtectedRoute.tsx`
-
-- `requireAdmin` continua funcionando, agora checa `role === 'admin'` ou `is_global_admin`.
-- Nenhuma mudanca estrutural necessaria, apenas ajustar o tipo de role.
-
-### 7. Bloquear exclusao de cards para usuarios comuns
-
-No componente `CardDetailsDialog.tsx`, o botao/acao de "Excluir" card so sera renderizado se `checkModulePermission('csm', 'delete')` retornar `true`. Como usuarios comuns terao `can_delete = false`, o botao sumira automaticamente. Verificar e adicionar essa checagem onde necessario.
-
-### 8. Remover sistema de Custom Roles/Grupos
-
-Como a hierarquia agora e fixa (Global Admin > Admin > Comum), o sistema de grupos customizados (`custom_roles`, `role_module_permissions`) e a UI de "Novo Grupo" serao simplificados. Os grupos de permissao por modulo ainda podem existir para controlar quais modulos cada usuario comum pode ver, mas a criacao de "cargos" como SDR, Closer sera removida.
-
-### Arquivos a modificar
-
-1. **Migration SQL** -- adicionar `is_global_admin`, migrar roles existentes
-2. **`src/integrations/supabase/types.ts`** -- atualizar tipos gerados
-3. **`src/types/user.ts`** -- role: `'admin' | 'user'`
-4. **`src/contexts/AuthContext.tsx`** -- Profile com `is_global_admin`, role simplificado
-5. **`src/hooks/useModulePermissions.tsx`** -- logica de permissao por nivel
-6. **`src/components/UserManagement.tsx`** -- UI refatorada para 3 niveis
-7. **`src/components/ProtectedRoute.tsx`** -- ajuste de tipos
-8. **`src/components/kanban/CardDetailsDialog.tsx`** -- checagem de permissao no botao excluir
-9. **Edge function `create-user`** -- aceitar apenas `'admin'` ou `'user'` como role
