@@ -158,7 +158,7 @@ export async function importActiveClientsApollo(): Promise<{ success: number; sk
           servico_contratado: client.servico_contratado,
           fase_projeto: client.fase_projeto,
           niche: client.niche,
-          categoria: 'MRR recorrente',
+          categoria: 'MRR Recorrente',
         } as any)
         .eq('id', existing[0].id);
 
@@ -188,7 +188,7 @@ export async function importActiveClientsApollo(): Promise<{ success: number; sk
         valor_contrato: client.valor_contrato,
         niche: client.niche,
         fase_projeto: client.fase_projeto,
-        categoria: 'MRR recorrente',
+        categoria: 'MRR Recorrente',
         client_status: 'ativo',
         position: 0,
         created_by: user.id,
@@ -205,10 +205,9 @@ export async function importActiveClientsApollo(): Promise<{ success: number; sk
   // Bulk update: set categoria for ALL cards in the pipeline
   const { error: bulkError } = await supabase
     .from('csm_cards')
-    .update({ categoria: 'MRR recorrente' } as any)
+    .update({ categoria: 'MRR Recorrente' } as any)
     .eq('pipeline_id', PIPELINE_ID)
-    .eq('client_status', 'ativo')
-    .is('categoria', null);
+    .eq('client_status', 'ativo');
 
   if (bulkError) {
     result.errors.push(`Erro ao atualizar categoria em lote: ${bulkError.message}`);
