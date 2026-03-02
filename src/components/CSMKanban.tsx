@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { importCancelledClients } from '@/utils/importCancelledClients';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -1042,6 +1043,24 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
               minYear={2025}
               minMonth={0}
             />
+          )}
+          {viewFilter === 'cancelado' && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={async () => {
+                toast.info('Importando clientes cancelados...');
+                const result = await importCancelledClients();
+                if (result.errors.length > 0) {
+                  toast.error(`Erros: ${result.errors.join(', ')}`);
+                } else {
+                  toast.success(`Importação concluída! ${result.success} sucesso, ${result.skipped} ignorados`);
+                }
+                fetchCards(selectedPipeline);
+              }}
+            >
+              Importar Cancelados
+            </Button>
           )}
         </div>
       </div>
