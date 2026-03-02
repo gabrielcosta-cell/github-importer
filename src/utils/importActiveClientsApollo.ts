@@ -158,6 +158,7 @@ export async function importActiveClientsApollo(): Promise<{ success: number; sk
           servico_contratado: client.servico_contratado,
           fase_projeto: client.fase_projeto,
           niche: client.niche,
+          categoria: 'MRR recorrente',
         } as any)
         .eq('id', existing[0].id);
 
@@ -187,6 +188,7 @@ export async function importActiveClientsApollo(): Promise<{ success: number; sk
         valor_contrato: client.valor_contrato,
         niche: client.niche,
         fase_projeto: client.fase_projeto,
+        categoria: 'MRR recorrente',
         client_status: 'ativo',
         position: 0,
         created_by: user.id,
