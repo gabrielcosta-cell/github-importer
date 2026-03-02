@@ -257,18 +257,6 @@ export const CRMOpsKanban: React.FC = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem onClick={() => toast.info('Integrações API em breve')}>
-                  <Plug className="h-4 w-4 mr-2" />
-                  Integrações API
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowStageManager(true)}>
-                  <PenLine className="h-4 w-4 mr-2" />
-                  Editar Pipeline
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast.info('Organizar ordem em breve')}>
-                  <GripVertical className="h-4 w-4 mr-2" />
-                  Organizar Ordem dos Funis
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => toast.info('Gerenciar etiquetas em breve')}>
                   <Tag className="h-4 w-4 mr-2" />
                   Gerenciar Etiquetas
