@@ -1,58 +1,74 @@
 
+## Importar 7 Clientes Cancelados no CSM
 
-## Plano: Adicionar campos faltantes ao CSM Card
+### Dados dos Clientes
 
-### Contexto
-Dos 15 campos necessarios para cadastrar um cliente completo (ex: QJ Donuts), 11 ja existem no sistema. Faltam 5 campos: 3 novos no banco de dados e 2 calculados no frontend.
+Todos os 7 clientes serao inseridos com:
+- `client_status = 'cancelado'`
+- `data_perda = '2026-01-30'` (data de cancelamento)
+- `churn = true`
 
-### 1. Migration SQL - Novos campos na tabela `csm_cards`
+### Mapeamento de Campos
 
-Adicionar 3 colunas:
-- `etapa_real` (text) - fase real do projeto (select com opcoes)
-- `valor_contrato` (numeric, default 0) - valor total do contrato
-- `observacao_comissao` (text) - descricao da comissao
+| Campo do Usuario | Campo no Banco | Exemplo |
+|---|---|---|
+| Nome | company_name + title | QJ Donuts |
+| Squad | squad | Artemis |
+| Plano | plano | Business |
+| Fase do Projeto | fase_projeto | Cancelamento |
+| Fee | monthly_revenue | 3000 |
+| Servico | servico_contratado | Gestao de Trafego |
+| Assinatura | data_contrato | 2025-08-01 |
+| Tempo de Contrato | tempo_contrato | 6 |
+| Valor de Contrato | valor_contrato | 18000 |
+| Nicho | niche | Franquia |
+| Comissao (sim/nao) | existe_comissao | true/false |
+| Comissao (texto) | observacao_comissao | 1e franquia das uni |
+| Data Inicio | data_inicio | calculado a partir de Assinatura |
 
-**Nota:** `etapa_formal` e `tempo_dot` sao calculados no frontend, nao precisam de coluna.
+**Nota:** Etapa Formal e Tempo de DOT sao calculados automaticamente no frontend, nao precisam ser salvos.
 
-### 2. Atualizar tipo CSMCard em `src/types/kanban.ts`
+### Clientes a Inserir
 
-Adicionar:
-- `etapa_real?: string`
-- `valor_contrato?: number`
-- `observacao_comissao?: string`
+| # | Empresa | Squad | Plano | Fee | Contrato | Nicho | Comissao |
+|---|---|---|---|---|---|---|---|
+| 1 | QJ Donuts | Artemis | Business | 3.000 | 6m / 18k | Franquia | Sim: 1e franquia das uni |
+| 2 | Rede Fooch | Apollo | Pro | 3.500 | 12m / 42k | Servico | Nao |
+| 3 | Italia no Box | Athena | Business | 3.000 | 6m / 18k | Franquia | Nao |
+| 4 | Aluga Ai | Athena | Business | 3.000 | 6m / 18k | Franquia | Sim: uando bater a meta |
+| 5 | Master Crio | Ares | Pro | 4.900 | 6m / 29.4k | Produto | Sim: 2,5% sobre vendas |
+| 6 | Belafer | Ares | Business | 3.000 | 6m / 18k | Produto | Nao |
+| 7 | Unigama | Artemis | Pro | 4.200 | 6m / 25.2k | Educacao | Sim: nsalidade gerada pe |
 
-### 3. Atualizar aba Resumo no `CardDetailsDialog.tsx`
+### Implementacao Tecnica
 
-Na secao Resumo (mobile e desktop), adicionar os novos campos na seguinte ordem apos os campos ja existentes:
+1. **Criar funcao utilitaria** `src/utils/importCancelledClients.ts`
+   - Funcao que recebe a lista de clientes parseada e insere no Supabase
+   - Busca o pipeline "Clientes ativos" e uma stage existente para associar
+   - Para cada cliente: verifica se ja existe (por company_name), atualiza ou insere
+   - Define campos: `client_status='cancelado'`, `churn=true`, `data_perda='2026-01-30'`, `fase_projeto='Cancelamento'` (ou 'Cancelamento Comercial' para Master Crio)
 
-**Campos calculados (somente leitura):**
-- **Etapa Formal**: Mapeamento automatico baseado na diferenca de meses entre `data_inicio` e a data atual:
-  - 1 mes = Onboarding
-  - 2 meses = Implementacao
-  - 3 meses = Refinamento
-  - 4 meses = Escala
-  - 5 meses = Expansao
-  - 6 meses = Renovacao
-  - 7+ meses = Retencao
-- **Tempo de DOT**: Numero de meses desde `data_inicio` ate hoje (somente leitura)
+2. **Executar a importacao** chamando a funcao com os 7 clientes hardcoded
+   - A funcao sera invocada uma unica vez (pode ser via botao temporario ou diretamente no console)
 
-**Campos editaveis:**
-- **Etapa Real**: Select com opcoes: Onboarding, Implementacao, Refinamento, Escala, Expansao, Renovacao, Retencao, Cancelamento
-- **Valor de Contrato**: Campo numerico editavel com formatacao em R$
-- **Observacao Comissao**: Campo de texto que aparece abaixo do toggle Sim/Nao de comissao ja existente
+3. **Campos por cliente inserido:**
+   - `title`, `company_name`, `stage_id`, `pipeline_id`
+   - `squad`, `plano`, `monthly_revenue`, `niche`
+   - `servico_contratado` = 'Gestao de Trafego'
+   - `data_contrato` (Assinatura convertida para formato ISO)
+   - `data_inicio` (mesmo valor de data_contrato, para calculo de Tempo de DOT)
+   - `tempo_contrato` (string: '6' ou '12')
+   - `valor_contrato` (numerico)
+   - `existe_comissao` (boolean)
+   - `observacao_comissao` (texto, quando aplicavel)
+   - `client_status` = 'cancelado'
+   - `churn` = true
+   - `data_perda` = '2026-01-30'
+   - `fase_projeto` = 'Cancelamento' (ou 'Cancelamento Comercial')
+   - `position` = 0, `created_by` = usuario autenticado
 
-### 4. Arquivos a modificar
+### Arquivo a criar
+- `src/utils/importCancelledClients.ts` — funcao de importacao com os 7 clientes
 
-| Arquivo | Alteracao |
-|---|---|
-| Migration SQL (nova) | Adicionar 3 colunas a `csm_cards` |
-| `src/types/kanban.ts` | Adicionar 3 propriedades ao tipo CSMCard |
-| `src/components/kanban/CardDetailsDialog.tsx` | Adicionar campos na aba Resumo (mobile + desktop) |
-
-### Detalhes tecnicos
-
-- A funcao de calculo de `etapa_formal` usara `differenceInMonths` do `date-fns` (ja instalado)
-- O campo `valor_contrato` usara o mesmo padrao de `EditableCell` com type `currency`
-- O campo `observacao_comissao` aparece condicionalmente apenas quando `existe_comissao` = true
-- Ambas as secoes mobile e desktop do dialog serao atualizadas para manter paridade
-
+### Arquivo a modificar
+- `src/components/CSMKanban.tsx` — adicionar botao temporario (ou useEffect one-time) para executar a importacao, removivel apos uso
