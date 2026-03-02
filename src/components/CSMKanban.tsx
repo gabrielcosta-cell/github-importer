@@ -1014,7 +1014,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
 
 
           <Select value={viewFilter} onValueChange={(v) => setViewFilter(v as 'ativo' | 'todos' | 'cancelado')}>
-            <SelectTrigger className="h-8 w-[180px]">
+            <SelectTrigger className="h-8 w-auto min-w-[160px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
