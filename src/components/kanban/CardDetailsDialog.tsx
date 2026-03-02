@@ -929,15 +929,9 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
 
       const updates: any = { [field]: processedValue };
       
-      // Se estiver atualizando company_name ou faturamento_display, atualizar o título também
-      if (field === 'company_name' || field === 'faturamento_display') {
-        const companyName = field === 'company_name' ? processedValue : card.company_name;
-        const faturamento = field === 'faturamento_display' ? processedValue : (card as any).faturamento_display;
-        
-        // Gerar novo título
-        const namePart = companyName || 'Sem nome';
-        const newTitle = faturamento ? `${namePart} - ${faturamento}` : namePart;
-        updates.title = newTitle;
+      // Se estiver atualizando company_name, atualizar o título também (sem faturamento no CSM)
+      if (field === 'company_name') {
+        updates.title = processedValue || 'Sem nome';
       }
 
       const { error } = await supabase
