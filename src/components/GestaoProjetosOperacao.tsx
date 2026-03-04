@@ -236,7 +236,8 @@ const FILTERABLE_COLUMNS: Record<string, (p: ProjetoRow) => string | undefined> 
 export const GestaoProjetosOperacao = () => {
   const now = new Date()
   const [selectedPeriod, setSelectedPeriod] = useState<{ month: number; year: number }>({ month: now.getMonth(), year: now.getFullYear() })
-  const [liveData, setLiveData] = useState<ProjetoRow[]>([])
+  const [rawCsmRows, setRawCsmRows] = useState<ProjetoRow[]>([])
+  const [rawCrmRows, setRawCrmRows] = useState<ProjetoRow[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [squads, setSquads] = useState<Array<{ id: string; name: string }>>([])
@@ -287,30 +288,48 @@ export const GestaoProjetosOperacao = () => {
         }))
       }
 
-      // Merge: vincular CRM cards ao CSM card correspondente pelo display_id
-      const csmMap = new Map<number, ProjetoRow>()
-      for (const row of csmRows) {
-        if (row.display_id) csmMap.set(row.display_id, row)
-      }
-
-      const unmatchedCrmRows: ProjetoRow[] = []
-      for (const crm of crmOpsRows) {
-        if (crm.display_id && csmMap.has(crm.display_id)) {
-          const csm = csmMap.get(crm.display_id)!
-          // Acumular receita CRM no card CSM
-          csm.crm_revenue = (csm.crm_revenue || 0) + (crm.monthly_revenue || 0)
-          csm.crm_tipo_receita = crm.tipo_receita || csm.crm_tipo_receita
-          csm.crm_card_id = crm.id
-        } else {
-          unmatchedCrmRows.push(crm)
-        }
-      }
-
-      setLiveData([...csmRows, ...unmatchedCrmRows])
+      setRawCsmRows(csmRows)
+      setRawCrmRows(crmOpsRows)
       setLoading(false)
     }
     fetchData()
   }, [])
+
+  // Merge dinâmico: só acumula crm_revenue quando o mês do card CRM coincide com selectedPeriod
+  const liveData = useMemo(() => {
+    const { month, year } = selectedPeriod
+
+    // Build CSM rows with CRM revenue merged only for the selected month
+    const mergedCsm = rawCsmRows.map(csm => {
+      // Find CRM cards matching this display_id whose created_at is in the selected month
+      const matchingCrmRevenue = rawCrmRows
+        .filter(crm => {
+          if (!crm.display_id || crm.display_id !== csm.display_id) return false
+          const dateStr = (crm.data_ganho || crm.created_at || '').substring(0, 10)
+          if (!dateStr) return false
+          const d = new Date(dateStr + 'T12:00:00')
+          return d.getMonth() === month && d.getFullYear() === year
+        })
+
+      if (matchingCrmRevenue.length === 0) return { ...csm, crm_revenue: 0, crm_tipo_receita: undefined, crm_card_id: undefined }
+
+      let crmRev = 0
+      let crmTipo: string | undefined
+      let crmCardId: string | undefined
+      for (const crm of matchingCrmRevenue) {
+        crmRev += crm.monthly_revenue || 0
+        crmTipo = crm.tipo_receita || crmTipo
+        crmCardId = crm.id
+      }
+      return { ...csm, crm_revenue: crmRev, crm_tipo_receita: crmTipo, crm_card_id: crmCardId }
+    })
+
+    // CRM cards without a matching CSM card (unmatched) — kept as independent rows
+    const matchedDisplayIds = new Set(rawCsmRows.map(r => r.display_id).filter(Boolean))
+    const unmatchedCrm = rawCrmRows.filter(crm => !crm.display_id || !matchedDisplayIds.has(crm.display_id))
+
+    return [...mergedCsm, ...unmatchedCrm]
+  }, [rawCsmRows, rawCrmRows, selectedPeriod])
 
   const wasRelevantInMonth = (p: ProjetoRow, month: number, year: number): boolean => {
     if (p.source === 'crm-ops') {
