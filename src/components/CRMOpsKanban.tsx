@@ -270,7 +270,7 @@ export const CRMOpsKanban: React.FC = () => {
           {/* Ordenar */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 px-2 transition-all duration-200 hover:scale-105">
+              <Button variant="outline" size="sm" className="h-9 px-2 transition-all duration-200 hover:scale-105">
                 <ArrowUpDown className="h-4 w-4 mr-2" />
                 <span>Ordenar</span>
               </Button>
@@ -300,7 +300,7 @@ export const CRMOpsKanban: React.FC = () => {
               variant="outline"
               size="sm"
               onClick={handleAddCard}
-              className="h-8 px-3 gap-2 transition-all duration-200 hover:scale-105"
+              className="h-9 px-3 gap-2 transition-all duration-200 hover:scale-105"
             >
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">Adicionar lead</span>
@@ -311,7 +311,7 @@ export const CRMOpsKanban: React.FC = () => {
           {isAdmin && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="h-8 w-8 transition-all duration-200 hover:scale-105">
+                <Button variant="outline" size="icon" className="h-9 w-9 transition-all duration-200 hover:scale-105">
                   <Settings className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>

@@ -331,10 +331,10 @@ export const DesktopGlobalSearch: React.FC<MobileGlobalSearchProps & { searchTer
       <div className="relative flex-1 md:max-w-md md:mx-auto">
         <button
           onClick={openModal}
-          className="w-full flex items-center gap-2 rounded-full border border-muted-foreground/20 bg-background/60 px-3 md:px-4 py-1 cursor-pointer hover:border-muted-foreground/40 transition-colors"
+          className="w-full flex items-center gap-2 rounded-full border border-muted-foreground/20 bg-background/60 px-3 md:px-4 py-1.5 cursor-pointer hover:border-muted-foreground/40 transition-colors"
         >
           <Search className="h-4 w-4 text-foreground/60 flex-shrink-0" />
-          <span className="h-8 flex items-center text-sm text-foreground/60">
+          <span className="h-9 flex items-center text-sm text-foreground/60">
             {searchTerm || 'Pesquisar...'}
           </span>
         </button>
