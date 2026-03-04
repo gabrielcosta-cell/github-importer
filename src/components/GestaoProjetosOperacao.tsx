@@ -529,9 +529,9 @@ export const GestaoProjetosOperacao = () => {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/30">
-                    <SortableHeader label="ID" columnKey="display_id" {...sharedHeaderProps} className="sticky left-0 z-10 bg-muted/30 min-w-[60px]" />
-                    <SortableHeader label="Nome" columnKey="nome" {...sharedHeaderProps} className="sticky left-[60px] z-10 bg-muted/30 min-w-[180px]" />
-                    <SortableHeader label="Squad" columnKey="squad" {...sharedHeaderProps} filterValues={filterOptions.squad} activeFilters={columnFilters.squad} className="sticky left-[240px] z-10 bg-muted/30 min-w-[90px]" />
+                    <SortableHeader label="ID" columnKey="display_id" {...sharedHeaderProps} className="sticky left-0 z-10 bg-primary text-primary-foreground min-w-[60px]" />
+                    <SortableHeader label="Nome" columnKey="nome" {...sharedHeaderProps} className="sticky left-[60px] z-10 bg-primary text-primary-foreground min-w-[180px]" />
+                    <SortableHeader label="Squad" columnKey="squad" {...sharedHeaderProps} filterValues={filterOptions.squad} activeFilters={columnFilters.squad} className="sticky left-[240px] z-10 bg-primary text-primary-foreground min-w-[90px]" />
                     <SortableHeader label="Origem" columnKey="origem" {...sharedHeaderProps} filterValues={filterOptions.origem} activeFilters={columnFilters.origem} className="min-w-[80px]" />
                     <SortableHeader label="Tipo Receita" columnKey="tipo_receita" {...sharedHeaderProps} filterValues={filterOptions.tipo_receita} activeFilters={columnFilters.tipo_receita} className="min-w-[120px]" />
                     <SortableHeader label="Plano" columnKey="plano" {...sharedHeaderProps} filterValues={filterOptions.plano} activeFilters={columnFilters.plano} className="min-w-[90px]" />
@@ -558,13 +558,13 @@ export const GestaoProjetosOperacao = () => {
                 <TableBody>
                   {displayData.map((p) => (
                     <TableRow key={p.id} className={p.client_status === 'cancelado' ? 'opacity-50' : ''}>
-                      <TableCell className="sticky left-0 z-10 bg-background font-mono text-xs">
+                      <TableCell className="sticky left-0 z-10 bg-primary/10 font-mono text-xs">
                         {p.display_id ? `#${String(p.display_id).padStart(4, '0')}` : '-'}
                       </TableCell>
-                      <TableCell className="sticky left-[60px] z-10 bg-background font-medium text-sm max-w-[200px] truncate">
+                      <TableCell className="sticky left-[60px] z-10 bg-primary/10 font-medium text-sm max-w-[200px] truncate">
                         {p.company_name || p.title || '-'}
                       </TableCell>
-                      <TableCell className="sticky left-[240px] z-10 bg-background">
+                      <TableCell className="sticky left-[240px] z-10 bg-primary/10">
                         {p.squad ? (
                           <Badge className={`text-xs ${SQUAD_COLORS[p.squad] || 'bg-muted text-muted-foreground'}`}>
                             {p.squad}
