@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { formatCurrency } from '@/utils/formatCurrency'
 import { MonthYearPicker } from '@/components/MonthYearPicker'
 import { differenceInMonths, parseISO, format } from 'date-fns'
+import { CRM_OPS_PIPELINE_NAMES } from '@/utils/setupCRMOpsPipelines'
 
 const PIPELINE_CLIENTES_ATIVOS = '749ccdc2-5127-41a1-997b-3dcb47979555'
 
@@ -39,6 +40,11 @@ interface ProjetoRow {
   motivo_perda?: string
   client_status?: string
   created_at?: string
+  // CRM Ops fields
+  source?: 'csm' | 'crm-ops'
+  tipo_receita?: string
+  data_ganho?: string
+  migrado_csm?: boolean
 }
 
 // Calcula Etapa Formal baseado em data_inicio
@@ -111,38 +117,74 @@ export const GestaoProjetosOperacao = () => {
     })
   }, [])
 
-  // Fetch live data from csm_cards
+  // Fetch live data from csm_cards (Clientes Ativos) + CRM Ops
   useEffect(() => {
-    const fetch = async () => {
+    const fetchData = async () => {
       setLoading(true)
-      const { data, error } = await supabase
+      
+      // 1. Fetch CSM Clientes Ativos
+      const { data: csmData, error: csmError } = await supabase
         .from('csm_cards')
         .select('id, display_id, company_name, title, squad, plano, fase_projeto, monthly_revenue, servico_contratado, data_contrato, data_inicio, tempo_contrato, valor_contrato, niche, existe_comissao, observacao_comissao, criativos_estaticos, criativos_video, lps, limite_investimento, data_perda, motivo_perda, client_status, created_at')
         .eq('pipeline_id', PIPELINE_CLIENTES_ATIVOS)
         .order('display_id', { ascending: true, nullsFirst: false })
 
-      if (!error) setLiveData(data || [])
+      const csmRows: ProjetoRow[] = (csmData || []).map(row => ({ ...row, source: 'csm' as const }))
+
+      // 2. Fetch CRM Ops pipelines
+      const { data: crmPipelines } = await supabase
+        .from('csm_pipelines')
+        .select('id, name')
+        .in('name', CRM_OPS_PIPELINE_NAMES)
+        .eq('is_active', true)
+
+      let crmOpsRows: ProjetoRow[] = []
+      if (crmPipelines && crmPipelines.length > 0) {
+        const pipelineIds = crmPipelines.map(p => p.id)
+        const { data: crmData } = await supabase
+          .from('csm_cards')
+          .select('id, display_id, company_name, title, squad, plano, fase_projeto, monthly_revenue, servico_contratado, data_contrato, data_inicio, tempo_contrato, valor_contrato, niche, existe_comissao, observacao_comissao, criativos_estaticos, criativos_video, lps, limite_investimento, data_perda, motivo_perda, client_status, created_at, tipo_receita, data_ganho, migrado_csm')
+          .in('pipeline_id', pipelineIds)
+          .gt('monthly_revenue', 0)
+          .order('created_at', { ascending: false })
+
+        crmOpsRows = (crmData || []).map(row => ({
+          ...row,
+          source: 'crm-ops' as const,
+          tipo_receita: (row as any).tipo_receita,
+          data_ganho: (row as any).data_ganho,
+          migrado_csm: (row as any).migrado_csm,
+        }))
+      }
+
+      setLiveData([...csmRows, ...crmOpsRows])
       setLoading(false)
     }
-    fetch()
+    fetchData()
   }, [])
 
   // Verifica se o cliente era relevante no mês selecionado
   const wasRelevantInMonth = (p: ProjetoRow, month: number, year: number): boolean => {
+    // CRM Ops cards: aparecem APENAS no mês de criação
+    if (p.source === 'crm-ops') {
+      // Cards migrados para CSM não aparecem mais
+      if (p.migrado_csm) return false
+      
+      const createdAt = parseISO(p.created_at || '')
+      return createdAt.getMonth() === month && createdAt.getFullYear() === year
+    }
+
+    // CSM cards: lógica existente
     const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59)
     
-    // Usa data_inicio ou data_contrato para determinar quando o cliente começou
-    // Fallback para created_at se nenhum dos dois existir
     const startDateStr = p.data_inicio || p.data_contrato || p.created_at
     if (startDateStr) {
       const startDate = parseISO(startDateStr)
       if (startDate > endOfMonth) return false
     }
 
-    // Ativos sempre aparecem (se já existiam)
     if (p.client_status !== 'cancelado') return true
 
-    // Cancelados: aparecem se data_perda >= mês selecionado
     if (!p.data_perda) return false
     const perdaDate = parseISO(p.data_perda)
     const perdaMonth = perdaDate.getMonth()
@@ -169,12 +211,14 @@ export const GestaoProjetosOperacao = () => {
 
   // CSV export
   const downloadCSV = () => {
-    const headers = ['ID', 'Nome', 'Squad', 'Plano', 'Etapa Formal', 'Fase do Projeto', 'Fee (MRR)', 'Serviço', 'Data Assinatura', 'Tempo de DOT', 'Tempo Contrato', 'Valor Contrato', 'Nicho', 'Comissão', 'Criativos Estáticos', 'Criativos Vídeo', 'LPs', 'Limite Investimento', 'Churn', 'Motivo']
+    const headers = ['ID', 'Nome', 'Origem', 'Tipo Receita', 'Squad', 'Plano', 'Etapa Formal', 'Fase do Projeto', 'Fee (MRR)', 'Serviço', 'Data Assinatura', 'Tempo de DOT', 'Tempo Contrato', 'Valor Contrato', 'Nicho', 'Comissão', 'Criativos Estáticos', 'Criativos Vídeo', 'LPs', 'Limite Investimento', 'Churn', 'Motivo']
     const csv = [
       headers.join(','),
       ...displayData.map(p => [
         p.display_id ? `#${String(p.display_id).padStart(4, '0')}` : '-',
         p.company_name || p.title || '-',
+        p.source === 'crm-ops' ? 'Venda Ops' : 'CSM',
+        p.tipo_receita || '-',
         p.squad || '-',
         p.plano || '-',
         calcEtapaFormal(p.data_inicio),
@@ -282,6 +326,8 @@ export const GestaoProjetosOperacao = () => {
                   <TableRow className="bg-muted/30">
                     <TableHead className="sticky left-0 z-10 bg-muted/30 min-w-[60px]">ID</TableHead>
                     <TableHead className="sticky left-[60px] z-10 bg-muted/30 min-w-[180px]">Nome</TableHead>
+                    <TableHead className="min-w-[80px]">Origem</TableHead>
+                    <TableHead className="min-w-[120px]">Tipo Receita</TableHead>
                     <TableHead className="min-w-[90px]">Squad</TableHead>
                     <TableHead className="min-w-[90px]">Plano</TableHead>
                     <TableHead className="min-w-[110px]">Etapa Formal</TableHead>
@@ -310,6 +356,23 @@ export const GestaoProjetosOperacao = () => {
                       </TableCell>
                       <TableCell className="sticky left-[60px] z-10 bg-background font-medium text-sm max-w-[200px] truncate">
                         {p.company_name || p.title || '-'}
+                      </TableCell>
+                      <TableCell>
+                        {p.source === 'crm-ops' ? (
+                          <Badge className="text-[10px] px-1.5 py-0 bg-orange-500/10 border-orange-500/30 text-orange-600 dark:text-orange-400" variant="outline">
+                            Venda Ops
+                          </Badge>
+                        ) : (
+                          <Badge className="text-[10px] px-1.5 py-0 bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400" variant="outline">
+                            CSM
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {p.tipo_receita === 'venda_unica' ? 'Venda Única' :
+                         p.tipo_receita === 'variavel_midia' ? 'Var. Mídia' :
+                         p.tipo_receita === 'variavel_meta' ? 'Var. Meta' :
+                         p.tipo_receita === 'venda_recorrente' ? 'Recorrente' : '-'}
                       </TableCell>
                       <TableCell>
                         {p.squad ? (
