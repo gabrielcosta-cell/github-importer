@@ -1,447 +1,318 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { EditableCell } from './EditableCell'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Plus, Download, Copy, Trash2, Undo2 } from 'lucide-react'
+import { Download, Save, Calendar, Search, Filter } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
+import { formatCurrency } from '@/utils/formatCurrency'
+import { MonthYearPicker } from '@/components/MonthYearPicker'
+import { differenceInMonths, parseISO, format } from 'date-fns'
 
-interface Projeto {
+const PIPELINE_CLIENTES_ATIVOS = '749ccdc2-5127-41a1-997b-3dcb47979555'
+
+interface ProjetoRow {
   id: string
-  nome: string
-  squad: string
-  plano: string
-  tipoProprietario: string
-  status: 'Ativo' | 'churn' | 'aviso previo' | 'possivel churn' | 'inativo' | 'Pré churn'
-  metaVendas: string
-  budgetMensal: string
-  budgetSemanal: string
-  rotinasAcompanhamento: string
+  display_id?: number
+  company_name?: string
+  title?: string
+  squad?: string
+  plano?: string
+  fase_projeto?: string
+  monthly_revenue?: number
+  servico_contratado?: string
+  data_contrato?: string
+  data_inicio?: string
+  tempo_contrato?: string
+  valor_contrato?: number
+  niche?: string
+  existe_comissao?: boolean
+  observacao_comissao?: string
+  criativos_estaticos?: number
+  criativos_video?: number
+  lps?: number
+  limite_investimento?: number
+  data_perda?: string
+  motivo_perda?: string
+  client_status?: string
+  created_at?: string
 }
 
+// Calcula Etapa Formal baseado em data_inicio
+const calcEtapaFormal = (dataInicio?: string | null): string => {
+  if (!dataInicio) return '-'
+  try {
+    const start = parseISO(dataInicio)
+    const diff = differenceInMonths(new Date(), start)
+    if (diff <= 0) return 'Onboarding'
+    if (diff === 1) return 'Implementação'
+    if (diff === 2) return 'Refinamento'
+    if (diff === 3) return 'Escala'
+    if (diff === 4) return 'Expansão'
+    if (diff === 5) return 'Renovação'
+    return 'Retenção'
+  } catch { return '-' }
+}
+
+// Calcula Tempo de DOT em meses
+const calcTempoDOT = (dataInicio?: string | null, dataPerda?: string | null): string => {
+  if (!dataInicio) return '-'
+  try {
+    const start = parseISO(dataInicio)
+    const end = dataPerda ? parseISO(dataPerda) : new Date()
+    const months = differenceInMonths(end, start)
+    if (months <= 0) return '< 1 mês'
+    return `${months} ${months === 1 ? 'mês' : 'meses'}`
+  } catch { return '-' }
+}
+
+const formatDate = (dateStr?: string | null): string => {
+  if (!dateStr) return '-'
+  try {
+    return format(parseISO(dateStr), 'dd/MM/yyyy')
+  } catch { return dateStr }
+}
+
+const SQUAD_COLORS: Record<string, string> = {
+  Apollo: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+  Athena: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+  Ares: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+  Artemis: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+}
+
+const PLANO_COLORS: Record<string, string> = {
+  Starter: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
+  Business: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+  Pro: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
+  Conceito: 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300',
+  Social: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300',
+}
+
+const MONTHS_LABEL = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 
 export const GestaoProjetosOperacao = () => {
-  const [projetos, setProjetos] = useState<Projeto[]>([])
+  const now = new Date()
+  const [selectedPeriod, setSelectedPeriod] = useState<{ month: number; year: number }>({ month: now.getMonth(), year: now.getFullYear() })
+  const [liveData, setLiveData] = useState<ProjetoRow[]>([])
+  const [snapshotData, setSnapshotData] = useState<ProjetoRow[] | null>(null)
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [squadFilter, setSquadFilter] = useState<string>('all')
   const [planoFilter, setPlanoFilter] = useState<string>('all')
-  const [statusFilter, setStatusFilter] = useState<string>('all')
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [selectedProjetos, setSelectedProjetos] = useState<Set<string>>(new Set())
-  const [undoStack, setUndoStack] = useState<{projetos: Projeto[], action: string}[]>([])
-  const [squads, setSquads] = useState<Array<{ id: string; name: string; color: string }>>([])
+  const [squads, setSquads] = useState<Array<{ id: string; name: string }>>([])
   const { toast } = useToast()
 
-  const [newProjeto, setNewProjeto] = useState<Omit<Projeto, 'id'>>({
-    nome: '',
-    squad: '',
-    plano: '',
-    tipoProprietario: '',
-    status: 'Ativo',
-    metaVendas: '',
-    budgetMensal: '',
-    budgetSemanal: '',
-    rotinasAcompanhamento: ''
-  })
+  const isCurrentMonth = selectedPeriod.month === now.getMonth() && selectedPeriod.year === now.getFullYear()
 
-  // Carregar squads do Supabase
+  // Fetch squads
   useEffect(() => {
-    const fetchSquads = async () => {
+    supabase.from('squads').select('id, name').eq('is_active', true).order('position').then(({ data }) => {
+      setSquads(data || [])
+    })
+  }, [])
+
+  // Fetch live data from csm_cards
+  useEffect(() => {
+    const fetch = async () => {
+      setLoading(true)
       const { data, error } = await supabase
-        .from('squads')
-        .select('id, name, color')
-        .eq('is_active', true)
-        .order('position');
+        .from('csm_cards')
+        .select('id, display_id, company_name, title, squad, plano, fase_projeto, monthly_revenue, servico_contratado, data_contrato, data_inicio, tempo_contrato, valor_contrato, niche, existe_comissao, observacao_comissao, criativos_estaticos, criativos_video, lps, limite_investimento, data_perda, motivo_perda, client_status, created_at')
+        .eq('pipeline_id', PIPELINE_CLIENTES_ATIVOS)
+        .order('display_id', { ascending: true, nullsFirst: false })
 
-      if (error) {
-        console.error('Erro ao buscar squads:', error);
-        return;
-      }
+      if (!error) setLiveData(data || [])
+      setLoading(false)
+    }
+    fetch()
+  }, [])
 
-      setSquads(data || []);
-    };
-
-    fetchSquads();
-  }, []);
-
-  // Carregar projetos/clientes do Supabase (csm_cards)
+  // Fetch snapshot when selecting a past month
   useEffect(() => {
-    const fetchProjetos = async () => {
-      try {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from('csm_cards')
-          .select('id, title, company_name, squad, plano, categoria, churn, monthly_revenue')
-          .eq('pipeline_id', '749ccdc2-5127-41a1-997b-3dcb47979555')
-          .order('title', { ascending: true });
-
-        if (error) throw error;
-
-        const mapped: Projeto[] = (data || []).map(card => ({
-          id: card.id,
-          nome: card.company_name || card.title || '',
-          squad: card.squad || '',
-          plano: card.plano || '',
-          tipoProprietario: '',
-          status: card.churn ? 'churn' as const : 'Ativo' as const,
-          metaVendas: '',
-          budgetMensal: '',
-          budgetSemanal: '',
-          rotinasAcompanhamento: ''
-        }));
-
-        setProjetos(mapped);
-      } catch (error) {
-        console.error('Erro ao carregar projetos:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProjetos();
-  }, []);
-
-  const filteredProjetos = projetos.filter(projeto => {
-    const matchesSearch = projeto.nome.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesSquad = !squadFilter || squadFilter === 'all' || projeto.squad === squadFilter
-    const matchesPlano = !planoFilter || planoFilter === 'all' || projeto.plano === planoFilter
-    const matchesStatus = !statusFilter || statusFilter === 'all' || projeto.status === statusFilter
-    
-    // Ocultar projetos com status "churn" da lista de clientes ativos
-    const notChurn = projeto.status !== 'churn'
-    
-    return matchesSearch && matchesSquad && matchesPlano && matchesStatus && notChurn
-  })
-
-  const saveToUndoStack = (action: string) => {
-    setUndoStack(prev => [...prev.slice(-9), { projetos: [...projetos], action }])
-  }
-
-  const updateProjeto = (id: string, field: keyof Projeto, value: string) => {
-    saveToUndoStack("Atualização de projeto")
-    
-    setProjetos(prev => prev.map(projeto => 
-      projeto.id === id ? { ...projeto, [field]: value } : projeto
-    ))
-    toast({
-      title: "Projeto atualizado",
-      description: "As alterações foram salvas com sucesso.",
-    })
-  }
-
-  const removeProjeto = (id: string) => {
-    saveToUndoStack("Exclusão de projeto")
-    
-    setProjetos(prev => prev.filter(projeto => projeto.id !== id))
-    setSelectedProjetos(prev => {
-      const newSet = new Set(prev)
-      newSet.delete(id)
-      return newSet
-    })
-    toast({
-      title: "Projeto removido",
-      description: "O projeto foi removido com sucesso. Pressione Ctrl+Z para desfazer.",
-      variant: "destructive"
-    })
-  }
-
-  const undo = () => {
-    if (undoStack.length > 0) {
-      const lastState = undoStack[undoStack.length - 1]
-      setProjetos(lastState.projetos)
-      setUndoStack(prev => prev.slice(0, -1))
-      toast({
-        title: "Ação desfeita",
-        description: `${lastState.action} foi desfeita com sucesso.`,
-      })
-    }
-  }
-
-  // Handle Ctrl+Z keyboard shortcut
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.ctrlKey && event.key === 'z') {
-        event.preventDefault()
-        undo()
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [undoStack])
-
-  // Helper function to display empty cells as "-"
-  const displayValue = (value: string) => {
-    return value && value.trim() !== '' && value !== '0' ? value : '-'
-  }
-
-  // Helper function to render text with clickable links
-  const renderTextWithLinks = (text: string) => {
-    if (!text || text === '-') return text
-    
-    const urlRegex = /(https?:\/\/[^\s,)]+)/g
-    const parts = text.split(urlRegex)
-    
-    return parts.map((part, index) => {
-      if (urlRegex.test(part)) {
-        return (
-          <a
-            key={index}
-            href={part}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 hover:text-blue-800 underline break-all"
-          >
-            {part}
-          </a>
-        )
-      }
-      return part
-    })
-  }
-
-  // Nova função simples para budget mensal - SEM COMPLICAÇÃO!
-  const handleBudgetMensalSave = (id: string, value: string | number) => {
-    saveToUndoStack("Atualização de budget mensal")
-    
-    let finalValue = '';
-    const stringValue = String(value).trim();
-    
-    // Se está vazio ou é "-", salva como vazio
-    if (!stringValue || stringValue === '-') {
-      finalValue = '';
-    } else {
-      // Remove R$ se existir e pega só o número
-      const cleanValue = stringValue.replace(/^R\$\s*/, '').replace(/[^0-9.,]/g, '');
-      
-      // Se é um número válido, formata com R$
-      if (cleanValue && !isNaN(Number(cleanValue.replace(',', '.')))) {
-        finalValue = `R$ ${cleanValue}`;
-      } else {
-        finalValue = '';
-      }
-    }
-    
-    setProjetos(prev => prev.map(projeto => 
-      projeto.id === id ? { ...projeto, budgetMensal: finalValue } : projeto
-    ))
-    
-    toast({
-      title: "Budget mensal atualizado",
-      description: "Valor salvo com sucesso.",
-    })
-  }
-
-  // Função específica para budget semanal - MANTÉM PADRÃO R$
-  const handleBudgetSemanalSave = (id: string, value: string | number) => {
-    saveToUndoStack("Atualização de budget semanal")
-    
-    let finalValue = '';
-    const stringValue = String(value).trim();
-    
-    // Se está vazio ou é "-", salva como vazio
-    if (!stringValue || stringValue === '-') {
-      finalValue = '';
-    } else {
-      // Remove R$ se existir e pega só o número
-      const cleanValue = stringValue.replace(/^R\$\s*/, '').replace(/[^0-9.,]/g, '');
-      
-      // Se é um número válido, formata com R$
-      if (cleanValue && !isNaN(Number(cleanValue.replace(',', '.')))) {
-        finalValue = `R$ ${cleanValue}`;
-      } else {
-        finalValue = '';
-      }
-    }
-    
-    setProjetos(prev => prev.map(projeto => 
-      projeto.id === id ? { ...projeto, budgetSemanal: finalValue } : projeto
-    ))
-    
-    toast({
-      title: "Budget semanal atualizado", 
-      description: "Valor salvo com sucesso.",
-    })
-  }
-
-  // Função para exibir budget mensal - SIMPLES!
-  const displayBudgetMensal = (value: string | undefined) => {
-    if (!value || value.trim() === '' || value === '0') {
-      return '-';
-    }
-    return value;
-  }
-
-  // Função para exibir budget semanal - MANTÉM FORMATO R$
-  const displayBudgetSemanal = (value: string | undefined) => {
-    if (!value || value.trim() === '' || value === '0') {
-      return '-';
-    }
-    
-    // Se já tem R$, mantém como está
-    if (value.startsWith('R$')) {
-      return value;
-    }
-    
-    // Se é só número, adiciona R$
-    const cleanValue = value.replace(/[^0-9.,]/g, '');
-    if (cleanValue && !isNaN(Number(cleanValue.replace(',', '.')))) {
-      return `R$ ${cleanValue}`;
-    }
-    
-    return value;
-  }
-
-  const addProjeto = () => {
-    if (!newProjeto.nome.trim()) {
-      toast({
-        title: "Erro",
-        description: "Nome do projeto é obrigatório.",
-        variant: "destructive"
-      })
+    if (isCurrentMonth) {
+      setSnapshotData(null)
       return
     }
+    const fetchSnapshot = async () => {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('csm_project_snapshots' as any)
+        .select('*')
+        .eq('snapshot_month', selectedPeriod.month + 1)
+        .eq('snapshot_year', selectedPeriod.year)
+        .order('display_id', { ascending: true, nullsFirst: false })
 
-    saveToUndoStack("Adição de projeto")
-    
-    const projeto: Projeto = {
-      ...newProjeto,
-      id: Date.now().toString()
+      if (!error && data && (data as any[]).length > 0) {
+        setSnapshotData((data as any[]).map((s: any) => ({
+          id: s.card_id,
+          display_id: s.display_id,
+          company_name: s.company_name,
+          squad: s.squad,
+          plano: s.plano,
+          fase_projeto: s.fase_projeto,
+          monthly_revenue: s.monthly_revenue,
+          servico_contratado: s.servico_contratado,
+          data_contrato: s.data_contrato,
+          data_inicio: s.data_inicio,
+          tempo_contrato: s.tempo_contrato,
+          valor_contrato: s.valor_contrato,
+          niche: s.niche,
+          existe_comissao: s.existe_comissao,
+          observacao_comissao: s.observacao_comissao,
+          criativos_estaticos: s.criativos_estaticos,
+          criativos_video: s.criativos_video,
+          lps: s.lps,
+          limite_investimento: s.limite_investimento,
+          data_perda: s.data_perda,
+          motivo_perda: s.motivo_perda,
+          client_status: s.status,
+        })))
+      } else {
+        setSnapshotData([])
+      }
+      setLoading(false)
     }
+    fetchSnapshot()
+  }, [selectedPeriod, isCurrentMonth])
 
-    setProjetos(prev => [...prev, projeto])
-    setNewProjeto({
-      nome: '',
-      squad: '',
-      plano: '',
-      tipoProprietario: '',
-      status: 'Ativo',
-      metaVendas: '',
-      budgetMensal: '',
-      budgetSemanal: '',
-      rotinasAcompanhamento: ''
+  // Save snapshot
+  const saveSnapshot = async () => {
+    setSaving(true)
+    try {
+      const activeCards = liveData.filter(c => c.client_status !== 'cancelado')
+      const rows = activeCards.map(c => ({
+        card_id: c.id,
+        snapshot_month: selectedPeriod.month + 1,
+        snapshot_year: selectedPeriod.year,
+        status: c.client_status || 'ativo',
+        company_name: c.company_name || c.title || '',
+        display_id: c.display_id,
+        squad: c.squad,
+        plano: c.plano,
+        fase_projeto: c.fase_projeto,
+        monthly_revenue: c.monthly_revenue || 0,
+        servico_contratado: c.servico_contratado,
+        data_contrato: c.data_contrato,
+        data_inicio: c.data_inicio,
+        tempo_contrato: c.tempo_contrato,
+        valor_contrato: c.valor_contrato || 0,
+        niche: c.niche,
+        existe_comissao: c.existe_comissao || false,
+        observacao_comissao: c.observacao_comissao,
+        criativos_estaticos: c.criativos_estaticos,
+        criativos_video: c.criativos_video,
+        lps: c.lps,
+        limite_investimento: c.limite_investimento,
+        data_perda: c.data_perda,
+        motivo_perda: c.motivo_perda,
+      }))
+
+      const { error } = await supabase
+        .from('csm_project_snapshots' as any)
+        .upsert(rows as any, { onConflict: 'card_id,snapshot_month,snapshot_year' })
+
+      if (error) throw error
+
+      toast({ title: 'Snapshot salvo', description: `${rows.length} registros salvos para ${MONTHS_LABEL[selectedPeriod.month]}/${selectedPeriod.year}.` })
+    } catch (err: any) {
+      console.error(err)
+      toast({ title: 'Erro ao salvar snapshot', description: err.message, variant: 'destructive' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Data to render
+  const displayData = useMemo(() => {
+    const source = isCurrentMonth ? liveData : (snapshotData || [])
+    return source.filter(p => {
+      const name = (p.company_name || p.title || '').toLowerCase()
+      const matchesSearch = !searchTerm || name.includes(searchTerm.toLowerCase())
+      const matchesSquad = squadFilter === 'all' || p.squad === squadFilter
+      const matchesPlano = planoFilter === 'all' || p.plano === planoFilter
+      return matchesSearch && matchesSquad && matchesPlano
     })
-    setShowAddForm(false)
-    toast({
-      title: "Projeto adicionado",
-      description: "O novo projeto foi criado com sucesso.",
-    })
-  }
+  }, [isCurrentMonth, liveData, snapshotData, searchTerm, squadFilter, planoFilter])
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'Ativo':
-        return 'projeto-status-ativo'
-      case 'churn':
-        return 'projeto-status-churn'
-      case 'aviso previo':
-        return 'projeto-status-aviso-previo'
-      case 'possivel churn':
-        return 'projeto-status-possivel-churn'
-      case 'inativo':
-        return 'projeto-status-inativo'
-      case 'Pré churn':
-        return 'projeto-status-pre-churn'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
-  }
+  // MRR total
+  const totalMRR = useMemo(() => displayData.reduce((sum, p) => sum + (p.monthly_revenue || 0), 0), [displayData])
 
-  const getPlanoBadge = (plano: string) => {
-    switch (plano) {
-      case 'Starter':
-        return 'projeto-plano-starter'
-      case 'Business':
-        return 'projeto-plano-business'
-      case 'Pro':
-        return 'projeto-plano-pro'
-      case 'Conceito':
-        return 'projeto-plano-conceito'
-      case 'Social':
-        return 'projeto-plano-social'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
-  }
-
-  const getSquadBadge = (squad: string) => {
-    switch (squad) {
-      case 'Atlas':
-        return 'squad-atlas'
-      case 'Athena':
-        return 'squad-athena'
-      case 'Ares':
-        return 'squad-ares'
-      case 'Artemis':
-        return 'squad-artemis'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
-  }
-
+  // CSV export
   const downloadCSV = () => {
-    const headers = ['Nome', 'Squad', 'Plano', 'Tipo do Projeto', 'Status', 'Meta de Vendas', 'Budget Mensal', 'Budget Semanal', 'Rotinas de Acompanhamento']
-    const csvContent = [
+    const headers = ['ID', 'Nome', 'Squad', 'Plano', 'Etapa Formal', 'Fase do Projeto', 'Fee (MRR)', 'Serviço', 'Data Assinatura', 'Tempo de DOT', 'Tempo Contrato', 'Valor Contrato', 'Nicho', 'Comissão', 'Criativos Estáticos', 'Criativos Vídeo', 'LPs', 'Limite Investimento', 'Churn', 'Motivo']
+    const csv = [
       headers.join(','),
-      ...filteredProjetos.map(projeto => [
-        projeto.nome,
-        projeto.squad,
-        projeto.plano,
-        projeto.tipoProprietario,
-        projeto.status,
-        projeto.metaVendas,
-        projeto.budgetMensal,
-        projeto.budgetSemanal,
-        projeto.rotinasAcompanhamento
-      ].map(field => `"${field}"`).join(','))
+      ...displayData.map(p => [
+        p.display_id ? `#${String(p.display_id).padStart(4, '0')}` : '-',
+        p.company_name || p.title || '-',
+        p.squad || '-',
+        p.plano || '-',
+        calcEtapaFormal(p.data_inicio),
+        p.fase_projeto || '-',
+        p.monthly_revenue || 0,
+        p.servico_contratado || '-',
+        p.data_contrato || '-',
+        calcTempoDOT(p.data_inicio, p.data_perda),
+        p.tempo_contrato || '-',
+        p.valor_contrato || 0,
+        p.niche || '-',
+        p.existe_comissao ? 'Sim' : 'Não',
+        p.criativos_estaticos ?? '-',
+        p.criativos_video ?? '-',
+        p.lps ?? '-',
+        p.limite_investimento ?? '-',
+        p.data_perda || '-',
+        p.motivo_perda || '-',
+      ].map(f => `"${f}"`).join(','))
     ].join('\n')
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
-    const url = URL.createObjectURL(blob)
-    link.setAttribute('href', url)
-    link.setAttribute('download', 'gestao_projetos.csv')
-    link.style.visibility = 'hidden'
-    document.body.appendChild(link)
+    link.href = URL.createObjectURL(blob)
+    link.download = `projetos_${MONTHS_LABEL[selectedPeriod.month]}_${selectedPeriod.year}.csv`
     link.click()
-    document.body.removeChild(link)
   }
 
-  const planos = Array.from(new Set(projetos.map(p => p.plano).filter(Boolean)))
+  const planos = Array.from(new Set(liveData.map(p => p.plano).filter(Boolean)))
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Gestão de projetos</h1>
-        <p className="text-lg text-muted-foreground">
-          Quadro de clientes e alocação (Operação)
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">Gestão de Projetos</h1>
+        <p className="text-lg text-muted-foreground">Quadro de clientes e alocação (Operação)</p>
       </div>
 
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Projetos</CardTitle>
+        <CardHeader className="pb-4">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-3">
+              <CardTitle className="text-lg">Projetos</CardTitle>
+              <MonthYearPicker
+                selectedPeriods={[selectedPeriod]}
+                onPeriodsChange={(periods) => {
+                  if (periods.length > 0) setSelectedPeriod(periods[0])
+                }}
+                singleSelect
+              />
+              {!isCurrentMonth && snapshotData && snapshotData.length === 0 && (
+                <Badge variant="outline" className="text-amber-600 border-amber-300">Sem snapshot</Badge>
+              )}
+              {!isCurrentMonth && snapshotData && snapshotData.length > 0 && (
+                <Badge variant="secondary">Snapshot</Badge>
+              )}
+            </div>
             <div className="flex items-center gap-2">
-              <Button
-                onClick={() => setShowAddForm(true)}
-                size="sm"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Adicionar Projeto
-              </Button>
-              <Button
-                onClick={downloadCSV}
-                variant="outline"
-                size="sm"
-              >
+              {isCurrentMonth && (
+                <Button onClick={saveSnapshot} disabled={saving} size="sm" variant="outline">
+                  <Save className="h-4 w-4 mr-2" />
+                  {saving ? 'Salvando...' : 'Salvar Snapshot'}
+                </Button>
+              )}
+              <Button onClick={downloadCSV} variant="outline" size="sm">
                 <Download className="h-4 w-4 mr-2" />
                 Exportar CSV
               </Button>
@@ -449,338 +320,135 @@ export const GestaoProjetosOperacao = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4 mb-6">
-            <div className="flex flex-wrap gap-4 items-end">
-              <div className="flex-1 min-w-64">
-                <Input
-                  placeholder="Buscar por cliente..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSearchTerm('')
-                    setSquadFilter('all')
-                    setPlanoFilter('all')
-                    setStatusFilter('all')
-                  }}
-                >
-                  Limpar
-                </Button>
-                {undoStack.length > 0 && (
-                  <Button
-                    variant="outline"
-                    onClick={undo}
-                    size="sm"
-                  >
-                    <Undo2 className="h-4 w-4 mr-2" />
-                    Desfazer (Ctrl+Z)
-                  </Button>
-                )}
-              </div>
+          {/* Filters */}
+          <div className="flex flex-wrap gap-3 mb-4 items-center">
+            <div className="relative flex-1 min-w-[200px] max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar cliente..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 h-9"
+              />
             </div>
-            
-            <div className="flex flex-wrap gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Squad</label>
-                <Select value={squadFilter} onValueChange={setSquadFilter}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Todos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    {squads.map(squad => (
-                      <SelectItem key={squad.id} value={squad.name}>{squad.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Plano</label>
-                <Select value={planoFilter} onValueChange={setPlanoFilter}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Todos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    {planos.map(plano => (
-                      <SelectItem key={plano} value={plano}>{plano}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Status</label>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Todos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="Ativo">Ativo</SelectItem>
-                    <SelectItem value="churn">churn</SelectItem>
-                    <SelectItem value="aviso previo">aviso previo</SelectItem>
-                    <SelectItem value="possivel churn">possivel churn</SelectItem>
-                    <SelectItem value="inativo">inativo</SelectItem>
-                    <SelectItem value="Pré churn">Pré churn</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <Select value={squadFilter} onValueChange={setSquadFilter}>
+              <SelectTrigger className="w-32 h-9">
+                <SelectValue placeholder="Squad" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                {squads.map(s => <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={planoFilter} onValueChange={setPlanoFilter}>
+              <SelectTrigger className="w-32 h-9">
+                <SelectValue placeholder="Plano" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                {planos.map(p => <SelectItem key={p} value={p!}>{p}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <div className="ml-auto flex items-center gap-3 text-sm text-muted-foreground">
+              <span>{displayData.length} clientes</span>
+              <span className="font-medium text-foreground">MRR: {formatCurrency(totalMRR)}</span>
             </div>
           </div>
 
-          <div className="text-sm text-muted-foreground mb-4">
-            Mostrando {filteredProjetos.length} de {projetos.length}
-          </div>
-
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[180px]">NOME</TableHead>
-                  <TableHead className="w-[80px]">SQUAD</TableHead>
-                  <TableHead className="w-[100px]">PLANO</TableHead>
-                  <TableHead className="w-[120px]">TIPO DO PROJETO</TableHead>
-                  <TableHead className="w-[100px]">STATUS</TableHead>
-                  <TableHead className="w-[150px]">META DE VENDAS</TableHead>
-                  <TableHead className="w-[120px]">BUDGET MENSAL</TableHead>
-                  <TableHead className="w-[120px]">BUDGET SEMANAL</TableHead>
-                  <TableHead className="min-w-[200px]">ROTINAS DE ACOMPANHAMENTO</TableHead>
-                  <TableHead className="w-[80px]">AÇÕES</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {showAddForm && (
-                  <TableRow className="bg-muted/50">
-                    <TableCell>
-                      <Input
-                        value={newProjeto.nome}
-                        onChange={(e) => setNewProjeto(prev => ({ ...prev, nome: e.target.value }))}
-                        placeholder="Nome do projeto"
-                        className="h-8"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Select value={newProjeto.squad} onValueChange={(value) => setNewProjeto(prev => ({ ...prev, squad: value }))}>
-                        <SelectTrigger className="h-8">
-                          <SelectValue placeholder="Squad" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {squads.map((squad) => (
-                            <SelectItem key={squad.id} value={squad.name}>
-                              {squad.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      <Select value={newProjeto.plano} onValueChange={(value) => setNewProjeto(prev => ({ ...prev, plano: value }))}>
-                        <SelectTrigger className="h-8">
-                          <SelectValue placeholder="Plano" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Starter">Starter</SelectItem>
-                          <SelectItem value="Business">Business</SelectItem>
-                          <SelectItem value="Pro">Pro</SelectItem>
-                          <SelectItem value="Conceito">Conceito</SelectItem>
-                          <SelectItem value="Social">Social</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        value={newProjeto.tipoProprietario}
-                        onChange={(e) => setNewProjeto(prev => ({ ...prev, tipoProprietario: e.target.value }))}
-                        placeholder="Tipo"
-                        className="h-8"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Select value={newProjeto.status} onValueChange={(value: any) => setNewProjeto(prev => ({ ...prev, status: value }))}>
-                        <SelectTrigger className="h-8">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Ativo">Ativo</SelectItem>
-                          <SelectItem value="churn">churn</SelectItem>
-                          <SelectItem value="aviso previo">aviso previo</SelectItem>
-                          <SelectItem value="possivel churn">possivel churn</SelectItem>
-                          <SelectItem value="inativo">inativo</SelectItem>
-                          <SelectItem value="Pré churn">Pré churn</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        value={newProjeto.metaVendas}
-                        onChange={(e) => setNewProjeto(prev => ({ ...prev, metaVendas: e.target.value }))}
-                        placeholder="Meta de vendas"
-                        className="h-8"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        value={newProjeto.budgetMensal}
-                        onChange={(e) => setNewProjeto(prev => ({ ...prev, budgetMensal: e.target.value }))}
-                        placeholder="Budget mensal"
-                        className="h-8"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        value={newProjeto.budgetSemanal}
-                        onChange={(e) => setNewProjeto(prev => ({ ...prev, budgetSemanal: e.target.value }))}
-                        placeholder="Budget semanal"
-                        className="h-8"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        value={newProjeto.rotinasAcompanhamento}
-                        onChange={(e) => setNewProjeto(prev => ({ ...prev, rotinasAcompanhamento: e.target.value }))}
-                        placeholder="Rotinas"
-                        className="h-8"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button size="sm" onClick={addProjeto} className="h-8 px-2">
-                          Salvar
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => setShowAddForm(false)} className="h-8 px-2">
-                          Cancelar
-                        </Button>
-                      </div>
-                    </TableCell>
+          {loading ? (
+            <div className="py-20 text-center text-muted-foreground">Carregando...</div>
+          ) : displayData.length === 0 ? (
+            <div className="py-20 text-center text-muted-foreground">
+              {isCurrentMonth ? 'Nenhum cliente encontrado.' : 'Nenhum snapshot encontrado para este período.'}
+            </div>
+          ) : (
+            <div className="rounded-md border overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/30">
+                    <TableHead className="sticky left-0 z-10 bg-muted/30 min-w-[60px]">ID</TableHead>
+                    <TableHead className="sticky left-[60px] z-10 bg-muted/30 min-w-[180px]">Nome</TableHead>
+                    <TableHead className="min-w-[90px]">Squad</TableHead>
+                    <TableHead className="min-w-[90px]">Plano</TableHead>
+                    <TableHead className="min-w-[110px]">Etapa Formal</TableHead>
+                    <TableHead className="min-w-[120px]">Fase do Projeto</TableHead>
+                    <TableHead className="min-w-[110px] text-right">Fee (MRR)</TableHead>
+                    <TableHead className="min-w-[130px]">Serviço</TableHead>
+                    <TableHead className="min-w-[110px]">Data Assinatura</TableHead>
+                    <TableHead className="min-w-[100px]">Tempo de DOT</TableHead>
+                    <TableHead className="min-w-[100px]">Tempo Contrato</TableHead>
+                    <TableHead className="min-w-[120px] text-right">Valor Contrato</TableHead>
+                    <TableHead className="min-w-[110px]">Nicho</TableHead>
+                    <TableHead className="min-w-[100px]">Comissão</TableHead>
+                    <TableHead className="min-w-[80px] text-center">Estáticos</TableHead>
+                    <TableHead className="min-w-[80px] text-center">Vídeos</TableHead>
+                    <TableHead className="min-w-[60px] text-center">LPs</TableHead>
+                    <TableHead className="min-w-[110px] text-right">Lim. Investimento</TableHead>
+                    <TableHead className="min-w-[100px]">Churn</TableHead>
+                    <TableHead className="min-w-[130px]">Motivo</TableHead>
                   </TableRow>
-                )}
-                {filteredProjetos.map((projeto) => (
-                  <TableRow key={projeto.id}>
-                    <TableCell className="font-medium">
-                      <EditableCell
-                        value={projeto.nome}
-                        onSave={(value) => updateProjeto(projeto.id, 'nome', String(value))}
-                        type="text"
-                      />
-                    </TableCell>
-                     <TableCell>
-                       <EditableCell
-                         value={displayValue(projeto.squad)}
-                         onSave={(value) => updateProjeto(projeto.id, 'squad', String(value))}
-                         type="select"
-                         options={[
-                           { value: 'Ares', label: 'Ares' },
-                           { value: 'Atlas', label: 'Atlas' },
-                           { value: 'Artemis', label: 'Artemis' },
-                           { value: 'Athena', label: 'Athena' }
-                         ]}
-                         badgeClassName={getSquadBadge(projeto.squad)}
-                       />
-                     </TableCell>
-                     <TableCell>
-                       <EditableCell
-                         value={displayValue(projeto.plano)}
-                         onSave={(value) => updateProjeto(projeto.id, 'plano', String(value))}
-                         type="select"
-                         options={[
-                           { value: 'Starter', label: 'Starter' },
-                           { value: 'Business', label: 'Business' },
-                           { value: 'Pro', label: 'Pro' },
-                           { value: 'Conceito', label: 'Conceito' }
-                         ]}
-                         badgeClassName={getPlanoBadge(projeto.plano)}
-                       />
-                     </TableCell>
-                    <TableCell>
-                      <EditableCell
-                        value={displayValue(projeto.tipoProprietario)}
-                        onSave={(value) => updateProjeto(projeto.id, 'tipoProprietario', String(value))}
-                        type="text"
-                      />
-                    </TableCell>
-                     <TableCell>
-                       <EditableCell
-                         value={projeto.status}
-                         onSave={(value) => updateProjeto(projeto.id, 'status', String(value))}
-                         type="select"
-                         options={[
-                           { value: 'Ativo', label: 'Ativo' },
-                           { value: 'churn', label: 'churn' },
-                           { value: 'aviso previo', label: 'aviso previo' },
-                           { value: 'possivel churn', label: 'possivel churn' },
-                           { value: 'inativo', label: 'inativo' },
-                           { value: 'Pré churn', label: 'Pré churn' }
-                         ]}
-                         badgeClassName={getStatusBadge(projeto.status)}
-                         readonly={true}
-                       />
-                     </TableCell>
-                    <TableCell>
-                      <EditableCell
-                        value={displayValue(projeto.metaVendas)}
-                        onSave={(value) => updateProjeto(projeto.id, 'metaVendas', String(value))}
-                        type="text"
-                      />
-                    </TableCell>
-                     <TableCell>
-                       <EditableCell
-                         value={displayBudgetMensal(projeto.budgetMensal)}
-                         onSave={(value) => handleBudgetMensalSave(projeto.id, value)}
-                         type="text"
-                       />
-                     </TableCell>
-                     <TableCell>
-                       <EditableCell
-                         value={displayBudgetSemanal(projeto.budgetSemanal)}
-                         onSave={(value) => handleBudgetSemanalSave(projeto.id, value)}
-                         type="text"
-                       />
-                     </TableCell>
-                     <TableCell className="min-w-[200px] max-w-[250px] pr-2">
-                       <div className="text-sm leading-relaxed break-words whitespace-pre-line overflow-hidden">
-                         {displayValue(projeto.rotinasAcompanhamento) === '-' ? 
-                           <EditableCell
-                             value={displayValue(projeto.rotinasAcompanhamento)}
-                             onSave={(value) => updateProjeto(projeto.id, 'rotinasAcompanhamento', String(value))}
-                             type="text"
-                           />
-                           :
-                           <div className="space-y-2">
-                             <div className="text-xs leading-relaxed">
-                               {renderTextWithLinks(projeto.rotinasAcompanhamento)}
-                             </div>
-                             <EditableCell
-                               value="Editar rotinas"
-                               onSave={(value) => updateProjeto(projeto.id, 'rotinasAcompanhamento', String(value))}
-                               type="text"
-                             />
-                           </div>
-                         }
-                       </div>
-                     </TableCell>
-                     <TableCell className="w-[80px]">
-                       <Button
-                         size="sm"
-                         variant="outline"
-                         onClick={() => removeProjeto(projeto.id)}
-                         className="h-8 w-8 p-0 text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                       >
-                         <Trash2 className="h-4 w-4" />
-                       </Button>
-                     </TableCell>
-                   </TableRow>
-                 ))}
-               </TableBody>
-             </Table>
-           </div>
-         </CardContent>
-       </Card>
-     </div>
-   )
- }
+                </TableHeader>
+                <TableBody>
+                  {displayData.map((p) => (
+                    <TableRow key={p.id} className={p.client_status === 'cancelado' ? 'opacity-50' : ''}>
+                      <TableCell className="sticky left-0 z-10 bg-background font-mono text-xs">
+                        {p.display_id ? `#${String(p.display_id).padStart(4, '0')}` : '-'}
+                      </TableCell>
+                      <TableCell className="sticky left-[60px] z-10 bg-background font-medium text-sm max-w-[200px] truncate">
+                        {p.company_name || p.title || '-'}
+                      </TableCell>
+                      <TableCell>
+                        {p.squad ? (
+                          <Badge className={`text-xs ${SQUAD_COLORS[p.squad] || 'bg-muted text-muted-foreground'}`}>
+                            {p.squad}
+                          </Badge>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell>
+                        {p.plano ? (
+                          <Badge className={`text-xs ${PLANO_COLORS[p.plano] || 'bg-muted text-muted-foreground'}`}>
+                            {p.plano}
+                          </Badge>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell className="text-sm">{calcEtapaFormal(p.data_inicio)}</TableCell>
+                      <TableCell className="text-sm">{p.fase_projeto || '-'}</TableCell>
+                      <TableCell className="text-sm text-right font-medium">
+                        {p.monthly_revenue ? formatCurrency(p.monthly_revenue) : '-'}
+                      </TableCell>
+                      <TableCell className="text-sm">{p.servico_contratado || '-'}</TableCell>
+                      <TableCell className="text-sm">{formatDate(p.data_contrato)}</TableCell>
+                      <TableCell className="text-sm">{calcTempoDOT(p.data_inicio, p.data_perda)}</TableCell>
+                      <TableCell className="text-sm">{p.tempo_contrato ? `${p.tempo_contrato} meses` : '-'}</TableCell>
+                      <TableCell className="text-sm text-right">
+                        {p.valor_contrato ? formatCurrency(p.valor_contrato) : '-'}
+                      </TableCell>
+                      <TableCell className="text-sm">{p.niche || '-'}</TableCell>
+                      <TableCell className="text-sm">
+                        {p.existe_comissao ? (
+                          <span className="text-green-600 dark:text-green-400" title={p.observacao_comissao || ''}>Sim</span>
+                        ) : 'Não'}
+                      </TableCell>
+                      <TableCell className="text-sm text-center">{p.criativos_estaticos ?? '-'}</TableCell>
+                      <TableCell className="text-sm text-center">{p.criativos_video ?? '-'}</TableCell>
+                      <TableCell className="text-sm text-center">{p.lps ?? '-'}</TableCell>
+                      <TableCell className="text-sm text-right">
+                        {p.limite_investimento ? formatCurrency(p.limite_investimento) : '-'}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {p.data_perda ? formatDate(p.data_perda) : '-'}
+                      </TableCell>
+                      <TableCell className="text-sm max-w-[150px] truncate" title={p.motivo_perda || ''}>
+                        {p.motivo_perda || '-'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
