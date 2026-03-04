@@ -1,23 +1,19 @@
 
 
-## Plano: Atribuir receita CRM da Versatil Banheiras ao card CSM #0031
+## Totalizadores separados no cabeçalho de Projetos
 
-### Problema
-A Versatil Banheiras tem dois cards CSM (Social Media e Performance). O card CRM está com um `display_id` que não corresponde ao card de Performance (#0031), então aparece como linha separada na tabela.
+Currently, the header shows a single "MRR" total that sums both `monthly_revenue` and `crm_revenue`. The request is to break this into three distinct values.
 
-### Solução
-Executar um UPDATE simples no banco para setar o `display_id` do card CRM da Versatil Banheiras para `31` (correspondente ao card de Performance).
+### Changes in `src/components/GestaoProjetosOperacao.tsx`
 
-```sql
-UPDATE csm_cards
-SET display_id = 31
-WHERE LOWER(TRIM(company_name)) LIKE '%versatil%banheiras%'
-  AND pipeline_id != '749ccdc2-5127-41a1-997b-3dcb47979555'
-  AND monthly_revenue > 0;
-```
+1. **Replace the single `totalMRR` memo** (line 394) with three separate memos:
+   - `totalMRR` = sum of `monthly_revenue` only (fee recorrente CSM)
+   - `totalCRM` = sum of `crm_revenue` only (vendas do CRM Ops)
+   - `totalGeral` = `totalMRR + totalCRM`
 
-Isso fará com que o merge na aba Projetos vincule automaticamente a receita CRM ao card de Performance #0031, eliminando a linha duplicada.
+2. **Update the header display** (line 469) from the single `MRR: R$ X` to show three values side by side:
+   - `MRR: R$ X` | `CRM: R$ X` | `Total: R$ X`
+   - Each as a small `text-sm font-medium` span, visually separated
 
-### Nenhuma alteração de código necessária
-A lógica de merge por `display_id` já está implementada e funcionando. Este é apenas um ajuste de dados.
+This is a minimal change -- two areas of the file, no new components needed.
 
