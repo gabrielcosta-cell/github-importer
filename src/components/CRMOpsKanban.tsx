@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Plus, Search, Settings, Pencil, BarChart3, Plug, PenLine, GripVertical, Tag, Zap, Trophy, ThumbsDown, ArrowUpDown, ListChecks, Shield, FileDown } from 'lucide-react';
+import { Plus, Search, Settings, Pencil, BarChart3, Plug, PenLine, GripVertical, Tag, Zap, Trophy, ThumbsDown, ArrowUpDown, ListChecks, Shield, FileDown, Filter } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -38,6 +39,9 @@ export const CRMOpsKanban: React.FC = () => {
   // Date filter
   const [dateStart, setDateStart] = useState<Date | undefined>();
   const [dateEnd, setDateEnd] = useState<Date | undefined>();
+
+  // Sort
+  const [sortBy, setSortBy] = useState<'title' | 'created' | 'mrr'>('created');
 
   // Load CRM Ops pipelines
   const fetchPipelines = async () => {
@@ -121,9 +125,13 @@ export const CRMOpsKanban: React.FC = () => {
     }
   }, [selectedPipeline]);
 
-  // Filtered cards
+  const handleSortChange = (sort: 'title' | 'created' | 'mrr') => {
+    setSortBy(sort);
+  };
+
+  // Filtered and sorted cards
   const filteredCards = useMemo(() => {
-    return cards.filter(card => {
+    const filtered = cards.filter(card => {
       if (searchTerm) {
         const term = searchTerm.toLowerCase();
         const matchesSearch =
@@ -141,7 +149,14 @@ export const CRMOpsKanban: React.FC = () => {
 
       return true;
     });
-  }, [cards, searchTerm, dateStart, dateEnd]);
+
+    // Sort
+    return [...filtered].sort((a, b) => {
+      if (sortBy === 'title') return (a.title || '').localeCompare(b.title || '');
+      if (sortBy === 'mrr') return (b.monthly_revenue || 0) - (a.monthly_revenue || 0);
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }, [cards, searchTerm, dateStart, dateEnd, sortBy]);
 
   const refreshCards = useCallback(() => {
     if (selectedPipeline) fetchCards(selectedPipeline);
@@ -217,8 +232,8 @@ export const CRMOpsKanban: React.FC = () => {
 
       {/* Desktop Header - CSM Style Toolbar */}
       <div className="hidden md:flex md:flex-row md:items-center justify-between w-full mb-4 flex-shrink-0 gap-0 relative z-10">
-        {/* Left: Search */}
-        <div className="flex items-center gap-3 h-full flex-1">
+        {/* Left: Search + Configurações */}
+        <div className="flex items-center gap-2 h-full flex-1">
           <div className="relative w-72">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -228,24 +243,8 @@ export const CRMOpsKanban: React.FC = () => {
               className="pl-9 h-9 text-sm"
             />
           </div>
-        </div>
 
-        {/* Right side: Controls */}
-        <div className="flex flex-wrap gap-2 items-center justify-end">
-          {/* Lead count */}
-          <span className="text-sm font-medium text-foreground">
-            {filteredCards.length} {filteredCards.length === 1 ? 'lead' : 'leads'}
-          </span>
-
-          {/* Date Filter (Filtros) */}
-          <CRMOpsDateFilter
-            startDate={dateStart}
-            endDate={dateEnd}
-            onApply={handleDateApply}
-            onClear={handleDateClear}
-          />
-
-          {/* Configurações Dropdown */}
+          {/* Configurações Dropdown - next to search */}
           {isAdmin && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -254,7 +253,7 @@ export const CRMOpsKanban: React.FC = () => {
                   <span>Configurações</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="start" className="w-56">
                 <DropdownMenuItem onClick={() => setShowStageManager(true)}>
                   <Pencil className="h-4 w-4 mr-2" />
                   Editar Etapas
@@ -294,6 +293,41 @@ export const CRMOpsKanban: React.FC = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
+        </div>
+
+        {/* Right side: Controls */}
+        <div className="flex flex-wrap gap-2 items-center justify-end">
+          {/* Lead count */}
+          <span className="text-sm font-medium text-foreground">
+            {filteredCards.length} {filteredCards.length === 1 ? 'lead' : 'leads'}
+          </span>
+
+          {/* Ordenar */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8 px-2 transition-all duration-200 hover:scale-105">
+                <ArrowUpDown className="h-4 w-4 mr-2" />
+                <span>Ordenar</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-0" align="end">
+              <div className="p-2">
+                <div className="space-y-1">
+                  <Button variant={sortBy === 'title' ? 'default' : 'ghost'} size="sm" className="w-full justify-start h-8" onClick={() => handleSortChange('title')}>Título (A-Z)</Button>
+                  <Button variant={sortBy === 'mrr' ? 'default' : 'ghost'} size="sm" className="w-full justify-start h-8" onClick={() => handleSortChange('mrr')}>Valor do MRR</Button>
+                  <Button variant={sortBy === 'created' ? 'default' : 'ghost'} size="sm" className="w-full justify-start h-8" onClick={() => handleSortChange('created')}>Data de criação</Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {/* Filtros (Date Filter) */}
+          <CRMOpsDateFilter
+            startDate={dateStart}
+            endDate={dateEnd}
+            onApply={handleDateApply}
+            onClear={handleDateClear}
+          />
 
           {/* Adicionar lead */}
           {isAdmin && (
