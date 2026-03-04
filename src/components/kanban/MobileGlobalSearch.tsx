@@ -328,7 +328,7 @@ export const DesktopGlobalSearch: React.FC<MobileGlobalSearchProps & { searchTer
   return (
     <>
       {/* Trigger: inline search bar */}
-      <div className="relative flex-1 md:max-w-md md:mx-auto">
+      <div className="relative flex-1 min-w-0 md:max-w-md">
         <button
           onClick={openModal}
           className="w-full flex items-center gap-2 rounded-full border border-muted-foreground/20 bg-background/60 px-3 md:px-4 py-1.5 cursor-pointer hover:border-muted-foreground/40 transition-colors"
