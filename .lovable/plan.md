@@ -1,58 +1,66 @@
 
 
-## Plano: Remover snapshots e usar consulta em tempo real com filtro por mês
+## Plano: Tipos de receita no CRM Ops com migração automática para CSM
 
-### Resumo
-Eliminar toda a lógica de snapshots e sempre consultar `csm_cards` diretamente, filtrando pela data de criação e status de cancelamento relativo ao mês selecionado.
+### Regras de negócio finais
 
-### Regras de visibilidade
-Para o mês/ano selecionado, um cliente aparece se:
-1. **Foi criado antes do fim do mês selecionado** (`created_at <= último dia do mês`)
-2. **E** está ativo, **OU** foi cancelado no mês selecionado (`data_perda` cai naquele mês), **OU** foi cancelado após o mês selecionado
+| Tipo | Na aba Projetos | Ação automática |
+|------|-----------------|-----------------|
+| **Venda Única** | MRR apenas no mês de criação | Nenhuma |
+| **Variável de Mídia** | MRR apenas no mês de criação | Nenhuma |
+| **Variável sobre Meta** | MRR apenas no mês de criação | Nenhuma |
+| **Venda Recorrente** | MRR apenas no mês de criação | No dia 1 do mês seguinte, cria automaticamente um card no CSM (Clientes Ativos) com os mesmos dados |
 
-Em resumo: mostra quem existia e ainda estava ativo naquele mês + quem churnou naquele mês.
+Todos os cards CRM Ops devem registrar `created_at` e `data_ganho` (data de ganho/fechamento) e ser filtráveis por ambos.
 
-### Alterações em `GestaoProjetosOperacao.tsx`
+### Alterações
 
-1. **Remover** todo o state e lógica de `snapshotData`, `isCurrentMonth`, `saveSnapshot`, botão "Salvar Snapshot", badges de snapshot
-2. **Remover** a chamada à tabela `csm_project_snapshots`
-3. **Simplificar `displayData`**: sempre usar `liveData` como fonte, com filtro:
-   - `created_at` do card é anterior ao fim do mês selecionado
-   - Se `client_status === 'cancelado'`: `data_perda` deve ser no mês selecionado ou posterior (ou seja, ainda estava ativo naquele mês ou churnou naquele mês)
-4. **Remover** referências a `isCurrentMonth` no JSX (badges "Sem snapshot", "Snapshot", botão salvar)
+#### 1. Migration: novas colunas em `csm_cards`
+- `tipo_receita` (text, check constraint: `venda_unica`, `variavel_midia`, `variavel_meta`, `venda_recorrente`)
+- `migrado_csm` (boolean, default false) -- marca cards recorrentes já migrados
+- `data_ganho` (date) -- data de fechamento/ganho do negócio
 
-### Código-chave do filtro
+#### 2. Edge Function: `migrate-recurring-cards`
+Função agendada via `pg_cron` para rodar diariamente (ou no dia 1 de cada mês). Lógica:
+- Busca cards CRM Ops com `tipo_receita = 'venda_recorrente'` e `migrado_csm = false`
+- Para cada card cuja `created_at` seja de um mês anterior ao mês atual:
+  - Cria um card no pipeline Clientes Ativos (`749ccdc2-...`) copiando: `company_name`, `title`, `monthly_revenue`, `contact_name`, `contact_email`, `contact_phone`, `niche`, `squad`, `plano`, `servico_contratado`
+  - Define `data_inicio` do novo card como o dia 1 do mês atual
+  - Marca o card original com `migrado_csm = true`
 
-```ts
-const wasRelevantInMonth = (p: ProjetoRow, month: number, year: number): boolean => {
-  // Verifica se o cliente já existia no mês selecionado
-  const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59)
-  if (p.created_at) {
-    const createdAt = parseISO(p.created_at)
-    if (createdAt > endOfMonth) return false // criado depois do mês selecionado
-  }
+#### 3. `CRMOpsCardForm.tsx` -- campo "Tipo de Receita"
+- Adicionar Select com 4 opções ao formulário de criação de lead
+- Adicionar campo `data_ganho` (date picker)
+- Salvar `tipo_receita` e `data_ganho` no insert
 
-  // Ativos sempre aparecem (se já existiam)
-  if (p.client_status !== 'cancelado') return true
+#### 4. `CardDetailsDialog.tsx` -- exibir/editar `tipo_receita` e `data_ganho`
+- Campos editáveis na aba Resumo para cards de pipelines CRM Ops
+- Badge visual indicando o tipo de receita
+- Indicador "Migrado para CSM" quando `migrado_csm = true`
 
-  // Cancelados: aparecem se data_perda >= mês selecionado
-  if (!p.data_perda) return false
-  const perdaDate = parseISO(p.data_perda)
-  const perdaMonth = perdaDate.getMonth()
-  const perdaYear = perdaDate.getFullYear()
-  if (perdaYear > year) return true
-  if (perdaYear === year && perdaMonth >= month) return true
-  return false
-}
+#### 5. `CRMOpsKanban.tsx` -- filtros por mês de criação e data de ganho
+- Aproveitar o filtro de data existente (`CRMOpsDateFilter`) para permitir filtrar por `created_at` ou `data_ganho`
+- Adicionar toggle ou select para escolher qual campo filtrar
+
+#### 6. `GestaoProjetosOperacao.tsx` -- integrar cards CRM Ops no MRR
+- Buscar pipelines CRM Ops via `CRM_OPS_PIPELINE_NAMES`
+- Query adicional: cards desses pipelines com `monthly_revenue > 0` e `migrado_csm = false`
+- Adicionar `tipo_receita`, `data_ganho`, `migrado_csm`, `source` à interface `ProjetoRow`
+- Regra em `wasRelevantInMonth`: todos os cards CRM Ops aparecem apenas no mês de `created_at`
+- Badge "Venda Ops" + tipo na tabela
+- Incluir no total de MRR e contagem
+
+#### 7. `supabase/config.toml` -- registrar edge function
+```toml
+[functions.migrate-recurring-cards]
+verify_jwt = false
 ```
 
-### O que é removido
-- State `snapshotData`, `isCurrentMonth`
-- `useEffect` de fetch de snapshots
-- Função `saveSnapshot` e botão correspondente
-- Badges de "Sem snapshot" / "Snapshot"
-- Função `isChurnInMonth` (não usada)
-- Referência à tabela `csm_project_snapshots`
+#### 8. Cron job (SQL via insert tool)
+Agendar `pg_cron` para chamar a edge function `migrate-recurring-cards` diariamente à meia-noite, garantindo que no dia 1 de cada mês os cards recorrentes sejam migrados.
 
-Nenhuma alteração no banco de dados é necessária.
+### Resultado esperado
+- **Fevereiro**: Ackno Site (Venda Única, R$ 2.850) + Paragon Bank (Venda Recorrente, R$ 4.000) somam ao MRR
+- **Março (dia 1)**: Paragon Bank é automaticamente criada no CSM como card regular; o card CRM Ops é marcado como migrado e não aparece mais na aba Projetos; Ackno Site também não aparece (venda única de fevereiro)
+- Todos os cards CRM Ops filtráveis por data de criação e data de ganho
 
