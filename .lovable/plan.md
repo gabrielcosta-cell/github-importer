@@ -1,26 +1,46 @@
 
-## Filtro de Mes de Cancelamento para Clientes Cancelados
 
-### Objetivo
-Adicionar um seletor de mes/ano que aparece apenas quando o filtro "Clientes Cancelados" esta ativo, permitindo filtrar cards pela `data_perda` (data de cancelamento) em um mes especifico.
+## Analise de Alturas - Toolbar CSM e CRM
 
-### Como vai funcionar
-- Quando o usuario seleciona "Clientes Cancelados" no dropdown de status, um seletor de mes/ano aparece ao lado dos filtros existentes
-- O seletor usa o componente `MonthYearPicker` ja existente no projeto, configurado em modo `singleSelect`
-- O filtro compara o campo `data_perda` do card com o mes/ano selecionado
-- Meses disponiveis: todos de 2025 em diante (sem limite superior, funciona para meses futuros)
-- Quando nenhum mes esta selecionado, mostra todos os cancelados (comportamento atual)
+### Inconsistencias Encontradas
 
-### Alteracoes tecnicas
+| Elemento | Altura Atual | Arquivo |
+|---|---|---|
+| Campo de busca (DesktopGlobalSearch) | `py-1` + `h-8` interno = ~34px | MobileGlobalSearch.tsx (linha 334, 337) |
+| Botao Ordenar | `h-8` (32px) | CSMKanban.tsx:965, CRMOpsKanban.tsx:273 |
+| Botao Filtros (CSM FilterPopover) | `size="sm"` = `min-h-9` (36px) | FilterPopover.tsx:85 |
+| Botao Filtros (CRM CRMOpsDateFilter) | `h-8` (32px) | CRMOpsDateFilter.tsx:51 |
+| Botao Adicionar cliente/lead | `h-8` (32px) | CSMKanban.tsx:1020, CRMOpsKanban.tsx:303 |
+| Botao Configuracoes (engrenagem) | `h-8 w-8` (32px) | CSMKanban.tsx:1031, CRMOpsKanban.tsx:314 |
+| Botao Limpar Filtros (X) CSM | `h-9 w-9` (36px) | CSMKanban.tsx:1007 |
+| Pipeline Selector (CRM) | `h-9` (36px) | CRMOpsKanban.tsx:361 |
 
-**1. `src/components/CSMKanban.tsx`**
-- Adicionar estado `selectedChurnMonth` do tipo `{ month: number; year: number }[]` (array para compatibilidade com MonthYearPicker, mas singleSelect=true)
-- Na logica de `filteredCardsData`, quando `viewFilter === 'cancelado'` e ha um mes selecionado, filtrar cards cuja `data_perda` esteja dentro do mes/ano escolhido
-- Renderizar o `MonthYearPicker` ao lado do dropdown de status, visivel apenas quando `viewFilter === 'cancelado'`
-- Incluir o filtro de mes na funcao `handleClearFilters`
-- Adicionar `selectedChurnMonth` nas dependencias do `useMemo`
+### Problema
 
-**2. Logica de filtragem**
-- Extrair ano e mes da `data_perda` do card (formato `YYYY-MM-DD`)
-- Comparar com o mes/ano selecionado no picker
-- Cards sem `data_perda` nao aparecem quando o filtro de mes esta ativo
+Existem 3 alturas diferentes misturadas: `h-8` (32px), `h-9` (36px), e o campo de busca com altura variavel. Isso cria desalinhamento visual.
+
+### Plano de Correcao
+
+Padronizar todos os elementos do toolbar para **`h-9`** (36px), que e a altura padrao do design system (`size="sm"` = `min-h-9`).
+
+**Arquivos a alterar:**
+
+1. **`src/components/kanban/MobileGlobalSearch.tsx`** (linha 334, 337)
+   - Alterar o botao trigger do search para ter altura `h-9`
+   - Mudar `py-1` para `py-1.5` e `h-8` para `h-9` no span interno
+
+2. **`src/components/CRMOpsKanban.tsx`**
+   - Botao Ordenar: `h-8` → `h-9` (linha 273)
+   - Botao Adicionar lead: `h-8` → `h-9` (linha 303)
+   - Botao Configuracoes: `h-8 w-8` → `h-9 w-9` (linha 314)
+
+3. **`src/components/CSMKanban.tsx`**
+   - Botao Ordenar: `h-8` → `h-9` (linha 965)
+   - Botao Adicionar cliente: `h-8` → `h-9` (linha 1020)
+   - Botao Configuracoes: `h-8 w-8` → `h-9 w-9` (linha 1031)
+
+4. **`src/components/crm-ops/CRMOpsDateFilter.tsx`**
+   - Botao Filtros: `h-8` → `h-9` (linha 51)
+
+O `FilterPopover` do CSM e o botao Limpar Filtros ja estao em `h-9`, entao nao precisam de ajuste. O Pipeline Selector do CRM tambem ja esta em `h-9`.
+
