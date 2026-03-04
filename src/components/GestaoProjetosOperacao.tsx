@@ -170,7 +170,9 @@ export const GestaoProjetosOperacao = () => {
       // Cards migrados para CSM não aparecem mais
       if (p.migrado_csm) return false
       
-      const createdAt = parseISO(p.created_at || '')
+      // Extract date-only to avoid timezone shifting
+      const createdDateOnly = (p.created_at || '').substring(0, 10)
+      const createdAt = new Date(createdDateOnly + 'T12:00:00')
       return createdAt.getMonth() === month && createdAt.getFullYear() === year
     }
 
@@ -179,7 +181,9 @@ export const GestaoProjetosOperacao = () => {
     
     const startDateStr = p.data_inicio || p.data_contrato || p.created_at
     if (startDateStr) {
-      const startDate = parseISO(startDateStr)
+      // Extract date-only to avoid timezone shifting (UTC midnight → previous day in BRT)
+      const dateOnly = startDateStr.substring(0, 10)
+      const startDate = new Date(dateOnly + 'T12:00:00')
       if (startDate > endOfMonth) return false
     }
 
