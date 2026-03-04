@@ -247,7 +247,7 @@ export const CRMOpsKanban: React.FC = () => {
       {/* Desktop Header - CSM Style Toolbar */}
       <div className="hidden md:flex md:flex-row md:items-center justify-between w-full mb-4 flex-shrink-0 gap-0 relative z-10">
         {/* Left: Search + Configurações */}
-        <div className="flex items-center gap-2 h-full flex-1">
+        <div className="flex items-center gap-2 h-full flex-1 min-w-0">
           {/* Desktop global search - same as CSM */}
           <DesktopGlobalSearch
             currentPipelineId={selectedPipeline}
@@ -262,7 +262,7 @@ export const CRMOpsKanban: React.FC = () => {
         </div>
 
         {/* Right side: Controls */}
-        <div className="flex flex-wrap gap-2 items-center justify-end">
+        <div className="flex flex-wrap gap-2 items-center justify-end flex-shrink-0">
           {/* Lead count */}
           <span className="text-base font-semibold text-foreground">
             {filteredCards.length} {filteredCards.length === 1 ? 'lead' : 'leads'}

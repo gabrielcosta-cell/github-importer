@@ -905,7 +905,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
       {/* ===== DESKTOP HEADER (unchanged) ===== */}
       <div className="hidden md:flex md:flex-row md:items-center justify-between w-full mb-4 flex-shrink-0 gap-0 relative z-10">
         {/* Left: Toggle + Search */}
-        <div className="flex items-center gap-3 h-full flex-1">
+        <div className="flex items-center gap-3 h-full flex-1 min-w-0">
           {/* Desktop global search */}
           <DesktopGlobalSearch
             currentPipelineId={selectedPipeline}
@@ -919,7 +919,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
 
         </div>
         {/* Right side: Controls */}
-        <div className="flex flex-wrap gap-2 items-center justify-end">
+        <div className="flex flex-wrap gap-2 items-center justify-end flex-shrink-0">
           {/* Contador de clientes com MRR */}
           <div className="flex items-center gap-1">
             <span className="text-base font-semibold text-foreground">
