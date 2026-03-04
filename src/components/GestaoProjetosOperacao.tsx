@@ -226,6 +226,32 @@ export const GestaoProjetosOperacao = () => {
     }
   }
 
+  // Verifica se data_perda cai no mês/ano selecionado
+  const isChurnInMonth = (dataPerda?: string | null, month?: number, year?: number): boolean => {
+    if (!dataPerda) return false
+    try {
+      const d = parseISO(dataPerda)
+      return d.getMonth() === month && d.getFullYear() === year
+    } catch { return false }
+  }
+
+  // Verifica se o cliente estava ativo no mês selecionado
+  // Um cliente cancelado aparece até o mês em que foi cancelado
+  const wasActiveInMonth = (p: ProjetoRow, month: number, year: number): boolean => {
+    if (p.client_status !== 'cancelado') return true // ativos sempre aparecem
+    // Cancelados: aparecem se data_perda >= mês selecionado (ou seja, ainda estava ativo naquele mês ou foi cancelado naquele mês)
+    if (!p.data_perda) return false
+    try {
+      const perdaDate = parseISO(p.data_perda)
+      const perdaMonth = perdaDate.getMonth()
+      const perdaYear = perdaDate.getFullYear()
+      // O cliente aparece no mês do cancelamento e em todos os meses anteriores
+      if (perdaYear > year) return true
+      if (perdaYear === year && perdaMonth >= month) return true
+      return false
+    } catch { return false }
+  }
+
   // Data to render
   const displayData = useMemo(() => {
     const source = isCurrentMonth ? liveData : (snapshotData || [])
@@ -234,9 +260,11 @@ export const GestaoProjetosOperacao = () => {
       const matchesSearch = !searchTerm || name.includes(searchTerm.toLowerCase())
       const matchesSquad = squadFilter === 'all' || p.squad === squadFilter
       const matchesPlano = planoFilter === 'all' || p.plano === planoFilter
-      return matchesSearch && matchesSquad && matchesPlano
+      // Filtro de visibilidade por status: ativos + cancelados no mês selecionado
+      const matchesStatus = wasActiveInMonth(p, selectedPeriod.month, selectedPeriod.year)
+      return matchesSearch && matchesSquad && matchesPlano && matchesStatus
     })
-  }, [isCurrentMonth, liveData, snapshotData, searchTerm, squadFilter, planoFilter])
+  }, [isCurrentMonth, liveData, snapshotData, searchTerm, squadFilter, planoFilter, selectedPeriod])
 
   // MRR total
   const totalMRR = useMemo(() => displayData.reduce((sum, p) => sum + (p.monthly_revenue || 0), 0), [displayData])
