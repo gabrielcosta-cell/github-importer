@@ -1,46 +1,29 @@
 
 
-## Analise de Alturas - Toolbar CSM e CRM
+## Analise de Larguras dos Botoes do Toolbar
 
-### Inconsistencias Encontradas
+Olhando as screenshots e o codigo, o problema e o **padding horizontal inconsistente** entre os botoes:
 
-| Elemento | Altura Atual | Arquivo |
+| Botao | Padding Atual | Resultado |
 |---|---|---|
-| Campo de busca (DesktopGlobalSearch) | `py-1` + `h-8` interno = ~34px | MobileGlobalSearch.tsx (linha 334, 337) |
-| Botao Ordenar | `h-8` (32px) | CSMKanban.tsx:965, CRMOpsKanban.tsx:273 |
-| Botao Filtros (CSM FilterPopover) | `size="sm"` = `min-h-9` (36px) | FilterPopover.tsx:85 |
-| Botao Filtros (CRM CRMOpsDateFilter) | `h-8` (32px) | CRMOpsDateFilter.tsx:51 |
-| Botao Adicionar cliente/lead | `h-8` (32px) | CSMKanban.tsx:1020, CRMOpsKanban.tsx:303 |
-| Botao Configuracoes (engrenagem) | `h-8 w-8` (32px) | CSMKanban.tsx:1031, CRMOpsKanban.tsx:314 |
-| Botao Limpar Filtros (X) CSM | `h-9 w-9` (36px) | CSMKanban.tsx:1007 |
-| Pipeline Selector (CRM) | `h-9` (36px) | CRMOpsKanban.tsx:361 |
+| Ordenar (CSM/CRM) | `px-2` | Mais estreito |
+| Filtros (CRM DateFilter) | `size="sm"` sem px explicito = `px-3` | Medio |
+| Filtros (CSM FilterPopover) | `size="sm"` sem px explicito = `px-3` | Medio |
+| Adicionar lead/cliente | `px-3` | Medio |
+| Engrenagem | `size="icon"` (quadrado) | OK |
+| Pipeline Selector | `min-w-[160px]` / auto | OK |
 
-### Problema
+### Correcao
 
-Existem 3 alturas diferentes misturadas: `h-8` (32px), `h-9` (36px), e o campo de busca com altura variavel. Isso cria desalinhamento visual.
-
-### Plano de Correcao
-
-Padronizar todos os elementos do toolbar para **`h-9`** (36px), que e a altura padrao do design system (`size="sm"` = `min-h-9`).
+Padronizar o padding horizontal de todos os botoes de texto para **`px-3`**, que e o padrao do `size="sm"` do design system.
 
 **Arquivos a alterar:**
 
-1. **`src/components/kanban/MobileGlobalSearch.tsx`** (linha 334, 337)
-   - Alterar o botao trigger do search para ter altura `h-9`
-   - Mudar `py-1` para `py-1.5` e `h-8` para `h-9` no span interno
+1. **`src/components/CRMOpsKanban.tsx`** (linha 273)
+   - Botao Ordenar: `px-2` → `px-3`
 
-2. **`src/components/CRMOpsKanban.tsx`**
-   - Botao Ordenar: `h-8` → `h-9` (linha 273)
-   - Botao Adicionar lead: `h-8` → `h-9` (linha 303)
-   - Botao Configuracoes: `h-8 w-8` → `h-9 w-9` (linha 314)
+2. **`src/components/CSMKanban.tsx`** (linha 965)
+   - Botao Ordenar: `px-2` → `px-3`
 
-3. **`src/components/CSMKanban.tsx`**
-   - Botao Ordenar: `h-8` → `h-9` (linha 965)
-   - Botao Adicionar cliente: `h-8` → `h-9` (linha 1020)
-   - Botao Configuracoes: `h-8 w-8` → `h-9 w-9` (linha 1031)
-
-4. **`src/components/crm-ops/CRMOpsDateFilter.tsx`**
-   - Botao Filtros: `h-8` → `h-9` (linha 51)
-
-O `FilterPopover` do CSM e o botao Limpar Filtros ja estao em `h-9`, entao nao precisam de ajuste. O Pipeline Selector do CRM tambem ja esta em `h-9`.
+Apenas esses dois botoes estao fora do padrao. Os demais ja usam `px-3` (explicito ou via `size="sm"` default).
 
