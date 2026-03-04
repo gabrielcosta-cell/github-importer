@@ -379,7 +379,7 @@ export const GestaoProjetosOperacao = () => {
       return matchesSearch && (matchesStatus || hasCrmRevenueThisMonth)
     }).map(p => {
       if (!wasRelevantInMonth(p, selectedPeriod.month, selectedPeriod.year) && p.source === 'csm' && (p.crm_revenue || 0) > 0) {
-        return { ...p, source: 'crm-ops' as const }
+        return { ...p, source: 'crm-ops' as const, crm_revenue: 0 }
       }
       return p
     })
