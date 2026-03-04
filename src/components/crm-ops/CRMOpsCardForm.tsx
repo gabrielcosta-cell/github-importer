@@ -16,10 +16,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Building2, User, DollarSign } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Building2, DollarSign, Calendar as CalendarIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { CSMStage } from '@/types/kanban';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface CRMOpsCardFormProps {
   pipelineId: string;
@@ -29,6 +33,13 @@ interface CRMOpsCardFormProps {
   onClose: () => void;
   onRefresh: () => void;
 }
+
+const TIPO_RECEITA_OPTIONS = [
+  { value: 'venda_unica', label: 'Venda Única' },
+  { value: 'variavel_midia', label: 'Variável de Mídia' },
+  { value: 'variavel_meta', label: 'Variável sobre Meta' },
+  { value: 'venda_recorrente', label: 'Venda Recorrente' },
+];
 
 export const CRMOpsCardForm: React.FC<CRMOpsCardFormProps> = ({
   pipelineId,
@@ -44,6 +55,9 @@ export const CRMOpsCardForm: React.FC<CRMOpsCardFormProps> = ({
   const [contactPhone, setContactPhone] = useState('');
   const [faturamentoDisplay, setFaturamentoDisplay] = useState('');
   const [selectedStage, setSelectedStage] = useState(stageId);
+  const [tipoReceita, setTipoReceita] = useState('');
+  const [dataGanho, setDataGanho] = useState<Date | undefined>();
+  const [dataGanhoOpen, setDataGanhoOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const faturamentoOptions = [
@@ -80,7 +94,9 @@ export const CRMOpsCardForm: React.FC<CRMOpsCardFormProps> = ({
           position: 0,
           value: 0,
           created_by: userData.user.id,
-        })
+          tipo_receita: tipoReceita || null,
+          data_ganho: dataGanho ? format(dataGanho, 'yyyy-MM-dd') : null,
+        } as any)
         .select('id')
         .single();
 
@@ -106,6 +122,8 @@ export const CRMOpsCardForm: React.FC<CRMOpsCardFormProps> = ({
       setContactPhone('');
       setFaturamentoDisplay('');
       setSelectedStage(stageId);
+      setTipoReceita('');
+      setDataGanho(undefined);
     } catch (error) {
       console.error('Erro ao criar lead:', error);
       toast.error('Erro ao criar lead');
@@ -179,6 +197,45 @@ export const CRMOpsCardForm: React.FC<CRMOpsCardFormProps> = ({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Tipo de Receita */}
+          <div>
+            <Label>Tipo de Receita</Label>
+            <Select value={tipoReceita} onValueChange={setTipoReceita}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                {TIPO_RECEITA_OPTIONS.map(opt => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Data de Ganho */}
+          <div>
+            <Label>Data de Ganho</Label>
+            <Popover open={dataGanhoOpen} onOpenChange={setDataGanhoOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-start text-left font-normal">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dataGanho ? format(dataGanho, "dd/MM/yyyy", { locale: ptBR }) : "Selecione a data"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={dataGanho}
+                  onSelect={(date) => {
+                    setDataGanho(date);
+                    setDataGanhoOpen(false);
+                  }}
+                  locale={ptBR}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div>

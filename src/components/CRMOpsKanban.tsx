@@ -41,6 +41,7 @@ export const CRMOpsKanban: React.FC = () => {
   // Date filter
   const [dateStart, setDateStart] = useState<Date | undefined>();
   const [dateEnd, setDateEnd] = useState<Date | undefined>();
+  const [dateField, setDateField] = useState<'created_at' | 'data_ganho'>('created_at');
 
   // Sort
   const [sortBy, setSortBy] = useState<'title' | 'created' | 'mrr'>('created');
@@ -144,9 +145,11 @@ export const CRMOpsKanban: React.FC = () => {
       }
 
       if (dateStart || dateEnd) {
-        const cardDate = new Date(card.created_at);
-        if (dateStart && cardDate < startOfDay(dateStart)) return false;
-        if (dateEnd && cardDate > endOfDay(dateEnd)) return false;
+        const dateValue = dateField === 'data_ganho' && (card as any).data_ganho
+          ? new Date((card as any).data_ganho)
+          : new Date(card.created_at);
+        if (dateStart && dateValue < startOfDay(dateStart)) return false;
+        if (dateEnd && dateValue > endOfDay(dateEnd)) return false;
       }
 
       return true;
@@ -288,6 +291,15 @@ export const CRMOpsKanban: React.FC = () => {
           </Popover>
 
           {/* Filtros (Date Filter) */}
+          <Select value={dateField} onValueChange={(v) => setDateField(v as 'created_at' | 'data_ganho')}>
+            <SelectTrigger className="h-9 w-auto min-w-[130px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="created_at">Data de criação</SelectItem>
+              <SelectItem value="data_ganho">Data de ganho</SelectItem>
+            </SelectContent>
+          </Select>
           <CRMOpsDateFilter
             startDate={dateStart}
             endDate={dateEnd}

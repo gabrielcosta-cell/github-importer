@@ -715,6 +715,8 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
     'qual_investe_marketing': 'Já investe em marketing?',
     'qual_urgencia_real': 'Urgência real?',
     'qual_clareza_objetivos': 'Nível de clareza sobre os objetivos?',
+    'tipo_receita': 'Tipo de Receita',
+    'data_ganho': 'Data de Ganho',
   };
 
   // Função para formatar o valor para exibição no histórico
@@ -2459,6 +2461,61 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                               </SelectContent>
                             </Select>
                           </div>
+
+                          {/* Tipo de Receita (CRM Ops) */}
+                          {moduleType !== 'csm' && (
+                            <>
+                              <Separator className="my-1" />
+                              <div className="space-y-0">
+                                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                                  <DollarSign className="h-3 w-3 text-emerald-600" />
+                                  <span>Tipo de Receita</span>
+                                </div>
+                                <Select value={(card as any).tipo_receita || 'none'} onValueChange={(value) => updateCardField('tipo_receita', value === 'none' ? '' : value)}>
+                                  <SelectTrigger className="w-full h-6 text-[10px]"><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">Nenhum</SelectItem>
+                                    <SelectItem value="venda_unica">Venda Única</SelectItem>
+                                    <SelectItem value="variavel_midia">Variável de Mídia</SelectItem>
+                                    <SelectItem value="variavel_meta">Variável sobre Meta</SelectItem>
+                                    <SelectItem value="venda_recorrente">Venda Recorrente</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <Separator className="my-1" />
+                              <div className="space-y-0">
+                                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                                  <Calendar className="h-3 w-3 text-blue-600" />
+                                  <span>Data de Ganho</span>
+                                </div>
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button variant="outline" className="w-full h-6 text-[10px] justify-start">
+                                      <Calendar className="mr-1 h-3 w-3" />
+                                      {(card as any).data_ganho ? new Date((card as any).data_ganho).toLocaleDateString('pt-BR') : 'Selecionar'}
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-0" align="start">
+                                    <CalendarComponent
+                                      mode="single"
+                                      selected={(card as any).data_ganho ? new Date((card as any).data_ganho) : undefined}
+                                      onSelect={(date) => updateCardField('data_ganho', date ? date.toISOString().split('T')[0] : '')}
+                                    />
+                                  </PopoverContent>
+                                </Popover>
+                              </div>
+                              {(card as any).migrado_csm && (
+                                <>
+                                  <Separator className="my-1" />
+                                  <div className="flex items-center gap-1.5 text-[10px]">
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-500/10 border-blue-500/30 text-blue-600">
+                                      Migrado para CSM
+                                    </Badge>
+                                  </div>
+                                </>
+                              )}
+                            </>
+                          )}
                           {moduleType === 'csm' && (
                             <>
                               <Separator className="my-1" />
@@ -3336,6 +3393,61 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                         </SelectContent>
                       </Select>
                     </div>
+
+                    {/* Tipo de Receita (CRM Ops) */}
+                    {moduleType !== 'csm' && (
+                      <>
+                        <Separator className="my-1" />
+                        <div className="space-y-0">
+                          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                            <DollarSign className="h-3 w-3 text-emerald-600" />
+                            <span>Tipo de Receita</span>
+                          </div>
+                          <Select value={(card as any).tipo_receita || 'none'} onValueChange={(value) => updateCardField('tipo_receita', value === 'none' ? '' : value)}>
+                            <SelectTrigger className="w-full h-6 text-[10px]"><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Nenhum</SelectItem>
+                              <SelectItem value="venda_unica">Venda Única</SelectItem>
+                              <SelectItem value="variavel_midia">Variável de Mídia</SelectItem>
+                              <SelectItem value="variavel_meta">Variável sobre Meta</SelectItem>
+                              <SelectItem value="venda_recorrente">Venda Recorrente</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Separator className="my-1" />
+                        <div className="space-y-0">
+                          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                            <Calendar className="h-3 w-3 text-blue-600" />
+                            <span>Data de Ganho</span>
+                          </div>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline" className="w-full h-6 text-[10px] justify-start">
+                                <Calendar className="mr-1 h-3 w-3" />
+                                {(card as any).data_ganho ? new Date((card as any).data_ganho).toLocaleDateString('pt-BR') : 'Selecionar'}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <CalendarComponent
+                                mode="single"
+                                selected={(card as any).data_ganho ? new Date((card as any).data_ganho) : undefined}
+                                onSelect={(date) => updateCardField('data_ganho', date ? date.toISOString().split('T')[0] : '')}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        {(card as any).migrado_csm && (
+                          <>
+                            <Separator className="my-1" />
+                            <div className="flex items-center gap-1.5 text-[10px]">
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-500/10 border-blue-500/30 text-blue-600">
+                                Migrado para CSM
+                              </Badge>
+                            </div>
+                          </>
+                        )}
+                      </>
+                    )}
 
                     {moduleType === 'csm' && (
                       <>

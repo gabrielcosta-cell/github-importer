@@ -109,4 +109,8 @@ export interface CSMCard {
   // Campos adicionais do contrato
   valor_contrato?: number;
   observacao_comissao?: string;
+  // Campos de tipo de receita (CRM Ops)
+  tipo_receita?: 'venda_unica' | 'variavel_midia' | 'variavel_meta' | 'venda_recorrente' | null;
+  migrado_csm?: boolean;
+  data_ganho?: string | null;
 }
