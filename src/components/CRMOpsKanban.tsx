@@ -258,54 +258,6 @@ export const CRMOpsKanban: React.FC = () => {
             onSearchChange={handleSearchChange}
           />
 
-          {/* Configurações Dropdown - next to search */}
-          {isAdmin && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="h-8 w-8 transition-all duration-200 hover:scale-105">
-                  <Settings className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
-                <DropdownMenuItem onClick={() => setShowStageManager(true)}>
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Editar Etapas
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast.info('Gerenciar etiquetas em breve')}>
-                  <Tag className="h-4 w-4 mr-2" />
-                  Gerenciar Etiquetas
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast.info('Automações em breve')}>
-                  <Zap className="h-4 w-4 mr-2" />
-                  Automações de Funis
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast.info('Configurações de ganho em breve')}>
-                  <Trophy className="h-4 w-4 mr-2" />
-                  Configurações de Ganho
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast.info('Motivos de perda em breve')}>
-                  <ThumbsDown className="h-4 w-4 mr-2" />
-                  Motivos de Perda
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast.info('Ordem dos leads em breve')}>
-                  <ArrowUpDown className="h-4 w-4 mr-2" />
-                  Ordem dos Leads
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast.info('Tarefas em breve')}>
-                  <ListChecks className="h-4 w-4 mr-2" />
-                  Tarefas
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast.info('Permissões em breve')}>
-                  <Shield className="h-4 w-4 mr-2" />
-                  Permissões de Exportação
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast.info('Importar leads em breve')}>
-                  <FileDown className="h-4 w-4 mr-2" />
-                  Importar Leads
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
         </div>
 
         {/* Right side: Controls */}
@@ -353,6 +305,55 @@ export const CRMOpsKanban: React.FC = () => {
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">Adicionar lead</span>
             </Button>
+          )}
+
+          {/* Configurações */}
+          {isAdmin && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" className="h-8 w-8 transition-all duration-200 hover:scale-105">
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => setShowStageManager(true)}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Editar Etapas
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast.info('Gerenciar etiquetas em breve')}>
+                  <Tag className="h-4 w-4 mr-2" />
+                  Gerenciar Etiquetas
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast.info('Automações em breve')}>
+                  <Zap className="h-4 w-4 mr-2" />
+                  Automações de Funis
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast.info('Configurações de ganho em breve')}>
+                  <Trophy className="h-4 w-4 mr-2" />
+                  Configurações de Ganho
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast.info('Motivos de perda em breve')}>
+                  <ThumbsDown className="h-4 w-4 mr-2" />
+                  Motivos de Perda
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast.info('Ordem dos leads em breve')}>
+                  <ArrowUpDown className="h-4 w-4 mr-2" />
+                  Ordem dos Leads
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast.info('Tarefas em breve')}>
+                  <ListChecks className="h-4 w-4 mr-2" />
+                  Tarefas
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast.info('Permissões em breve')}>
+                  <Shield className="h-4 w-4 mr-2" />
+                  Permissões de Exportação
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast.info('Importar leads em breve')}>
+                  <FileDown className="h-4 w-4 mr-2" />
+                  Importar Leads
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
 
           {/* Pipeline Selector */}
