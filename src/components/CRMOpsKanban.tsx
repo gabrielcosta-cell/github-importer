@@ -262,9 +262,8 @@ export const CRMOpsKanban: React.FC = () => {
           {isAdmin && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 px-2 transition-all duration-200 hover:scale-105">
-                  <Settings className="h-4 w-4 mr-2" />
-                  <span>Configurações</span>
+                <Button variant="outline" size="icon" className="h-8 w-8 transition-all duration-200 hover:scale-105">
+                  <Settings className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56">
