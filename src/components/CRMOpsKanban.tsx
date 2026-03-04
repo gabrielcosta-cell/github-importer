@@ -208,33 +208,21 @@ export const CRMOpsKanban: React.FC = () => {
           <Button
             size="icon"
             onClick={handleAddCard}
-            className="h-10 w-10 flex-shrink-0 bg-green-600 hover:bg-green-700 text-white rounded-lg"
+            className="h-10 w-10 flex-shrink-0 rounded-lg"
           >
             <Plus className="h-5 w-5" />
           </Button>
         )}
       </div>
 
-      {/* Desktop Header - Reference Style Toolbar */}
-      <div className="hidden md:flex md:items-center w-full mb-3 flex-shrink-0 gap-2 relative z-10">
-        {/* Left side: Add + Search */}
-        <div className="flex items-center gap-2">
-          {isAdmin && (
-            <Button
-              size="sm"
-              onClick={handleAddCard}
-              className="gap-1.5 h-9 bg-green-600 hover:bg-green-700 text-white font-medium"
-            >
-              <Plus className="h-4 w-4" />
-              Adicionar
-            </Button>
-          )}
-
-          {/* Search */}
-          <div className="relative w-56">
+      {/* Desktop Header - CSM Style Toolbar */}
+      <div className="hidden md:flex md:flex-row md:items-center justify-between w-full mb-4 flex-shrink-0 gap-0 relative z-10">
+        {/* Left: Search */}
+        <div className="flex items-center gap-3 h-full flex-1">
+          <div className="relative w-72">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar leads..."
+              placeholder="Pesquisar..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9 h-9 text-sm"
@@ -242,21 +230,35 @@ export const CRMOpsKanban: React.FC = () => {
           </div>
         </div>
 
-        {/* Spacer */}
-        <div className="flex-1" />
+        {/* Right side: Controls */}
+        <div className="flex flex-wrap gap-2 items-center justify-end">
+          {/* Lead count */}
+          <span className="text-sm font-medium text-foreground">
+            {filteredCards.length} {filteredCards.length === 1 ? 'lead' : 'leads'}
+          </span>
 
-        {/* Right side: Configurações, Pipeline, Edit, Filtros */}
-        <div className="flex items-center gap-2">
+          {/* Date Filter (Filtros) */}
+          <CRMOpsDateFilter
+            startDate={dateStart}
+            endDate={dateEnd}
+            onApply={handleDateApply}
+            onClear={handleDateClear}
+          />
+
           {/* Configurações Dropdown */}
           {isAdmin && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1.5 h-9 text-sm">
-                  <Settings className="h-4 w-4" />
-                  Configurações
+                <Button variant="outline" size="sm" className="h-8 px-2 transition-all duration-200 hover:scale-105">
+                  <Settings className="h-4 w-4 mr-2" />
+                  <span>Configurações</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => setShowStageManager(true)}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Editar Etapas
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => toast.info('Gerenciar etiquetas em breve')}>
                   <Tag className="h-4 w-4 mr-2" />
                   Gerenciar Etiquetas
@@ -293,39 +295,30 @@ export const CRMOpsKanban: React.FC = () => {
             </DropdownMenu>
           )}
 
-          {/* Pipeline Selector + Edit button as single group */}
-          <div className="flex items-center h-9 border border-border rounded-md overflow-hidden bg-background">
-            <div className="flex items-center px-2.5 border-r border-border">
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <Select value={selectedPipeline} onValueChange={setSelectedPipeline}>
-              <SelectTrigger className="h-9 w-[140px] text-sm border-0 shadow-none px-2 focus:ring-0 rounded-none">
-                <SelectValue placeholder="Pipeline" />
-              </SelectTrigger>
-              <SelectContent>
-                {pipelines.map(p => (
-                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {isAdmin && (
-              <button
-                onClick={() => setShowStageManager(true)}
-                className="flex items-center justify-center h-9 w-9 border-l border-border hover:bg-muted transition-colors"
-                title="Editar etapas"
-              >
-                <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-              </button>
-            )}
-          </div>
+          {/* Adicionar lead */}
+          {isAdmin && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAddCard}
+              className="h-8 px-3 gap-2 transition-all duration-200 hover:scale-105"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Adicionar lead</span>
+            </Button>
+          )}
 
-          {/* Date Filter */}
-          <CRMOpsDateFilter
-            startDate={dateStart}
-            endDate={dateEnd}
-            onApply={handleDateApply}
-            onClear={handleDateClear}
-          />
+          {/* Pipeline Selector */}
+          <Select value={selectedPipeline} onValueChange={setSelectedPipeline}>
+            <SelectTrigger className="h-9 w-auto min-w-[160px]">
+              <SelectValue placeholder="Pipeline" />
+            </SelectTrigger>
+            <SelectContent>
+              {pipelines.map(p => (
+                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
