@@ -270,7 +270,7 @@ export const CRMOpsKanban: React.FC = () => {
           {/* Ordenar */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="h-9 px-2 transition-all duration-200 hover:scale-105">
+              <Button variant="outline" size="sm" className="h-9 px-3 transition-all duration-200 hover:scale-105">
                 <ArrowUpDown className="h-4 w-4 mr-2" />
                 <span>Ordenar</span>
               </Button>
