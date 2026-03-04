@@ -254,12 +254,7 @@ export const GestaoProjetosOperacao = () => {
   const planos = Array.from(new Set(liveData.map(p => p.plano).filter(Boolean)))
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Gestão de Projetos</h1>
-        <p className="text-lg text-muted-foreground">Quadro de clientes e alocação (Operação)</p>
-      </div>
-
+    <div className="space-y-4">
       <Card>
         <CardHeader className="pb-4">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
