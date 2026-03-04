@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { ToolbarButton } from '@/components/ui/toolbar-button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Calendar as CalendarIcon, ChevronRight, X } from 'lucide-react';
@@ -48,7 +49,7 @@ export const CRMOpsDateFilter: React.FC<CRMOpsDateFilterProps> = ({
   return (
     <Popover open={open} onOpenChange={handleOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2 h-9 min-h-0 py-0 text-xs relative">
+        <ToolbarButton className="text-xs relative">
           <CalendarIcon className="h-3.5 w-3.5" />
           Filtros
           {hasFilter && (
@@ -68,7 +69,7 @@ export const CRMOpsDateFilter: React.FC<CRMOpsDateFilterProps> = ({
               </span>
             </>
           )}
-        </Button>
+        </ToolbarButton>
       </PopoverTrigger>
       <PopoverContent className="w-[320px] p-4" align="end">
         <div className="space-y-4">

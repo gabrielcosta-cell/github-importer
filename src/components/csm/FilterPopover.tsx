@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
+import { ToolbarButton } from '@/components/ui/toolbar-button';
 import { Badge } from '@/components/ui/badge';
 import {
   Popover,
@@ -82,19 +83,19 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="h-9 min-h-0 py-0 relative transition-all duration-200 hover:scale-105">
-          <Filter className="h-4 w-4 mr-2 transition-transform duration-200" />
+        <ToolbarButton className="relative">
+          <Filter className="h-4 w-4" />
           Filtros
-          <ChevronDown className="h-4 w-4 ml-2" />
+          <ChevronDown className="h-4 w-4" />
           {activeFiltersCount > 0 && (
             <Badge 
               variant="secondary" 
-              className="ml-2 h-5 min-w-5 rounded-full px-1.5 text-xs animate-in zoom-in-50 duration-200"
+              className="ml-1 h-5 min-w-5 rounded-full px-1.5 text-xs animate-in zoom-in-50 duration-200"
             >
               {activeFiltersCount}
             </Badge>
           )}
-        </Button>
+        </ToolbarButton>
       </PopoverTrigger>
       <PopoverContent className={`${showMotivoFilter ? 'w-[480px]' : 'w-[400px]'} p-0`} align="end">
         <div className="p-4">
