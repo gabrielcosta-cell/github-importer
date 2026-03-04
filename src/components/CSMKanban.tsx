@@ -922,7 +922,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
         <div className="flex flex-wrap gap-2 items-center justify-end">
           {/* Contador de clientes com MRR */}
           <div className="flex items-center gap-1">
-            <span className="text-sm font-medium text-foreground">
+            <span className="text-base font-semibold text-foreground">
               {filteredCardsData.count} {filteredCardsData.count === 1 ? 'cliente' : 'clientes'}
             </span>
             {syncing && (
