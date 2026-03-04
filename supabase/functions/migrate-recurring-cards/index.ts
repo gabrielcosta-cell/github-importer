@@ -122,10 +122,23 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Marcar card original como migrado
+      // Copiar display_id do novo card CSM para o card CRM original e marcar como migrado
+      const updateData: Record<string, unknown> = { migrado_csm: true };
+      if (newCard) {
+        // Buscar o display_id gerado para o novo card CSM
+        const { data: createdCard } = await supabase
+          .from("csm_cards")
+          .select("display_id")
+          .eq("id", newCard.id)
+          .single();
+
+        if (createdCard?.display_id) {
+          updateData.display_id = createdCard.display_id;
+        }
+      }
       await supabase
         .from("csm_cards")
-        .update({ migrado_csm: true })
+        .update(updateData)
         .eq("id", card.id);
 
       migratedCount++;

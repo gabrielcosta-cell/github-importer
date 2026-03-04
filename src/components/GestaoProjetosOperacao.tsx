@@ -45,6 +45,10 @@ interface ProjetoRow {
   tipo_receita?: string
   data_ganho?: string
   migrado_csm?: boolean
+  // Campos de merge CRM
+  crm_revenue?: number
+  crm_tipo_receita?: string
+  crm_card_id?: string
 }
 
 const calcEtapaFormal = (dataInicio?: string | null): string => {
@@ -194,6 +198,8 @@ const COLUMN_ACCESSORS: Record<string, (p: ProjetoRow) => string | number | unde
   etapa_formal: p => calcEtapaFormal(p.data_inicio),
   fase_projeto: p => p.fase_projeto || '-',
   monthly_revenue: p => p.monthly_revenue || 0,
+  crm_revenue: p => p.crm_revenue || 0,
+  total_revenue: p => (p.monthly_revenue || 0) + (p.crm_revenue || 0),
   servico: p => p.servico_contratado || '-',
   data_contrato: p => p.data_contrato || '',
   tempo_dot: p => {
@@ -281,7 +287,26 @@ export const GestaoProjetosOperacao = () => {
         }))
       }
 
-      setLiveData([...csmRows, ...crmOpsRows])
+      // Merge: vincular CRM cards ao CSM card correspondente pelo display_id
+      const csmMap = new Map<number, ProjetoRow>()
+      for (const row of csmRows) {
+        if (row.display_id) csmMap.set(row.display_id, row)
+      }
+
+      const unmatchedCrmRows: ProjetoRow[] = []
+      for (const crm of crmOpsRows) {
+        if (crm.display_id && csmMap.has(crm.display_id)) {
+          const csm = csmMap.get(crm.display_id)!
+          // Acumular receita CRM no card CSM
+          csm.crm_revenue = (csm.crm_revenue || 0) + (crm.monthly_revenue || 0)
+          csm.crm_tipo_receita = crm.tipo_receita || csm.crm_tipo_receita
+          csm.crm_card_id = crm.id
+        } else {
+          unmatchedCrmRows.push(crm)
+        }
+      }
+
+      setLiveData([...csmRows, ...unmatchedCrmRows])
       setLoading(false)
     }
     fetchData()
@@ -366,7 +391,7 @@ export const GestaoProjetosOperacao = () => {
     return filtered
   }, [liveData, searchTerm, selectedPeriod, sortColumn, sortDirection, columnFilters])
 
-  const totalMRR = useMemo(() => displayData.reduce((sum, p) => sum + (p.monthly_revenue || 0), 0), [displayData])
+  const totalMRR = useMemo(() => displayData.reduce((sum, p) => sum + (p.monthly_revenue || 0) + (p.crm_revenue || 0), 0), [displayData])
 
   // Unique filter values computed from period-filtered data (before column filters)
   const periodData = useMemo(() => {
@@ -382,7 +407,7 @@ export const GestaoProjetosOperacao = () => {
   }, [periodData])
 
   const downloadCSV = () => {
-    const headers = ['ID', 'Nome', 'Origem', 'Tipo Receita', 'Squad', 'Plano', 'Etapa Formal', 'Fase do Projeto', 'Fee (MRR)', 'Serviço', 'Data Assinatura', 'Tempo de DOT', 'Tempo Contrato', 'Valor Contrato', 'Nicho', 'Comissão', 'Criativos Estáticos', 'Criativos Vídeo', 'LPs', 'Limite Investimento', 'Churn', 'Motivo']
+    const headers = ['ID', 'Nome', 'Origem', 'Tipo Receita', 'Squad', 'Plano', 'Etapa Formal', 'Fase do Projeto', 'Fee (MRR)', 'Receita CRM', 'Total', 'Serviço', 'Data Assinatura', 'Tempo de DOT', 'Tempo Contrato', 'Valor Contrato', 'Nicho', 'Comissão', 'Criativos Estáticos', 'Criativos Vídeo', 'LPs', 'Limite Investimento', 'Churn', 'Motivo']
     const csv = [
       headers.join(','),
       ...displayData.map(p => [
@@ -395,6 +420,8 @@ export const GestaoProjetosOperacao = () => {
         calcEtapaFormal(p.data_inicio),
         p.fase_projeto || '-',
         p.monthly_revenue || 0,
+        p.crm_revenue || 0,
+        (p.monthly_revenue || 0) + (p.crm_revenue || 0),
         p.servico_contratado || '-',
         p.data_contrato || '-',
         calcTempoDOT(p.data_inicio, p.data_perda),
@@ -486,6 +513,8 @@ export const GestaoProjetosOperacao = () => {
                     <SortableHeader label="Etapa Formal" columnKey="etapa_formal" {...sharedHeaderProps} filterValues={filterOptions.etapa_formal} activeFilters={columnFilters.etapa_formal} className="min-w-[110px]" />
                     <SortableHeader label="Fase do Projeto" columnKey="fase_projeto" {...sharedHeaderProps} filterValues={filterOptions.fase_projeto} activeFilters={columnFilters.fase_projeto} className="min-w-[120px]" />
                     <SortableHeader label="Fee (MRR)" columnKey="monthly_revenue" {...sharedHeaderProps} className="min-w-[110px] text-right" />
+                    <SortableHeader label="Receita CRM" columnKey="crm_revenue" {...sharedHeaderProps} className="min-w-[110px] text-right" />
+                    <SortableHeader label="Total" columnKey="total_revenue" {...sharedHeaderProps} className="min-w-[110px] text-right" />
                     <SortableHeader label="Serviço" columnKey="servico" {...sharedHeaderProps} filterValues={filterOptions.servico} activeFilters={columnFilters.servico} className="min-w-[130px]" />
                     <SortableHeader label="Data Assinatura" columnKey="data_contrato" {...sharedHeaderProps} className="min-w-[110px]" />
                     <SortableHeader label="Tempo de DOT" columnKey="tempo_dot" {...sharedHeaderProps} className="min-w-[100px]" />
@@ -545,6 +574,12 @@ export const GestaoProjetosOperacao = () => {
                       <TableCell className="text-sm">{p.fase_projeto || '-'}</TableCell>
                       <TableCell className="text-sm text-right font-medium">
                         {p.monthly_revenue ? formatCurrency(p.monthly_revenue) : '-'}
+                      </TableCell>
+                      <TableCell className="text-sm text-right font-medium">
+                        {p.crm_revenue ? formatCurrency(p.crm_revenue) : '-'}
+                      </TableCell>
+                      <TableCell className="text-sm text-right font-semibold">
+                        {formatCurrency((p.monthly_revenue || 0) + (p.crm_revenue || 0))}
                       </TableCell>
                       <TableCell className="text-sm">{p.servico_contratado || '-'}</TableCell>
                       <TableCell className="text-sm">{formatDate(p.data_contrato)}</TableCell>
