@@ -82,7 +82,7 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="h-9 relative transition-all duration-200 hover:scale-105">
+        <Button variant="outline" size="sm" className="h-9 min-h-0 py-0 relative transition-all duration-200 hover:scale-105">
           <Filter className="h-4 w-4 mr-2 transition-transform duration-200" />
           Filtros
           <ChevronDown className="h-4 w-4 ml-2" />
