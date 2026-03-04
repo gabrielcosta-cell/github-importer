@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
+import { ToolbarButton } from '@/components/ui/toolbar-button';
 import { Plus, Search, Settings, Pencil, BarChart3, Plug, PenLine, GripVertical, Tag, Zap, Trophy, ThumbsDown, ArrowUpDown, ListChecks, Shield, FileDown, Filter } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -270,10 +271,10 @@ export const CRMOpsKanban: React.FC = () => {
           {/* Ordenar */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="h-9 min-h-0 py-0 px-3 transition-all duration-200 hover:scale-105">
-                <ArrowUpDown className="h-4 w-4 mr-2" />
+              <ToolbarButton>
+                <ArrowUpDown className="h-4 w-4" />
                 <span>Ordenar</span>
-              </Button>
+              </ToolbarButton>
             </PopoverTrigger>
             <PopoverContent className="w-64 p-0" align="end">
               <div className="p-2">
@@ -296,24 +297,19 @@ export const CRMOpsKanban: React.FC = () => {
 
           {/* Adicionar lead */}
           {isAdmin && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleAddCard}
-              className="h-9 min-h-0 px-3 py-0 gap-2 transition-all duration-200 hover:scale-105"
-            >
+            <ToolbarButton onClick={handleAddCard}>
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">Adicionar lead</span>
-            </Button>
+            </ToolbarButton>
           )}
 
           {/* Configurações */}
           {isAdmin && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="h-9 w-9 transition-all duration-200 hover:scale-105">
+              <ToolbarButton toolbarSize="icon">
                   <Settings className="h-4 w-4" />
-                </Button>
+                </ToolbarButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem onClick={() => setShowStageManager(true)}>

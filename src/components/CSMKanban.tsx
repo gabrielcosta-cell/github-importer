@@ -3,6 +3,7 @@ import { importCancelledClients } from '@/utils/importCancelledClients';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { ToolbarButton } from '@/components/ui/toolbar-button';
 import { Plus, LayoutGrid, Rocket, Moon, Shield, Flame, Sunrise, DollarSign, Info, ArrowUpDown, UserPlus, Settings, Pencil, Tag, Zap, Trophy, ThumbsDown, ListChecks, FileDown } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -962,10 +963,10 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
           {/* Ordenação */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="h-9 min-h-0 py-0 px-3 transition-all duration-200 hover:scale-105">
-                <ArrowUpDown className="h-4 w-4 mr-2" />
+              <ToolbarButton>
+                <ArrowUpDown className="h-4 w-4" />
                 <span>Ordenar</span>
-              </Button>
+              </ToolbarButton>
             </PopoverTrigger>
             <PopoverContent className="w-64 p-0" align="end">
               <div className="p-2">
@@ -1001,36 +1002,30 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
             onClearFilters={handleClearFilters}
           />
           {(selectedSquad !== 'todos' || selectedPlano !== 'todos' || selectedMotivo !== 'todos' || selectedNiche !== 'todos' || selectedFlag !== 'todos' || selectedTagsFilter.length > 0) && (
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-9 w-9 border-border hover:bg-accent transition-all duration-200 hover:scale-110"
+            <ToolbarButton
+              toolbarSize="icon"
+              className="border-border hover:bg-accent"
               onClick={() => { handleClearFilters(); toast.success('Filtros limpos'); }}
             >
               <Plus className="h-4 w-4 rotate-45" />
-            </Button>
+            </ToolbarButton>
           )}
           
           {/* Botão adicionar cliente - only for admins */}
           {isAdmin && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleAddSimpleCard}
-              className="h-9 min-h-0 py-0 px-3 gap-2 transition-all duration-200 hover:scale-105"
-            >
+            <ToolbarButton onClick={handleAddSimpleCard}>
               <UserPlus className="h-4 w-4" />
               <span className="hidden sm:inline">Adicionar cliente</span>
-            </Button>
+            </ToolbarButton>
           )}
 
           {/* Configurações */}
           {isAdmin && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="h-9 w-9 transition-all duration-200 hover:scale-105">
+                <ToolbarButton toolbarSize="icon">
                   <Settings className="h-4 w-4" />
-                </Button>
+                </ToolbarButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem onClick={() => setShowStageManager(true)}>
