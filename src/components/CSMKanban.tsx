@@ -970,9 +970,9 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
             <PopoverContent className="w-64 p-0" align="end">
               <div className="p-2">
                 <div className="space-y-1">
-                  <Button variant={sortBy === 'title' ? 'default' : 'ghost'} size="sm" className="w-full justify-start h-8" onClick={() => handleSortChange('title')}>Título (A-Z)</Button>
-                  <Button variant={sortBy === 'mrr' ? 'default' : 'ghost'} size="sm" className="w-full justify-start h-8" onClick={() => handleSortChange('mrr')}>Valor do MRR</Button>
-                  <Button variant={sortBy === 'created' ? 'default' : 'ghost'} size="sm" className="w-full justify-start h-8" onClick={() => handleSortChange('created')}>Data de criação</Button>
+                  <Button variant={sortBy === 'title' ? 'default' : 'ghost'} size="sm" className="w-full justify-start h-9" onClick={() => handleSortChange('title')}>Título (A-Z)</Button>
+                  <Button variant={sortBy === 'mrr' ? 'default' : 'ghost'} size="sm" className="w-full justify-start h-9" onClick={() => handleSortChange('mrr')}>Valor do MRR</Button>
+                  <Button variant={sortBy === 'created' ? 'default' : 'ghost'} size="sm" className="w-full justify-start h-9" onClick={() => handleSortChange('created')}>Data de criação</Button>
                 </div>
               </div>
             </PopoverContent>
