@@ -3,7 +3,8 @@ import { importCancelledClients } from '@/utils/importCancelledClients';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Plus, LayoutGrid, Rocket, Moon, Shield, Flame, Sunrise, DollarSign, Info, ArrowUpDown, UserPlus } from 'lucide-react';
+import { Plus, LayoutGrid, Rocket, Moon, Shield, Flame, Sunrise, DollarSign, Info, ArrowUpDown, UserPlus, Settings, Pencil, Tag, Zap, Trophy, ThumbsDown, ListChecks, FileDown } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -914,6 +915,60 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
             searchTerm={searchTerm}
             onSearchChange={handleSearchChange}
           />
+
+          {/* Configurações Dropdown - next to search */}
+          {isAdmin && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 px-2 transition-all duration-200 hover:scale-105">
+                  <Settings className="h-4 w-4 mr-2" />
+                  <span>Configurações</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                <DropdownMenuItem onClick={() => setShowStageManager(true)}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Editar Etapas
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowPipelineOrderManager(true)}>
+                  <LayoutGrid className="h-4 w-4 mr-2" />
+                  Ordem dos Pipelines
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast.info('Gerenciar etiquetas em breve')}>
+                  <Tag className="h-4 w-4 mr-2" />
+                  Gerenciar Etiquetas
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast.info('Automações em breve')}>
+                  <Zap className="h-4 w-4 mr-2" />
+                  Automações de Funis
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast.info('Configurações de ganho em breve')}>
+                  <Trophy className="h-4 w-4 mr-2" />
+                  Configurações de Ganho
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast.info('Motivos de perda em breve')}>
+                  <ThumbsDown className="h-4 w-4 mr-2" />
+                  Motivos de Perda
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast.info('Ordem dos clientes em breve')}>
+                  <ArrowUpDown className="h-4 w-4 mr-2" />
+                  Ordem dos Clientes
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast.info('Tarefas em breve')}>
+                  <ListChecks className="h-4 w-4 mr-2" />
+                  Tarefas
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast.info('Permissões em breve')}>
+                  <Shield className="h-4 w-4 mr-2" />
+                  Permissões de Exportação
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast.info('Importar clientes em breve')}>
+                  <FileDown className="h-4 w-4 mr-2" />
+                  Importar Clientes
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
         {/* Right side: Controls */}
         <div className="flex flex-wrap gap-2 items-center justify-end">
