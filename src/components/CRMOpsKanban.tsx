@@ -264,7 +264,7 @@ export const CRMOpsKanban: React.FC = () => {
         {/* Right side: Controls */}
         <div className="flex flex-wrap gap-2 items-center justify-end">
           {/* Lead count */}
-          <span className="text-sm font-medium text-foreground">
+          <span className="text-base font-semibold text-foreground">
             {filteredCards.length} {filteredCards.length === 1 ? 'lead' : 'leads'}
           </span>
 
