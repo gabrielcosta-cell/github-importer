@@ -1,11 +1,12 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Download, Search } from 'lucide-react'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Download, Search, ArrowUp, ArrowDown, ArrowUpDown, Filter } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 import { formatCurrency } from '@/utils/formatCurrency'
@@ -40,14 +41,12 @@ interface ProjetoRow {
   motivo_perda?: string
   client_status?: string
   created_at?: string
-  // CRM Ops fields
   source?: 'csm' | 'crm-ops'
   tipo_receita?: string
   data_ganho?: string
   migrado_csm?: boolean
 }
 
-// Calcula Etapa Formal baseado em data_inicio
 const calcEtapaFormal = (dataInicio?: string | null): string => {
   if (!dataInicio) return '-'
   try {
@@ -63,7 +62,6 @@ const calcEtapaFormal = (dataInicio?: string | null): string => {
   } catch { return '-' }
 }
 
-// Calcula Tempo de DOT em meses
 const calcTempoDOT = (dataInicio?: string | null, dataPerda?: string | null): string => {
   if (!dataInicio) return '-'
   try {
@@ -99,31 +97,158 @@ const PLANO_COLORS: Record<string, string> = {
 
 const MONTHS_LABEL = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 
+type SortDirection = 'asc' | 'desc'
+
+// Extracts unique non-empty values for a given accessor
+const getUniqueValues = (data: ProjetoRow[], accessor: (p: ProjetoRow) => string | undefined): string[] => {
+  const vals = new Set<string>()
+  data.forEach(p => {
+    const v = accessor(p)
+    if (v && v !== '-') vals.add(v)
+  })
+  return Array.from(vals).sort()
+}
+
+// --- SortableHeader component ---
+interface SortableHeaderProps {
+  label: string
+  columnKey: string
+  sortColumn: string | null
+  sortDirection: SortDirection
+  onSort: (key: string) => void
+  filterValues?: string[]
+  activeFilters?: string[]
+  onFilterChange?: (key: string, values: string[]) => void
+  className?: string
+}
+
+const SortableHeader = ({ label, columnKey, sortColumn, sortDirection, onSort, filterValues, activeFilters, onFilterChange, className }: SortableHeaderProps) => {
+  const isActive = sortColumn === columnKey
+  const hasFilter = filterValues && filterValues.length > 0
+  const hasActiveFilter = activeFilters && activeFilters.length > 0
+
+  return (
+    <TableHead className={className}>
+      <div className="flex items-center gap-0.5">
+        <button
+          onClick={() => onSort(columnKey)}
+          className="flex items-center gap-1 hover:text-foreground transition-colors text-left font-medium"
+        >
+          {label}
+          {isActive ? (
+            sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+          ) : (
+            <ArrowUpDown className="h-3 w-3 opacity-30" />
+          )}
+        </button>
+        {hasFilter && onFilterChange && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className={`p-0.5 rounded hover:bg-muted transition-colors ${hasActiveFilter ? 'text-primary' : 'text-muted-foreground opacity-50 hover:opacity-100'}`}>
+                <Filter className="h-3 w-3" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 p-2" align="start">
+              <div className="space-y-1 max-h-[240px] overflow-y-auto">
+                {hasActiveFilter && (
+                  <button
+                    onClick={() => onFilterChange(columnKey, [])}
+                    className="text-xs text-muted-foreground hover:text-foreground mb-1 underline"
+                  >
+                    Limpar filtros
+                  </button>
+                )}
+                {filterValues!.map(val => (
+                  <label key={val} className="flex items-center gap-2 py-0.5 px-1 rounded hover:bg-muted cursor-pointer text-sm">
+                    <Checkbox
+                      checked={activeFilters?.includes(val) ?? false}
+                      onCheckedChange={(checked) => {
+                        const current = activeFilters || []
+                        const next = checked ? [...current, val] : current.filter(v => v !== val)
+                        onFilterChange(columnKey, next)
+                      }}
+                    />
+                    <span className="truncate">{val}</span>
+                  </label>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
+      </div>
+    </TableHead>
+  )
+}
+
+// --- Accessor helpers for sorting/filtering ---
+const COLUMN_ACCESSORS: Record<string, (p: ProjetoRow) => string | number | undefined> = {
+  display_id: p => p.display_id,
+  nome: p => (p.company_name || p.title || '').toLowerCase(),
+  origem: p => p.source === 'crm-ops' ? 'Venda Ops' : 'CSM',
+  tipo_receita: p => {
+    const map: Record<string, string> = { venda_unica: 'Venda Única', variavel_midia: 'Var. Mídia', variavel_meta: 'Var. Meta', venda_recorrente: 'Recorrente' }
+    return p.tipo_receita ? (map[p.tipo_receita] || p.tipo_receita) : '-'
+  },
+  squad: p => p.squad || '-',
+  plano: p => p.plano || '-',
+  etapa_formal: p => calcEtapaFormal(p.data_inicio),
+  fase_projeto: p => p.fase_projeto || '-',
+  monthly_revenue: p => p.monthly_revenue || 0,
+  servico: p => p.servico_contratado || '-',
+  data_contrato: p => p.data_contrato || '',
+  tempo_dot: p => {
+    if (!p.data_inicio) return 0
+    try { return differenceInMonths(p.data_perda ? parseISO(p.data_perda) : new Date(), parseISO(p.data_inicio)) } catch { return 0 }
+  },
+  tempo_contrato: p => p.tempo_contrato ? parseInt(p.tempo_contrato) : 0,
+  valor_contrato: p => p.valor_contrato || 0,
+  niche: p => p.niche || '-',
+  comissao: p => p.existe_comissao ? 'Sim' : 'Não',
+  estaticos: p => p.criativos_estaticos ?? 0,
+  videos: p => p.criativos_video ?? 0,
+  lps: p => p.lps ?? 0,
+  limite_investimento: p => p.limite_investimento || 0,
+  churn: p => p.data_perda || '',
+  motivo: p => p.motivo_perda || '-',
+}
+
+const FILTERABLE_COLUMNS: Record<string, (p: ProjetoRow) => string | undefined> = {
+  origem: p => p.source === 'crm-ops' ? 'Venda Ops' : 'CSM',
+  tipo_receita: p => {
+    const map: Record<string, string> = { venda_unica: 'Venda Única', variavel_midia: 'Var. Mídia', variavel_meta: 'Var. Meta', venda_recorrente: 'Recorrente' }
+    return p.tipo_receita ? (map[p.tipo_receita] || p.tipo_receita) : undefined
+  },
+  squad: p => p.squad || undefined,
+  plano: p => p.plano || undefined,
+  etapa_formal: p => { const v = calcEtapaFormal(p.data_inicio); return v !== '-' ? v : undefined },
+  fase_projeto: p => p.fase_projeto || undefined,
+  servico: p => p.servico_contratado || undefined,
+  niche: p => p.niche || undefined,
+  comissao: p => p.existe_comissao ? 'Sim' : 'Não',
+}
+
 export const GestaoProjetosOperacao = () => {
   const now = new Date()
   const [selectedPeriod, setSelectedPeriod] = useState<{ month: number; year: number }>({ month: now.getMonth(), year: now.getFullYear() })
   const [liveData, setLiveData] = useState<ProjetoRow[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [squadFilter, setSquadFilter] = useState<string>('all')
-  const [planoFilter, setPlanoFilter] = useState<string>('all')
   const [squads, setSquads] = useState<Array<{ id: string; name: string }>>([])
+  const [sortColumn, setSortColumn] = useState<string | null>(null)
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
+  const [columnFilters, setColumnFilters] = useState<Record<string, string[]>>({})
   const { toast } = useToast()
 
-  // Fetch squads
   useEffect(() => {
     supabase.from('squads').select('id, name').eq('is_active', true).order('position').then(({ data }) => {
       setSquads(data || [])
     })
   }, [])
 
-  // Fetch live data from csm_cards (Clientes Ativos) + CRM Ops
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
-      
-      // 1. Fetch CSM Clientes Ativos
-      const { data: csmData, error: csmError } = await supabase
+      const { data: csmData } = await supabase
         .from('csm_cards')
         .select('id, display_id, company_name, title, squad, plano, fase_projeto, monthly_revenue, servico_contratado, data_contrato, data_inicio, tempo_contrato, valor_contrato, niche, existe_comissao, observacao_comissao, criativos_estaticos, criativos_video, lps, limite_investimento, data_perda, motivo_perda, client_status, created_at')
         .eq('pipeline_id', PIPELINE_CLIENTES_ATIVOS)
@@ -131,7 +256,6 @@ export const GestaoProjetosOperacao = () => {
 
       const csmRows: ProjetoRow[] = (csmData || []).map(row => ({ ...row, source: 'csm' as const }))
 
-      // 2. Fetch CRM Ops pipelines
       const { data: crmPipelines } = await supabase
         .from('csm_pipelines')
         .select('id, name')
@@ -163,32 +287,21 @@ export const GestaoProjetosOperacao = () => {
     fetchData()
   }, [])
 
-  // Verifica se o cliente era relevante no mês selecionado
   const wasRelevantInMonth = (p: ProjetoRow, month: number, year: number): boolean => {
-    // CRM Ops cards: aparecem APENAS no mês de criação
     if (p.source === 'crm-ops') {
-      // Cards migrados para CSM não aparecem mais
       if (p.migrado_csm) return false
-      
-      // Extract date-only to avoid timezone shifting
       const createdDateOnly = (p.created_at || '').substring(0, 10)
       const createdAt = new Date(createdDateOnly + 'T12:00:00')
       return createdAt.getMonth() === month && createdAt.getFullYear() === year
     }
-
-    // CSM cards: lógica existente
     const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59)
-    
     const startDateStr = p.data_inicio || p.data_contrato || p.created_at
     if (startDateStr) {
-      // Extract date-only to avoid timezone shifting (UTC midnight → previous day in BRT)
       const dateOnly = startDateStr.substring(0, 10)
       const startDate = new Date(dateOnly + 'T12:00:00')
       if (startDate > endOfMonth) return false
     }
-
     if (p.client_status !== 'cancelado') return true
-
     if (!p.data_perda) return false
     const perdaDate = parseISO(p.data_perda)
     const perdaMonth = perdaDate.getMonth()
@@ -198,22 +311,76 @@ export const GestaoProjetosOperacao = () => {
     return false
   }
 
-  // Data to render
+  const handleSort = useCallback((key: string) => {
+    if (sortColumn === key) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortColumn(key)
+      setSortDirection('asc')
+    }
+  }, [sortColumn])
+
+  const handleFilterChange = useCallback((key: string, values: string[]) => {
+    setColumnFilters(prev => ({ ...prev, [key]: values }))
+  }, [])
+
   const displayData = useMemo(() => {
-    return liveData.filter(p => {
+    let filtered = liveData.filter(p => {
       const name = (p.company_name || p.title || '').toLowerCase()
       const matchesSearch = !searchTerm || name.includes(searchTerm.toLowerCase())
-      const matchesSquad = squadFilter === 'all' || p.squad === squadFilter
-      const matchesPlano = planoFilter === 'all' || p.plano === planoFilter
       const matchesStatus = wasRelevantInMonth(p, selectedPeriod.month, selectedPeriod.year)
-      return matchesSearch && matchesSquad && matchesPlano && matchesStatus
+      return matchesSearch && matchesStatus
     })
-  }, [liveData, searchTerm, squadFilter, planoFilter, selectedPeriod])
 
-  // MRR total
+    // Apply column filters
+    for (const [key, values] of Object.entries(columnFilters)) {
+      if (values.length === 0) continue
+      const accessor = FILTERABLE_COLUMNS[key]
+      if (!accessor) continue
+      filtered = filtered.filter(p => {
+        const val = accessor(p)
+        return val ? values.includes(val) : false
+      })
+    }
+
+    // Apply sorting
+    if (sortColumn) {
+      const accessor = COLUMN_ACCESSORS[sortColumn]
+      if (accessor) {
+        filtered.sort((a, b) => {
+          const va = accessor(a)
+          const vb = accessor(b)
+          if (va == null && vb == null) return 0
+          if (va == null) return 1
+          if (vb == null) return -1
+          if (typeof va === 'number' && typeof vb === 'number') {
+            return sortDirection === 'asc' ? va - vb : vb - va
+          }
+          const sa = String(va)
+          const sb = String(vb)
+          return sortDirection === 'asc' ? sa.localeCompare(sb) : sb.localeCompare(sa)
+        })
+      }
+    }
+
+    return filtered
+  }, [liveData, searchTerm, selectedPeriod, sortColumn, sortDirection, columnFilters])
+
   const totalMRR = useMemo(() => displayData.reduce((sum, p) => sum + (p.monthly_revenue || 0), 0), [displayData])
 
-  // CSV export
+  // Unique filter values computed from period-filtered data (before column filters)
+  const periodData = useMemo(() => {
+    return liveData.filter(p => wasRelevantInMonth(p, selectedPeriod.month, selectedPeriod.year))
+  }, [liveData, selectedPeriod])
+
+  const filterOptions = useMemo(() => {
+    const opts: Record<string, string[]> = {}
+    for (const key of Object.keys(FILTERABLE_COLUMNS)) {
+      opts[key] = getUniqueValues(periodData, FILTERABLE_COLUMNS[key] as (p: ProjetoRow) => string | undefined)
+    }
+    return opts
+  }, [periodData])
+
   const downloadCSV = () => {
     const headers = ['ID', 'Nome', 'Origem', 'Tipo Receita', 'Squad', 'Plano', 'Etapa Formal', 'Fase do Projeto', 'Fee (MRR)', 'Serviço', 'Data Assinatura', 'Tempo de DOT', 'Tempo Contrato', 'Valor Contrato', 'Nicho', 'Comissão', 'Criativos Estáticos', 'Criativos Vídeo', 'LPs', 'Limite Investimento', 'Churn', 'Motivo']
     const csv = [
@@ -251,7 +418,9 @@ export const GestaoProjetosOperacao = () => {
     link.click()
   }
 
-  const planos = Array.from(new Set(liveData.map(p => p.plano).filter(Boolean)))
+  const activeFilterCount = Object.values(columnFilters).reduce((sum, v) => sum + v.length, 0)
+
+  const sharedHeaderProps = { sortColumn, sortDirection, onSort: handleSort, onFilterChange: handleFilterChange }
 
   return (
     <div className="space-y-4">
@@ -268,7 +437,14 @@ export const GestaoProjetosOperacao = () => {
                 singleSelect
               />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground">{displayData.length} clientes</span>
+              <span className="text-sm font-medium">MRR: {formatCurrency(totalMRR)}</span>
+              {activeFilterCount > 0 && (
+                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setColumnFilters({})}>
+                  Limpar filtros ({activeFilterCount})
+                </Button>
+              )}
               <Button onClick={downloadCSV} variant="outline" size="sm">
                 <Download className="h-4 w-4 mr-2" />
                 Exportar CSV
@@ -277,9 +453,9 @@ export const GestaoProjetosOperacao = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {/* Filters */}
-          <div className="flex flex-wrap gap-3 mb-4 items-center">
-            <div className="relative flex-1 min-w-[200px] max-w-sm">
+          {/* Search */}
+          <div className="mb-4 max-w-sm">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar cliente..."
@@ -287,28 +463,6 @@ export const GestaoProjetosOperacao = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9 h-9"
               />
-            </div>
-            <Select value={squadFilter} onValueChange={setSquadFilter}>
-              <SelectTrigger className="w-32 h-9">
-                <SelectValue placeholder="Squad" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                {squads.map(s => <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Select value={planoFilter} onValueChange={setPlanoFilter}>
-              <SelectTrigger className="w-32 h-9">
-                <SelectValue placeholder="Plano" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                {planos.map(p => <SelectItem key={p} value={p!}>{p}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <div className="ml-auto flex items-center gap-3 text-sm text-muted-foreground">
-              <span>{displayData.length} clientes</span>
-              <span className="font-medium text-foreground">MRR: {formatCurrency(totalMRR)}</span>
             </div>
           </div>
 
@@ -323,28 +477,28 @@ export const GestaoProjetosOperacao = () => {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/30">
-                    <TableHead className="sticky left-0 z-10 bg-muted/30 min-w-[60px]">ID</TableHead>
-                    <TableHead className="sticky left-[60px] z-10 bg-muted/30 min-w-[180px]">Nome</TableHead>
-                    <TableHead className="min-w-[80px]">Origem</TableHead>
-                    <TableHead className="min-w-[120px]">Tipo Receita</TableHead>
-                    <TableHead className="min-w-[90px]">Squad</TableHead>
-                    <TableHead className="min-w-[90px]">Plano</TableHead>
-                    <TableHead className="min-w-[110px]">Etapa Formal</TableHead>
-                    <TableHead className="min-w-[120px]">Fase do Projeto</TableHead>
-                    <TableHead className="min-w-[110px] text-right">Fee (MRR)</TableHead>
-                    <TableHead className="min-w-[130px]">Serviço</TableHead>
-                    <TableHead className="min-w-[110px]">Data Assinatura</TableHead>
-                    <TableHead className="min-w-[100px]">Tempo de DOT</TableHead>
-                    <TableHead className="min-w-[100px]">Tempo Contrato</TableHead>
-                    <TableHead className="min-w-[120px] text-right">Valor Contrato</TableHead>
-                    <TableHead className="min-w-[110px]">Nicho</TableHead>
-                    <TableHead className="min-w-[100px]">Comissão</TableHead>
-                    <TableHead className="min-w-[80px] text-center">Estáticos</TableHead>
-                    <TableHead className="min-w-[80px] text-center">Vídeos</TableHead>
-                    <TableHead className="min-w-[60px] text-center">LPs</TableHead>
-                    <TableHead className="min-w-[110px] text-right">Lim. Investimento</TableHead>
-                    <TableHead className="min-w-[100px]">Churn</TableHead>
-                    <TableHead className="min-w-[130px]">Motivo</TableHead>
+                    <SortableHeader label="ID" columnKey="display_id" {...sharedHeaderProps} className="sticky left-0 z-10 bg-muted/30 min-w-[60px]" />
+                    <SortableHeader label="Nome" columnKey="nome" {...sharedHeaderProps} className="sticky left-[60px] z-10 bg-muted/30 min-w-[180px]" />
+                    <SortableHeader label="Origem" columnKey="origem" {...sharedHeaderProps} filterValues={filterOptions.origem} activeFilters={columnFilters.origem} className="min-w-[80px]" />
+                    <SortableHeader label="Tipo Receita" columnKey="tipo_receita" {...sharedHeaderProps} filterValues={filterOptions.tipo_receita} activeFilters={columnFilters.tipo_receita} className="min-w-[120px]" />
+                    <SortableHeader label="Squad" columnKey="squad" {...sharedHeaderProps} filterValues={filterOptions.squad} activeFilters={columnFilters.squad} className="min-w-[90px]" />
+                    <SortableHeader label="Plano" columnKey="plano" {...sharedHeaderProps} filterValues={filterOptions.plano} activeFilters={columnFilters.plano} className="min-w-[90px]" />
+                    <SortableHeader label="Etapa Formal" columnKey="etapa_formal" {...sharedHeaderProps} filterValues={filterOptions.etapa_formal} activeFilters={columnFilters.etapa_formal} className="min-w-[110px]" />
+                    <SortableHeader label="Fase do Projeto" columnKey="fase_projeto" {...sharedHeaderProps} filterValues={filterOptions.fase_projeto} activeFilters={columnFilters.fase_projeto} className="min-w-[120px]" />
+                    <SortableHeader label="Fee (MRR)" columnKey="monthly_revenue" {...sharedHeaderProps} className="min-w-[110px] text-right" />
+                    <SortableHeader label="Serviço" columnKey="servico" {...sharedHeaderProps} filterValues={filterOptions.servico} activeFilters={columnFilters.servico} className="min-w-[130px]" />
+                    <SortableHeader label="Data Assinatura" columnKey="data_contrato" {...sharedHeaderProps} className="min-w-[110px]" />
+                    <SortableHeader label="Tempo de DOT" columnKey="tempo_dot" {...sharedHeaderProps} className="min-w-[100px]" />
+                    <SortableHeader label="Tempo Contrato" columnKey="tempo_contrato" {...sharedHeaderProps} className="min-w-[100px]" />
+                    <SortableHeader label="Valor Contrato" columnKey="valor_contrato" {...sharedHeaderProps} className="min-w-[120px] text-right" />
+                    <SortableHeader label="Nicho" columnKey="niche" {...sharedHeaderProps} filterValues={filterOptions.niche} activeFilters={columnFilters.niche} className="min-w-[110px]" />
+                    <SortableHeader label="Comissão" columnKey="comissao" {...sharedHeaderProps} filterValues={filterOptions.comissao} activeFilters={columnFilters.comissao} className="min-w-[100px]" />
+                    <SortableHeader label="Estáticos" columnKey="estaticos" {...sharedHeaderProps} className="min-w-[80px] text-center" />
+                    <SortableHeader label="Vídeos" columnKey="videos" {...sharedHeaderProps} className="min-w-[80px] text-center" />
+                    <SortableHeader label="LPs" columnKey="lps" {...sharedHeaderProps} className="min-w-[60px] text-center" />
+                    <SortableHeader label="Lim. Investimento" columnKey="limite_investimento" {...sharedHeaderProps} className="min-w-[110px] text-right" />
+                    <SortableHeader label="Churn" columnKey="churn" {...sharedHeaderProps} className="min-w-[100px]" />
+                    <SortableHeader label="Motivo" columnKey="motivo" {...sharedHeaderProps} className="min-w-[130px]" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
