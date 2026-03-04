@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { KanbanBoard } from './kanban/KanbanBoard';
+import { DesktopGlobalSearch } from './kanban/MobileGlobalSearch';
 import { CardDetailsDialog } from './kanban/CardDetailsDialog';
 import { CRMOpsDateFilter } from './crm-ops/CRMOpsDateFilter';
 import { CRMOpsCardForm } from './crm-ops/CRMOpsCardForm';
@@ -167,6 +168,18 @@ export const CRMOpsKanban: React.FC = () => {
     setShowCardDetails(true);
   };
 
+  const handleGlobalCardSelect = (card: CSMCard, pipelineId: string) => {
+    if (pipelineId !== selectedPipeline) {
+      setSelectedPipeline(pipelineId);
+    }
+    setSelectedCard(card);
+    setShowCardDetails(true);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+  };
+
   const handleAddCard = () => {
     setShowCardForm(true);
   };
@@ -234,15 +247,16 @@ export const CRMOpsKanban: React.FC = () => {
       <div className="hidden md:flex md:flex-row md:items-center justify-between w-full mb-4 flex-shrink-0 gap-0 relative z-10">
         {/* Left: Search + Configurações */}
         <div className="flex items-center gap-2 h-full flex-1">
-          <div className="relative w-72">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Pesquisar..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 h-9 text-sm"
-            />
-          </div>
+          {/* Desktop global search - same as CSM */}
+          <DesktopGlobalSearch
+            currentPipelineId={selectedPipeline}
+            pipelines={pipelines}
+            currentCards={cards}
+            currentStages={stages}
+            onSelectCard={handleGlobalCardSelect}
+            searchTerm={searchTerm}
+            onSearchChange={handleSearchChange}
+          />
 
           {/* Configurações Dropdown - next to search */}
           {isAdmin && (
