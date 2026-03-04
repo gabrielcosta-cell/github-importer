@@ -16,7 +16,7 @@ import { CRM_OPS_PIPELINE_NAMES } from '@/utils/setupCRMOpsPipelines'
 
 const PIPELINE_CLIENTES_ATIVOS = '749ccdc2-5127-41a1-997b-3dcb47979555'
 
-interface ProjetoRow {
+export interface ProjetoRow {
   id: string
   display_id?: number
   company_name?: string
@@ -45,6 +45,8 @@ interface ProjetoRow {
   tipo_receita?: string
   data_ganho?: string
   migrado_csm?: boolean
+  categoria?: string
+  receita_gerada_cliente?: number
   // Campos de merge CRM
   crm_revenue?: number
   crm_tipo_receita?: string
@@ -84,7 +86,7 @@ const formatDate = (dateStr?: string | null): string => {
   } catch { return dateStr }
 }
 
-const SQUAD_COLORS: Record<string, string> = {
+export const SQUAD_COLORS: Record<string, string> = {
   Apollo: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
   Athena: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
   Ares: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
@@ -257,7 +259,7 @@ export const GestaoProjetosOperacao = () => {
       setLoading(true)
       const { data: csmData } = await supabase
         .from('csm_cards')
-        .select('id, display_id, company_name, title, squad, plano, fase_projeto, monthly_revenue, servico_contratado, data_contrato, data_inicio, tempo_contrato, valor_contrato, niche, existe_comissao, observacao_comissao, criativos_estaticos, criativos_video, lps, limite_investimento, data_perda, motivo_perda, client_status, created_at')
+        .select('id, display_id, company_name, title, squad, plano, fase_projeto, monthly_revenue, servico_contratado, data_contrato, data_inicio, tempo_contrato, valor_contrato, niche, existe_comissao, observacao_comissao, criativos_estaticos, criativos_video, lps, limite_investimento, data_perda, motivo_perda, client_status, created_at, categoria, receita_gerada_cliente')
         .eq('pipeline_id', PIPELINE_CLIENTES_ATIVOS)
         .order('display_id', { ascending: true, nullsFirst: false })
 
