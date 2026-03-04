@@ -44,9 +44,10 @@ export const MobileGlobalSearch: React.FC<MobileGlobalSearchProps> = ({
   useEffect(() => {
     const loadAllData = async () => {
       try {
+        const pipelineIds = pipelines.map(p => p.id);
         const [cardsRes, stagesRes] = await Promise.all([
-          supabase.from('csm_cards').select('*').order('position'),
-          supabase.from('csm_stages').select('*').eq('is_active', true).order('position'),
+          supabase.from('csm_cards').select('*').in('pipeline_id', pipelineIds).order('position'),
+          supabase.from('csm_stages').select('*').eq('is_active', true).in('pipeline_id', pipelineIds).order('position'),
         ]);
 
         const allCards = (cardsRes.data || []) as CSMCard[];
@@ -239,9 +240,10 @@ export const DesktopGlobalSearch: React.FC<MobileGlobalSearchProps & { searchTer
   useEffect(() => {
     const loadAllData = async () => {
       try {
+        const pipelineIds = pipelines.map(p => p.id);
         const [cardsRes, stagesRes] = await Promise.all([
-          supabase.from('csm_cards').select('*').order('position'),
-          supabase.from('csm_stages').select('*').eq('is_active', true).order('position'),
+          supabase.from('csm_cards').select('*').in('pipeline_id', pipelineIds).order('position'),
+          supabase.from('csm_stages').select('*').eq('is_active', true).in('pipeline_id', pipelineIds).order('position'),
         ]);
 
         const pipelineMap: Record<string, string> = {};
