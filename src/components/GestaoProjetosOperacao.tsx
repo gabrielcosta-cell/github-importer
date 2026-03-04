@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Download, Save, Calendar, Search, Filter } from 'lucide-react'
+import { Download, Search } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 import { formatCurrency } from '@/utils/formatCurrency'
@@ -97,16 +97,12 @@ export const GestaoProjetosOperacao = () => {
   const now = new Date()
   const [selectedPeriod, setSelectedPeriod] = useState<{ month: number; year: number }>({ month: now.getMonth(), year: now.getFullYear() })
   const [liveData, setLiveData] = useState<ProjetoRow[]>([])
-  const [snapshotData, setSnapshotData] = useState<ProjetoRow[] | null>(null)
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [squadFilter, setSquadFilter] = useState<string>('all')
   const [planoFilter, setPlanoFilter] = useState<string>('all')
   const [squads, setSquads] = useState<Array<{ id: string; name: string }>>([])
   const { toast } = useToast()
-
-  const isCurrentMonth = selectedPeriod.month === now.getMonth() && selectedPeriod.year === now.getFullYear()
 
   // Fetch squads
   useEffect(() => {
@@ -131,140 +127,34 @@ export const GestaoProjetosOperacao = () => {
     fetch()
   }, [])
 
-  // Fetch snapshot when selecting a past month
-  useEffect(() => {
-    if (isCurrentMonth) {
-      setSnapshotData(null)
-      return
+  // Verifica se o cliente era relevante no mês selecionado
+  const wasRelevantInMonth = (p: ProjetoRow, month: number, year: number): boolean => {
+    const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59)
+    if (p.created_at) {
+      const createdAt = parseISO(p.created_at)
+      if (createdAt > endOfMonth) return false
     }
-    const fetchSnapshot = async () => {
-      setLoading(true)
-      const { data, error } = await supabase
-        .from('csm_project_snapshots' as any)
-        .select('*')
-        .eq('snapshot_month', selectedPeriod.month + 1)
-        .eq('snapshot_year', selectedPeriod.year)
-        .order('display_id', { ascending: true, nullsFirst: false })
-
-      if (!error && data && (data as any[]).length > 0) {
-        setSnapshotData((data as any[]).map((s: any) => ({
-          id: s.card_id,
-          display_id: s.display_id,
-          company_name: s.company_name,
-          squad: s.squad,
-          plano: s.plano,
-          fase_projeto: s.fase_projeto,
-          monthly_revenue: s.monthly_revenue,
-          servico_contratado: s.servico_contratado,
-          data_contrato: s.data_contrato,
-          data_inicio: s.data_inicio,
-          tempo_contrato: s.tempo_contrato,
-          valor_contrato: s.valor_contrato,
-          niche: s.niche,
-          existe_comissao: s.existe_comissao,
-          observacao_comissao: s.observacao_comissao,
-          criativos_estaticos: s.criativos_estaticos,
-          criativos_video: s.criativos_video,
-          lps: s.lps,
-          limite_investimento: s.limite_investimento,
-          data_perda: s.data_perda,
-          motivo_perda: s.motivo_perda,
-          client_status: s.status,
-        })))
-      } else {
-        setSnapshotData([])
-      }
-      setLoading(false)
-    }
-    fetchSnapshot()
-  }, [selectedPeriod, isCurrentMonth])
-
-  // Save snapshot
-  const saveSnapshot = async () => {
-    setSaving(true)
-    try {
-      const activeCards = liveData.filter(c => c.client_status !== 'cancelado')
-      const rows = activeCards.map(c => ({
-        card_id: c.id,
-        snapshot_month: selectedPeriod.month + 1,
-        snapshot_year: selectedPeriod.year,
-        status: c.client_status || 'ativo',
-        company_name: c.company_name || c.title || '',
-        display_id: c.display_id,
-        squad: c.squad,
-        plano: c.plano,
-        fase_projeto: c.fase_projeto,
-        monthly_revenue: c.monthly_revenue || 0,
-        servico_contratado: c.servico_contratado,
-        data_contrato: c.data_contrato,
-        data_inicio: c.data_inicio,
-        tempo_contrato: c.tempo_contrato,
-        valor_contrato: c.valor_contrato || 0,
-        niche: c.niche,
-        existe_comissao: c.existe_comissao || false,
-        observacao_comissao: c.observacao_comissao,
-        criativos_estaticos: c.criativos_estaticos,
-        criativos_video: c.criativos_video,
-        lps: c.lps,
-        limite_investimento: c.limite_investimento,
-        data_perda: c.data_perda,
-        motivo_perda: c.motivo_perda,
-      }))
-
-      const { error } = await supabase
-        .from('csm_project_snapshots' as any)
-        .upsert(rows as any, { onConflict: 'card_id,snapshot_month,snapshot_year' })
-
-      if (error) throw error
-
-      toast({ title: 'Snapshot salvo', description: `${rows.length} registros salvos para ${MONTHS_LABEL[selectedPeriod.month]}/${selectedPeriod.year}.` })
-    } catch (err: any) {
-      console.error(err)
-      toast({ title: 'Erro ao salvar snapshot', description: err.message, variant: 'destructive' })
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  // Verifica se data_perda cai no mês/ano selecionado
-  const isChurnInMonth = (dataPerda?: string | null, month?: number, year?: number): boolean => {
-    if (!dataPerda) return false
-    try {
-      const d = parseISO(dataPerda)
-      return d.getMonth() === month && d.getFullYear() === year
-    } catch { return false }
-  }
-
-  // Verifica se o cliente estava ativo no mês selecionado
-  // Um cliente cancelado aparece até o mês em que foi cancelado
-  const wasActiveInMonth = (p: ProjetoRow, month: number, year: number): boolean => {
-    if (p.client_status !== 'cancelado') return true // ativos sempre aparecem
-    // Cancelados: aparecem se data_perda >= mês selecionado (ou seja, ainda estava ativo naquele mês ou foi cancelado naquele mês)
+    if (p.client_status !== 'cancelado') return true
     if (!p.data_perda) return false
-    try {
-      const perdaDate = parseISO(p.data_perda)
-      const perdaMonth = perdaDate.getMonth()
-      const perdaYear = perdaDate.getFullYear()
-      // O cliente aparece no mês do cancelamento e em todos os meses anteriores
-      if (perdaYear > year) return true
-      if (perdaYear === year && perdaMonth >= month) return true
-      return false
-    } catch { return false }
+    const perdaDate = parseISO(p.data_perda)
+    const perdaMonth = perdaDate.getMonth()
+    const perdaYear = perdaDate.getFullYear()
+    if (perdaYear > year) return true
+    if (perdaYear === year && perdaMonth >= month) return true
+    return false
   }
 
   // Data to render
   const displayData = useMemo(() => {
-    const source = isCurrentMonth ? liveData : (snapshotData || [])
-    return source.filter(p => {
+    return liveData.filter(p => {
       const name = (p.company_name || p.title || '').toLowerCase()
       const matchesSearch = !searchTerm || name.includes(searchTerm.toLowerCase())
       const matchesSquad = squadFilter === 'all' || p.squad === squadFilter
       const matchesPlano = planoFilter === 'all' || p.plano === planoFilter
-      // Filtro de visibilidade por status: ativos + cancelados no mês selecionado
-      const matchesStatus = wasActiveInMonth(p, selectedPeriod.month, selectedPeriod.year)
+      const matchesStatus = wasRelevantInMonth(p, selectedPeriod.month, selectedPeriod.year)
       return matchesSearch && matchesSquad && matchesPlano && matchesStatus
     })
-  }, [isCurrentMonth, liveData, snapshotData, searchTerm, squadFilter, planoFilter, selectedPeriod])
+  }, [liveData, searchTerm, squadFilter, planoFilter, selectedPeriod])
 
   // MRR total
   const totalMRR = useMemo(() => displayData.reduce((sum, p) => sum + (p.monthly_revenue || 0), 0), [displayData])
@@ -326,20 +216,8 @@ export const GestaoProjetosOperacao = () => {
                 }}
                 singleSelect
               />
-              {!isCurrentMonth && snapshotData && snapshotData.length === 0 && (
-                <Badge variant="outline" className="text-amber-600 border-amber-300">Sem snapshot</Badge>
-              )}
-              {!isCurrentMonth && snapshotData && snapshotData.length > 0 && (
-                <Badge variant="secondary">Snapshot</Badge>
-              )}
             </div>
             <div className="flex items-center gap-2">
-              {isCurrentMonth && (
-                <Button onClick={saveSnapshot} disabled={saving} size="sm" variant="outline">
-                  <Save className="h-4 w-4 mr-2" />
-                  {saving ? 'Salvando...' : 'Salvar Snapshot'}
-                </Button>
-              )}
               <Button onClick={downloadCSV} variant="outline" size="sm">
                 <Download className="h-4 w-4 mr-2" />
                 Exportar CSV
@@ -387,7 +265,7 @@ export const GestaoProjetosOperacao = () => {
             <div className="py-20 text-center text-muted-foreground">Carregando...</div>
           ) : displayData.length === 0 ? (
             <div className="py-20 text-center text-muted-foreground">
-              {isCurrentMonth ? 'Nenhum cliente encontrado.' : 'Nenhum snapshot encontrado para este período.'}
+              Nenhum cliente encontrado para este período.
             </div>
           ) : (
             <div className="rounded-md border overflow-x-auto">
