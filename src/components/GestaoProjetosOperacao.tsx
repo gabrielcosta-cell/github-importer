@@ -391,7 +391,9 @@ export const GestaoProjetosOperacao = () => {
     return filtered
   }, [liveData, searchTerm, selectedPeriod, sortColumn, sortDirection, columnFilters])
 
-  const totalMRR = useMemo(() => displayData.reduce((sum, p) => sum + (p.monthly_revenue || 0) + (p.crm_revenue || 0), 0), [displayData])
+  const totalMRR = useMemo(() => displayData.reduce((sum, p) => sum + (p.monthly_revenue || 0), 0), [displayData])
+  const totalCRM = useMemo(() => displayData.reduce((sum, p) => sum + (p.crm_revenue || 0), 0), [displayData])
+  const totalGeral = useMemo(() => totalMRR + totalCRM, [totalMRR, totalCRM])
 
   // Unique filter values computed from period-filtered data (before column filters)
   const periodData = useMemo(() => {
@@ -467,6 +469,10 @@ export const GestaoProjetosOperacao = () => {
             <div className="flex items-center gap-3">
               <span className="text-sm text-muted-foreground">{displayData.length} clientes</span>
               <span className="text-sm font-medium">MRR: {formatCurrency(totalMRR)}</span>
+              <span className="text-muted-foreground">|</span>
+              <span className="text-sm font-medium">CRM: {formatCurrency(totalCRM)}</span>
+              <span className="text-muted-foreground">|</span>
+              <span className="text-sm font-medium">Total: {formatCurrency(totalGeral)}</span>
               {activeFilterCount > 0 && (
                 <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setColumnFilters({})}>
                   Limpar filtros ({activeFilterCount})
