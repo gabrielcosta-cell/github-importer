@@ -531,9 +531,9 @@ export const GestaoProjetosOperacao = () => {
                   <TableRow className="bg-muted/30">
                     <SortableHeader label="ID" columnKey="display_id" {...sharedHeaderProps} className="sticky left-0 z-10 bg-muted/30 min-w-[60px]" />
                     <SortableHeader label="Nome" columnKey="nome" {...sharedHeaderProps} className="sticky left-[60px] z-10 bg-muted/30 min-w-[180px]" />
+                    <SortableHeader label="Squad" columnKey="squad" {...sharedHeaderProps} filterValues={filterOptions.squad} activeFilters={columnFilters.squad} className="sticky left-[240px] z-10 bg-muted/30 min-w-[90px]" />
                     <SortableHeader label="Origem" columnKey="origem" {...sharedHeaderProps} filterValues={filterOptions.origem} activeFilters={columnFilters.origem} className="min-w-[80px]" />
                     <SortableHeader label="Tipo Receita" columnKey="tipo_receita" {...sharedHeaderProps} filterValues={filterOptions.tipo_receita} activeFilters={columnFilters.tipo_receita} className="min-w-[120px]" />
-                    <SortableHeader label="Squad" columnKey="squad" {...sharedHeaderProps} filterValues={filterOptions.squad} activeFilters={columnFilters.squad} className="sticky left-[240px] z-10 bg-muted/30 min-w-[90px]" />
                     <SortableHeader label="Plano" columnKey="plano" {...sharedHeaderProps} filterValues={filterOptions.plano} activeFilters={columnFilters.plano} className="min-w-[90px]" />
                     <SortableHeader label="Etapa Formal" columnKey="etapa_formal" {...sharedHeaderProps} filterValues={filterOptions.etapa_formal} activeFilters={columnFilters.etapa_formal} className="min-w-[110px]" />
                     <SortableHeader label="Fase do Projeto" columnKey="fase_projeto" {...sharedHeaderProps} filterValues={filterOptions.fase_projeto} activeFilters={columnFilters.fase_projeto} className="min-w-[120px]" />
@@ -564,6 +564,13 @@ export const GestaoProjetosOperacao = () => {
                       <TableCell className="sticky left-[60px] z-10 bg-background font-medium text-sm max-w-[200px] truncate">
                         {p.company_name || p.title || '-'}
                       </TableCell>
+                      <TableCell className="sticky left-[240px] z-10 bg-background">
+                        {p.squad ? (
+                          <Badge className={`text-xs ${SQUAD_COLORS[p.squad] || 'bg-muted text-muted-foreground'}`}>
+                            {p.squad}
+                          </Badge>
+                        ) : '-'}
+                      </TableCell>
                       <TableCell>
                         {p.source === 'crm-ops' ? (
                           <Badge className="text-[10px] px-1.5 py-0 bg-orange-500/10 border-orange-500/30 text-orange-600 dark:text-orange-400" variant="outline">
@@ -580,13 +587,6 @@ export const GestaoProjetosOperacao = () => {
                          p.tipo_receita === 'variavel_midia' ? 'Var. Mídia' :
                          p.tipo_receita === 'variavel_meta' ? 'Var. Meta' :
                          p.tipo_receita === 'venda_recorrente' ? 'Recorrente' : '-'}
-                      </TableCell>
-                      <TableCell className="sticky left-[240px] z-10 bg-background">
-                        {p.squad ? (
-                          <Badge className={`text-xs ${SQUAD_COLORS[p.squad] || 'bg-muted text-muted-foreground'}`}>
-                            {p.squad}
-                          </Badge>
-                        ) : '-'}
                       </TableCell>
                       <TableCell>
                         {p.plano ? (
