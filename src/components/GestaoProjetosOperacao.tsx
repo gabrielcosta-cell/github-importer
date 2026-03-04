@@ -375,7 +375,13 @@ export const GestaoProjetosOperacao = () => {
       const name = (p.company_name || p.title || '').toLowerCase()
       const matchesSearch = !searchTerm || name.includes(searchTerm.toLowerCase())
       const matchesStatus = wasRelevantInMonth(p, selectedPeriod.month, selectedPeriod.year)
-      return matchesSearch && matchesStatus
+      const hasCrmRevenueThisMonth = !matchesStatus && p.source === 'csm' && (p.crm_revenue || 0) > 0
+      return matchesSearch && (matchesStatus || hasCrmRevenueThisMonth)
+    }).map(p => {
+      if (!wasRelevantInMonth(p, selectedPeriod.month, selectedPeriod.year) && p.source === 'csm' && (p.crm_revenue || 0) > 0) {
+        return { ...p, source: 'crm-ops' as const }
+      }
+      return p
     })
 
     // Apply column filters
