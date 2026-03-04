@@ -1,19 +1,27 @@
 
 
-## Totalizadores separados no cabeçalho de Projetos
+## Correção: Receita CRM só no mês de criação do card
 
-Currently, the header shows a single "MRR" total that sums both `monthly_revenue` and `crm_revenue`. The request is to break this into three distinct values.
+### Problema
+No `useEffect` de fetch (linhas 296-307), **todos** os cards CRM são mergeados no CSM correspondente de uma vez só, somando `crm_revenue` permanentemente. Quando o usuário muda o mês, a receita CRM continua lá porque já foi "grudada" no objeto CSM.
 
-### Changes in `src/components/GestaoProjetosOperacao.tsx`
+### Solução em `src/components/GestaoProjetosOperacao.tsx`
 
-1. **Replace the single `totalMRR` memo** (line 394) with three separate memos:
-   - `totalMRR` = sum of `monthly_revenue` only (fee recorrente CSM)
-   - `totalCRM` = sum of `crm_revenue` only (vendas do CRM Ops)
-   - `totalGeral` = `totalMRR + totalCRM`
+1. **Separar estado bruto** — trocar o `liveData` por dois estados:
+   - `rawCsmRows: ProjetoRow[]` — cards do pipeline Clientes Ativos
+   - `rawCrmRows: ProjetoRow[]` — cards dos pipelines CRM Ops (matched + unmatched)
 
-2. **Update the header display** (line 469) from the single `MRR: R$ X` to show three values side by side:
-   - `MRR: R$ X` | `CRM: R$ X` | `Total: R$ X`
-   - Each as a small `text-sm font-medium` span, visually separated
+2. **Remover o merge do useEffect** (linhas 290-309) — simplesmente salvar os dois arrays separados.
 
-This is a minimal change -- two areas of the file, no new components needed.
+3. **Criar `liveData` como `useMemo`** que depende de `rawCsmRows`, `rawCrmRows` e `selectedPeriod`:
+   - Para cada CSM row, procurar CRM cards com mesmo `display_id` **cuja `created_at` caia no mês selecionado**
+   - Só acumular `crm_revenue` quando o mês bater
+   - CRM cards sem match continuam como rows independentes (filtrados por `wasRelevantInMonth` como já acontece)
+
+4. **Nenhuma outra mudança** — `displayData`, `totalMRR`, `totalCRM`, `totalGeral` e o restante continuam funcionando normalmente pois dependem de `liveData`.
+
+### Resultado
+- Janeiro: `crm_revenue = 0` nos rows CSM (cards CRM criados em fev)
+- Fevereiro: `crm_revenue` aparece corretamente
+- Março: `crm_revenue = 0` novamente
 
