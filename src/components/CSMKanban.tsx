@@ -962,7 +962,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
           {/* Ordenação */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="h-9 px-3 transition-all duration-200 hover:scale-105">
+              <Button variant="outline" size="sm" className="h-9 min-h-0 py-0 px-3 transition-all duration-200 hover:scale-105">
                 <ArrowUpDown className="h-4 w-4 mr-2" />
                 <span>Ordenar</span>
               </Button>
@@ -1017,7 +1017,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
               variant="outline"
               size="sm"
               onClick={handleAddSimpleCard}
-              className="h-9 px-3 gap-2 transition-all duration-200 hover:scale-105"
+              className="h-9 min-h-0 py-0 px-3 gap-2 transition-all duration-200 hover:scale-105"
             >
               <UserPlus className="h-4 w-4" />
               <span className="hidden sm:inline">Adicionar cliente</span>

@@ -48,7 +48,7 @@ export const CRMOpsDateFilter: React.FC<CRMOpsDateFilterProps> = ({
   return (
     <Popover open={open} onOpenChange={handleOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2 h-9 text-xs relative">
+        <Button variant="outline" size="sm" className="gap-2 h-9 min-h-0 py-0 text-xs relative">
           <CalendarIcon className="h-3.5 w-3.5" />
           Filtros
           {hasFilter && (
