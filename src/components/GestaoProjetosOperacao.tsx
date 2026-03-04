@@ -130,11 +130,19 @@ export const GestaoProjetosOperacao = () => {
   // Verifica se o cliente era relevante no mês selecionado
   const wasRelevantInMonth = (p: ProjetoRow, month: number, year: number): boolean => {
     const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59)
-    if (p.created_at) {
-      const createdAt = parseISO(p.created_at)
-      if (createdAt > endOfMonth) return false
+    
+    // Usa data_inicio ou data_contrato para determinar quando o cliente começou
+    // Fallback para created_at se nenhum dos dois existir
+    const startDateStr = p.data_inicio || p.data_contrato || p.created_at
+    if (startDateStr) {
+      const startDate = parseISO(startDateStr)
+      if (startDate > endOfMonth) return false
     }
+
+    // Ativos sempre aparecem (se já existiam)
     if (p.client_status !== 'cancelado') return true
+
+    // Cancelados: aparecem se data_perda >= mês selecionado
     if (!p.data_perda) return false
     const perdaDate = parseISO(p.data_perda)
     const perdaMonth = perdaDate.getMonth()
