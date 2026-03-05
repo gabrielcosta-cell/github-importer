@@ -484,7 +484,7 @@ export const GestaoProjetosOperacao = () => {
         <CardHeader className="pb-4">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-3">
-              <CardTitle className="text-lg">Projetos</CardTitle>
+              
               <MonthYearPicker
                 selectedPeriods={[selectedPeriod]}
                 onPeriodsChange={(periods) => {
