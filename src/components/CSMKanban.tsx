@@ -84,7 +84,9 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
     initialCache?.selectedPipeline ?? initialCache?.pipelines?.[0]?.id ?? ''
   );
   const [viewFilter, setViewFilter] = useState<'ativo' | 'todos' | 'cancelado'>('ativo');
-  const [selectedChurnMonth, setSelectedChurnMonth] = useState<{ month: number; year: number }[]>([]);
+  const [selectedChurnMonth, setSelectedChurnMonth] = useState<{ month: number; year: number }[]>([
+    { month: new Date().getMonth(), year: new Date().getFullYear() }
+  ]);
   const [stages, setStages] = useState<CSMStage[]>(initialCache?.stages ?? []);
   const [cards, setCards] = useState<CSMCard[]>(initialCache?.cards ?? []);
   const [cardTagsMap, setCardTagsMap] = useState<Record<string, string[]>>(initialCache?.cardTagsMap ?? {});
