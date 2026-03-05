@@ -1,41 +1,24 @@
 
 
-## Edição de Fee (MRR) na tabela de Projetos com log de auditoria
+## Ocultar botão "Importar Cancelados" e adicionar MonthYearPicker nos filtros Ativos/Todos
 
-### Resumo
-Permitir que apenas o Admin Global edite o Fee (MRR) diretamente na tabela de Projetos, com dialog de propagação por meses, salvando snapshots em `csm_project_snapshots` e registrando um log de auditoria como atividade no card CSM via `csm_activities`.
+### O que muda
 
-### Implementação
+1. **Remover o botão "Importar Cancelados"** — o bloco que renderiza o botão (linhas 1095-1112 do CSMKanban.tsx) será removido.
 
-**1. Novo componente `src/components/projetos/FeeEditDialog.tsx`**
-- Dialog com: nome do cliente (readonly), valor atual, input do novo valor (currency), e RadioGroup com 4 opções:
-  - Apenas este mês
-  - Este mês e todos os anteriores
-  - Este mês e todos os seguintes
-  - Todos os meses
-- Ao confirmar:
-  - Calcula os meses afetados (limitados pelo `data_inicio` e `data_perda` do cliente)
-  - Faz batch upsert em `csm_project_snapshots` para cada mês afetado
-  - Insere uma atividade de auditoria em `csm_activities` com `activity_type: 'fee_change'` e descrição no formato solicitado:
-    `"MRR alterado de R$5.440 para R$4.352 apenas para o mês de Janeiro/26 por Gabriel Costa - em 05/03/26"`
+2. **Mostrar MonthYearPicker em todos os filtros de cliente** — atualmente o picker só aparece no filtro "Clientes Cancelados". Ele passará a aparecer também em "Clientes Ativos" e "Todos os Clientes", com lógica de filtragem diferente:
+   - **Cancelados**: filtra por `data_perda` no mês selecionado (comportamento atual, mantido)
+   - **Ativos**: filtra cards que estavam ativos naquele mês — ou seja, `data_inicio <= fim do mês` E (`data_perda` é null OU `data_perda > início do mês`)
+   - **Todos**: combina ambas as lógicas — mostra cards que tinham alguma relação com aquele mês (ativos durante ou cancelados naquele mês)
 
-**2. Alterações em `src/components/GestaoProjetosOperacao.tsx`**
-- Importar `useAuth` para verificar `profile.is_global_admin`
-- Buscar snapshots do mês/ano selecionado ao carregar dados (query em `csm_project_snapshots`)
-- No `displayData`, sobrescrever `monthly_revenue` com o valor do snapshot quando existir
-- Na célula do Fee (MRR) (linha 608-610): se `is_global_admin`, renderizar o valor com ícone de edição e onClick que abre o `FeeEditDialog`; caso contrário, manter read-only
-- Indicador visual (ex: ícone ou cor sutil) quando o valor exibido vem de um snapshot
+### Arquivo alterado
 
-**3. Registro de auditoria no card CSM**
-- Inserir em `csm_activities` com:
-  - `card_id`: o ID do card CSM
-  - `activity_type`: `'fee_change'`
-  - `title`: `'Alteração de Fee (MRR)'`
-  - `description`: texto formatado com valor anterior, novo valor, meses afetados, nome do usuário, data/hora
-  - `created_by`: user.id do Admin Global
+**`src/components/CSMKanban.tsx`**
 
-### Arquivos
-
-1. **`src/components/projetos/FeeEditDialog.tsx`** — novo componente
-2. **`src/components/GestaoProjetosOperacao.tsx`** — fetch de snapshots, merge no displayData, célula editável para Admin Global
+- Remover o bloco do botão "Importar Cancelados" (linhas 1095-1112)
+- Alterar a condição `{viewFilter === 'cancelado' && (` do MonthYearPicker para `{(viewFilter === 'ativo' || viewFilter === 'todos' || viewFilter === 'cancelado') && (` — ou simplesmente renderizar sempre
+- Atualizar a lógica `matchesChurnMonth` no `filteredCardsData` para considerar o `viewFilter`:
+  - Se `cancelado`: mantém lógica atual (filtra por `data_perda`)
+  - Se `ativo` ou `todos`: filtra cards que estavam ativos no mês selecionado usando `data_inicio` e `data_perda`
+- Opcionalmente remover o import de `importCancelledClients` se não for mais usado em nenhum lugar
 
