@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { importCancelledClients } from '@/utils/importCancelledClients';
+
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -226,12 +226,37 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
         (card.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (card.company_name || '').toLowerCase().includes(searchTerm.toLowerCase());
       
-      // Filtrar por mês de cancelamento (data_perda)
+      // Filtrar por mês selecionado (lógica varia por viewFilter)
       const matchesChurnMonth = selectedChurnMonth.length === 0 || (() => {
-        if (!card.data_perda) return false;
-        const perdaDate = new Date(card.data_perda);
         const selMonth = selectedChurnMonth[0];
-        return perdaDate.getFullYear() === selMonth.year && perdaDate.getMonth() === selMonth.month;
+        const startOfMonth = new Date(selMonth.year, selMonth.month, 1);
+        const endOfMonth = new Date(selMonth.year, selMonth.month + 1, 0, 23, 59, 59);
+
+        if (viewFilter === 'cancelado') {
+          if (!card.data_perda) return false;
+          const perdaDate = new Date(card.data_perda);
+          return perdaDate.getFullYear() === selMonth.year && perdaDate.getMonth() === selMonth.month;
+        }
+
+        if (viewFilter === 'ativo') {
+          const inicio = card.data_inicio ? new Date(card.data_inicio) : null;
+          if (inicio && inicio > endOfMonth) return false;
+          if (card.data_perda) {
+            const perda = new Date(card.data_perda);
+            if (perda < startOfMonth) return false;
+          }
+          return true;
+        }
+
+        // viewFilter === 'todos': card ativo durante OU cancelado naquele mês
+        const inicio = card.data_inicio ? new Date(card.data_inicio) : null;
+        if (inicio && inicio > endOfMonth) return false;
+        if (card.data_perda) {
+          const perda = new Date(card.data_perda);
+          // Cancelado antes do mês e não cancelado nesse mês → não mostra
+          if (perda < startOfMonth && !(perda.getFullYear() === selMonth.year && perda.getMonth() === selMonth.month)) return false;
+        }
+        return true;
       })();
 
       return matchesStatus && matchesSquad && matchesPlano && matchesMotivo && matchesNiche && matchesFlag && matchesTags && matchesSearch && matchesChurnMonth;
@@ -1083,33 +1108,13 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
               <SelectItem value="todos">Todos os Clientes</SelectItem>
             </SelectContent>
           </Select>
-          {viewFilter === 'cancelado' && (
-            <MonthYearPicker
-              selectedPeriods={selectedChurnMonth}
-              onPeriodsChange={setSelectedChurnMonth}
-              singleSelect
-              minYear={2025}
-              minMonth={0}
-            />
-          )}
-          {viewFilter === 'cancelado' && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={async () => {
-                toast.info('Importando clientes cancelados...');
-                const result = await importCancelledClients();
-                if (result.errors.length > 0) {
-                  toast.error(`Erros: ${result.errors.join(', ')}`);
-                } else {
-                  toast.success(`Importação concluída! ${result.success} sucesso, ${result.skipped} ignorados`);
-                }
-                fetchCards(selectedPipeline);
-              }}
-            >
-              Importar Cancelados
-            </Button>
-          )}
+          <MonthYearPicker
+            selectedPeriods={selectedChurnMonth}
+            onPeriodsChange={setSelectedChurnMonth}
+            singleSelect
+            minYear={2025}
+            minMonth={0}
+          />
         </div>
       </div>
 
