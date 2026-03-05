@@ -6,13 +6,15 @@ import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Download, Search, ArrowUp, ArrowDown, ArrowUpDown, Filter } from 'lucide-react'
+import { Download, Search, ArrowUp, ArrowDown, ArrowUpDown, Filter, Pencil } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 import { formatCurrency } from '@/utils/formatCurrency'
 import { MonthYearPicker } from '@/components/MonthYearPicker'
 import { differenceInMonths, parseISO, format } from 'date-fns'
 import { CRM_OPS_PIPELINE_NAMES } from '@/utils/setupCRMOpsPipelines'
+import { useAuth } from '@/contexts/AuthContext'
+import { FeeEditDialog } from '@/components/projetos/FeeEditDialog'
 
 const PIPELINE_CLIENTES_ATIVOS = '749ccdc2-5127-41a1-997b-3dcb47979555'
 
@@ -246,7 +248,11 @@ export const GestaoProjetosOperacao = () => {
   const [sortColumn, setSortColumn] = useState<string | null>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const [columnFilters, setColumnFilters] = useState<Record<string, string[]>>({})
+  const [snapshotsMap, setSnapshotsMap] = useState<Map<string, number>>(new Map())
+  const [feeEditData, setFeeEditData] = useState<{ cardId: string; companyName: string; currentFee: number; dataInicio?: string | null; dataPerda?: string | null } | null>(null)
   const { toast } = useToast()
+  const { user, profile } = useAuth()
+  const isGlobalAdmin = profile?.is_global_admin === true
 
   useEffect(() => {
     supabase.from('squads').select('id, name').eq('is_active', true).order('position').then(({ data }) => {
@@ -297,12 +303,38 @@ export const GestaoProjetosOperacao = () => {
     fetchData()
   }, [])
 
+  // Fetch snapshots for selected period
+  const fetchSnapshots = useCallback(async () => {
+    const { data } = await supabase
+      .from('csm_project_snapshots')
+      .select('card_id, monthly_revenue')
+      .eq('snapshot_month', selectedPeriod.month + 1) // DB is 1-indexed
+      .eq('snapshot_year', selectedPeriod.year)
+
+    const map = new Map<string, number>()
+    if (data) {
+      for (const s of data) {
+        if (s.monthly_revenue != null) map.set(s.card_id, s.monthly_revenue)
+      }
+    }
+    setSnapshotsMap(map)
+  }, [selectedPeriod])
+
+  useEffect(() => {
+    fetchSnapshots()
+  }, [fetchSnapshots])
+
   // Merge dinâmico: só acumula crm_revenue quando o mês do card CRM coincide com selectedPeriod
   const liveData = useMemo(() => {
     const { month, year } = selectedPeriod
 
     // Build CSM rows with CRM revenue merged only for the selected month
     const mergedCsm = rawCsmRows.map(csm => {
+      // Apply snapshot override
+      const snapshotRevenue = snapshotsMap.get(csm.id)
+      const effectiveRevenue = snapshotRevenue !== undefined ? snapshotRevenue : csm.monthly_revenue
+      const hasSnapshot = snapshotRevenue !== undefined
+
       // Find CRM cards matching this display_id whose created_at is in the selected month
       const matchingCrmRevenue = rawCrmRows
         .filter(crm => {
@@ -313,7 +345,7 @@ export const GestaoProjetosOperacao = () => {
           return d.getMonth() === month && d.getFullYear() === year
         })
 
-      if (matchingCrmRevenue.length === 0) return { ...csm, crm_revenue: 0, crm_tipo_receita: undefined, crm_card_id: undefined }
+      if (matchingCrmRevenue.length === 0) return { ...csm, monthly_revenue: effectiveRevenue, _hasSnapshot: hasSnapshot, crm_revenue: 0, crm_tipo_receita: undefined, crm_card_id: undefined }
 
       let crmRev = 0
       let crmTipo: string | undefined
@@ -323,7 +355,7 @@ export const GestaoProjetosOperacao = () => {
         crmTipo = crm.tipo_receita || crmTipo
         crmCardId = crm.id
       }
-      return { ...csm, crm_revenue: crmRev, crm_tipo_receita: crmTipo, crm_card_id: crmCardId }
+      return { ...csm, monthly_revenue: effectiveRevenue, _hasSnapshot: hasSnapshot, crm_revenue: crmRev, crm_tipo_receita: crmTipo, crm_card_id: crmCardId }
     })
 
     // CRM cards without a matching CSM card (unmatched) — kept as independent rows
@@ -331,7 +363,7 @@ export const GestaoProjetosOperacao = () => {
     const unmatchedCrm = rawCrmRows.filter(crm => !crm.display_id || !matchedDisplayIds.has(crm.display_id))
 
     return [...mergedCsm, ...unmatchedCrm]
-  }, [rawCsmRows, rawCrmRows, selectedPeriod])
+  }, [rawCsmRows, rawCrmRows, selectedPeriod, snapshotsMap])
 
   const wasRelevantInMonth = (p: ProjetoRow, month: number, year: number): boolean => {
     if (p.source === 'crm-ops') {
@@ -606,7 +638,28 @@ export const GestaoProjetosOperacao = () => {
                       <TableCell className="text-sm">{calcEtapaFormal(p.data_inicio)}</TableCell>
                       <TableCell className="text-sm">{p.fase_projeto || '-'}</TableCell>
                       <TableCell className="text-sm text-right font-medium">
-                        {p.monthly_revenue ? formatCurrency(p.monthly_revenue) : '-'}
+                        {isGlobalAdmin && p.source === 'csm' ? (
+                          <button
+                            onClick={() => setFeeEditData({
+                              cardId: p.id,
+                              companyName: p.company_name || p.title || '',
+                              currentFee: p.monthly_revenue || 0,
+                              dataInicio: p.data_inicio,
+                              dataPerda: p.data_perda,
+                            })}
+                            className="inline-flex items-center gap-1 hover:text-primary transition-colors group cursor-pointer"
+                            title="Editar Fee (MRR)"
+                          >
+                            <span className={(p as any)._hasSnapshot ? 'text-amber-600 dark:text-amber-400' : ''}>
+                              {p.monthly_revenue ? formatCurrency(p.monthly_revenue) : '-'}
+                            </span>
+                            <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity" />
+                          </button>
+                        ) : (
+                          <span className={(p as any)._hasSnapshot ? 'text-amber-600 dark:text-amber-400' : ''}>
+                            {p.monthly_revenue ? formatCurrency(p.monthly_revenue) : '-'}
+                          </span>
+                        )}
                       </TableCell>
                       <TableCell className="text-sm text-right font-medium">
                         {p.crm_revenue ? formatCurrency(p.crm_revenue) : '-'}
@@ -647,6 +700,23 @@ export const GestaoProjetosOperacao = () => {
           )}
         </CardContent>
       </Card>
+
+      {feeEditData && user && profile && (
+        <FeeEditDialog
+          open={!!feeEditData}
+          onOpenChange={(open) => { if (!open) setFeeEditData(null) }}
+          cardId={feeEditData.cardId}
+          companyName={feeEditData.companyName}
+          currentFee={feeEditData.currentFee}
+          selectedMonth={selectedPeriod.month}
+          selectedYear={selectedPeriod.year}
+          dataInicio={feeEditData.dataInicio}
+          dataPerda={feeEditData.dataPerda}
+          userId={user.id}
+          userName={profile.name}
+          onSaved={fetchSnapshots}
+        />
+      )}
     </div>
   )
 }
