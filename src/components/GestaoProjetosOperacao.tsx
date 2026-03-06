@@ -728,8 +728,14 @@ export const GestaoProjetosOperacao = () => {
                       <TableCell className="text-sm text-right font-medium">
                         {p.crm_revenue ? formatCurrency(p.crm_revenue) : '-'}
                       </TableCell>
+                      <TableCell className="text-sm text-right font-medium">
+                        {p.variavel_midia_revenue ? formatCurrency(p.variavel_midia_revenue) : '-'}
+                      </TableCell>
+                      <TableCell className="text-sm text-right font-medium">
+                        {p.variavel_vendas_revenue ? formatCurrency(p.variavel_vendas_revenue) : '-'}
+                      </TableCell>
                       <TableCell className="text-sm text-right font-semibold">
-                        {formatCurrency((p.monthly_revenue || 0) + (p.crm_revenue || 0))}
+                        {formatCurrency((p.monthly_revenue || 0) + (p.crm_revenue || 0) + (p.variavel_midia_revenue || 0) + (p.variavel_vendas_revenue || 0))}
                       </TableCell>
                       <TableCell className="text-sm">{p.servico_contratado || '-'}</TableCell>
                       <TableCell className="text-sm">{formatDate(p.data_contrato)}</TableCell>
