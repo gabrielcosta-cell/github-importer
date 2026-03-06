@@ -490,7 +490,9 @@ export const GestaoProjetosOperacao = () => {
 
   const totalMRR = useMemo(() => displayData.reduce((sum, p) => sum + (p.monthly_revenue || 0), 0), [displayData])
   const totalCRM = useMemo(() => displayData.reduce((sum, p) => sum + (p.crm_revenue || 0), 0), [displayData])
-  const totalGeral = useMemo(() => totalMRR + totalCRM, [totalMRR, totalCRM])
+  const totalVarMidia = useMemo(() => displayData.reduce((sum, p) => sum + (p.variavel_midia_revenue || 0), 0), [displayData])
+  const totalVarVendas = useMemo(() => displayData.reduce((sum, p) => sum + (p.variavel_vendas_revenue || 0), 0), [displayData])
+  const totalGeral = useMemo(() => totalMRR + totalCRM + totalVarMidia + totalVarVendas, [totalMRR, totalCRM, totalVarMidia, totalVarVendas])
 
   const { churnCount, churnMRR } = useMemo(() => {
     const churned = liveData.filter(p => {
