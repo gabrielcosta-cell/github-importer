@@ -488,8 +488,8 @@ export const GestaoProjetosOperacao = () => {
     return filtered
   }, [liveData, searchTerm, selectedPeriod, sortColumn, sortDirection, columnFilters])
 
-  const totalMRR = useMemo(() => displayData.reduce((sum, p) => sum + (p.monthly_revenue || 0), 0), [displayData])
-  const totalCRM = useMemo(() => displayData.reduce((sum, p) => sum + (p.crm_revenue || 0), 0), [displayData])
+  const totalMRR = useMemo(() => displayData.filter(p => p.source !== 'crm-ops').reduce((sum, p) => sum + (p.monthly_revenue || 0), 0), [displayData])
+  const totalCRM = useMemo(() => displayData.reduce((sum, p) => sum + (p.crm_revenue || 0) + (p.source === 'crm-ops' ? (p.monthly_revenue || 0) : 0), 0), [displayData])
   const totalVarMidia = useMemo(() => displayData.reduce((sum, p) => sum + (p.variavel_midia_revenue || 0), 0), [displayData])
   const totalVarVendas = useMemo(() => displayData.reduce((sum, p) => sum + (p.variavel_vendas_revenue || 0), 0), [displayData])
   const totalGeral = useMemo(() => totalMRR + totalCRM + totalVarMidia + totalVarVendas, [totalMRR, totalCRM, totalVarMidia, totalVarVendas])
@@ -700,7 +700,9 @@ export const GestaoProjetosOperacao = () => {
                       <TableCell className="text-sm">{calcEtapaFormal(p.data_inicio)}</TableCell>
                       <TableCell className="text-sm">{p.fase_projeto || '-'}</TableCell>
                       <TableCell className="text-sm text-right font-medium">
-                        {isGlobalAdmin && p.source === 'csm' ? (
+                        {p.source === 'crm-ops' ? (
+                          <span>-</span>
+                        ) : isGlobalAdmin && p.source === 'csm' ? (
                           <button
                             onClick={() => setFeeEditData({
                               cardId: p.id,
@@ -724,7 +726,9 @@ export const GestaoProjetosOperacao = () => {
                         )}
                       </TableCell>
                       <TableCell className="text-sm text-right font-medium">
-                        {p.crm_revenue ? formatCurrency(p.crm_revenue) : '-'}
+                        {p.source === 'crm-ops'
+                          ? (p.monthly_revenue ? formatCurrency(p.monthly_revenue) : (p.crm_revenue ? formatCurrency(p.crm_revenue) : '-'))
+                          : (p.crm_revenue ? formatCurrency(p.crm_revenue) : '-')}
                       </TableCell>
                       <TableCell className="text-sm text-right font-medium">
                         {p.variavel_midia_revenue ? formatCurrency(p.variavel_midia_revenue) : '-'}
