@@ -582,11 +582,13 @@ export const GestaoProjetosOperacao = () => {
                 singleSelect
               />
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <span className="text-sm text-muted-foreground">{displayData.length} clientes</span>
               <span className="text-sm font-medium">MRR: {formatCurrency(totalMRR)}</span>
               <span className="text-muted-foreground">|</span>
               <span className="text-sm font-medium">CRM: {formatCurrency(totalCRM)}</span>
+              {totalVarMidia > 0 && (<><span className="text-muted-foreground">|</span><span className="text-sm font-medium">Var. Mídia: {formatCurrency(totalVarMidia)}</span></>)}
+              {totalVarVendas > 0 && (<><span className="text-muted-foreground">|</span><span className="text-sm font-medium">Var. Vendas: {formatCurrency(totalVarVendas)}</span></>)}
               <span className="text-muted-foreground">|</span>
               <span className="text-sm font-medium">Total: {formatCurrency(totalGeral)}</span>
               <span className="text-muted-foreground">|</span>
