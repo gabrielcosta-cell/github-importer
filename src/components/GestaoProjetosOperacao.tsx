@@ -726,7 +726,9 @@ export const GestaoProjetosOperacao = () => {
                         )}
                       </TableCell>
                       <TableCell className="text-sm text-right font-medium">
-                        {p.crm_revenue ? formatCurrency(p.crm_revenue) : '-'}
+                        {p.source === 'crm-ops'
+                          ? (p.monthly_revenue ? formatCurrency(p.monthly_revenue) : (p.crm_revenue ? formatCurrency(p.crm_revenue) : '-'))
+                          : (p.crm_revenue ? formatCurrency(p.crm_revenue) : '-')}
                       </TableCell>
                       <TableCell className="text-sm text-right font-medium">
                         {p.variavel_midia_revenue ? formatCurrency(p.variavel_midia_revenue) : '-'}
