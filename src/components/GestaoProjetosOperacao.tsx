@@ -350,34 +350,50 @@ export const GestaoProjetosOperacao = () => {
   const liveData = useMemo(() => {
     const { month, year } = selectedPeriod
 
+    const isInMonth = (crm: ProjetoRow) => {
+      const dateStr = (crm.data_ganho || crm.created_at || '').substring(0, 10)
+      if (!dateStr) return false
+      const d = new Date(dateStr + 'T12:00:00')
+      return d.getMonth() === month && d.getFullYear() === year
+    }
+
     // Build CSM rows with CRM revenue merged only for the selected month
     const mergedCsm = rawCsmRows.map(csm => {
-      // Apply snapshot override
       const snapshotRevenue = snapshotsMap.get(csm.id)
       const effectiveRevenue = snapshotRevenue !== undefined ? snapshotRevenue : csm.monthly_revenue
       const hasSnapshot = snapshotRevenue !== undefined
 
-      // Find CRM cards matching this display_id whose created_at is in the selected month
-      const matchingCrmRevenue = rawCrmRows
-        .filter(crm => {
-          if (!crm.display_id || crm.display_id !== csm.display_id) return false
-          const dateStr = (crm.data_ganho || crm.created_at || '').substring(0, 10)
-          if (!dateStr) return false
-          const d = new Date(dateStr + 'T12:00:00')
-          return d.getMonth() === month && d.getFullYear() === year
-        })
+      const matchingCrm = rawCrmRows.filter(crm =>
+        crm.display_id && crm.display_id === csm.display_id && isInMonth(crm)
+      )
 
-      if (matchingCrmRevenue.length === 0) return { ...csm, monthly_revenue: effectiveRevenue, _hasSnapshot: hasSnapshot, crm_revenue: 0, crm_tipo_receita: undefined, crm_card_id: undefined }
-
-      let crmRev = 0
+      let crmRev = 0, varMidiaRev = 0, varVendasRev = 0
       let crmTipo: string | undefined
       let crmCardId: string | undefined
-      for (const crm of matchingCrmRevenue) {
-        crmRev += crm.monthly_revenue || 0
-        crmTipo = crm.tipo_receita || crmTipo
-        crmCardId = crm.id
+
+      for (const crm of matchingCrm) {
+        const rev = crm.monthly_revenue || 0
+        if (crm.pipeline_name === 'Var. Mídia') {
+          varMidiaRev += rev
+        } else if (crm.pipeline_name === 'Var. Vendas') {
+          varVendasRev += rev
+        } else {
+          crmRev += rev
+          crmTipo = crm.tipo_receita || crmTipo
+          crmCardId = crm.id
+        }
       }
-      return { ...csm, monthly_revenue: effectiveRevenue, _hasSnapshot: hasSnapshot, crm_revenue: crmRev, crm_tipo_receita: crmTipo, crm_card_id: crmCardId }
+
+      return {
+        ...csm,
+        monthly_revenue: effectiveRevenue,
+        _hasSnapshot: hasSnapshot,
+        crm_revenue: crmRev,
+        crm_tipo_receita: crmTipo,
+        crm_card_id: crmCardId,
+        variavel_midia_revenue: varMidiaRev,
+        variavel_vendas_revenue: varVendasRev,
+      }
     })
 
     // CRM cards without a matching CSM card (unmatched) — kept as independent rows
