@@ -290,22 +290,32 @@ export const GestaoProjetosOperacao = () => {
         .eq('is_active', true)
 
       let crmOpsRows: ProjetoRow[] = []
+      const pipelineNameMap = new Map<string, string>()
       if (crmPipelines && crmPipelines.length > 0) {
         const pipelineIds = crmPipelines.map(p => p.id)
+        for (const p of crmPipelines) pipelineNameMap.set(p.id, p.name)
         const { data: crmData } = await supabase
           .from('csm_cards')
-          .select('id, display_id, company_name, title, squad, plano, fase_projeto, monthly_revenue, servico_contratado, data_contrato, data_inicio, tempo_contrato, valor_contrato, niche, existe_comissao, observacao_comissao, criativos_estaticos, criativos_video, lps, limite_investimento, data_perda, motivo_perda, client_status, created_at, tipo_receita, data_ganho, migrado_csm')
+          .select('id, display_id, company_name, title, squad, plano, fase_projeto, monthly_revenue, servico_contratado, data_contrato, data_inicio, tempo_contrato, valor_contrato, niche, existe_comissao, observacao_comissao, criativos_estaticos, criativos_video, lps, limite_investimento, data_perda, motivo_perda, client_status, created_at, tipo_receita, data_ganho, migrado_csm, pipeline_id')
           .in('pipeline_id', pipelineIds)
           .gt('monthly_revenue', 0)
           .order('created_at', { ascending: false })
 
-        crmOpsRows = (crmData || []).map(row => ({
-          ...row,
-          source: 'crm-ops' as const,
-          tipo_receita: (row as any).tipo_receita,
-          data_ganho: (row as any).data_ganho,
-          migrado_csm: (row as any).migrado_csm,
-        }))
+        crmOpsRows = (crmData || []).map(row => {
+          const pName = pipelineNameMap.get((row as any).pipeline_id) || ''
+          const shortName = pName === 'Variável | Verba de Mídia' ? 'Var. Mídia' :
+                           pName === 'Variável | Vendas do cliente' ? 'Var. Vendas' :
+                           pName === 'Upsell | CrossSell' ? 'Upsell' : 'Venda Ops'
+          return {
+            ...row,
+            source: 'crm-ops' as const,
+            tipo_receita: (row as any).tipo_receita,
+            data_ganho: (row as any).data_ganho,
+            migrado_csm: (row as any).migrado_csm,
+            pipeline_id: (row as any).pipeline_id,
+            pipeline_name: shortName,
+          }
+        })
       }
 
       setRawCsmRows(csmRows)
