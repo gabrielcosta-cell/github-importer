@@ -583,7 +583,9 @@ export const GestaoProjetosOperacao = () => {
               />
             </div>
             <div className="flex items-center gap-3 flex-wrap">
-              <span className="text-sm text-muted-foreground">{displayData.length} clientes</span>
+              <span className="text-sm text-muted-foreground">{displayData.filter(p => p.source !== 'crm-ops').length} clientes</span>
+              <span className="text-muted-foreground">|</span>
+              <span className="text-sm text-muted-foreground">{displayData.filter(p => p.source === 'crm-ops').length} vendas</span>
               <span className="text-sm font-medium">MRR: {formatCurrency(totalMRR)}</span>
               <span className="text-muted-foreground">|</span>
               <span className="text-sm font-medium">CRM: {formatCurrency(totalCRM + totalVarMidia + totalVarVendas)}</span>
