@@ -700,7 +700,9 @@ export const GestaoProjetosOperacao = () => {
                       <TableCell className="text-sm">{calcEtapaFormal(p.data_inicio)}</TableCell>
                       <TableCell className="text-sm">{p.fase_projeto || '-'}</TableCell>
                       <TableCell className="text-sm text-right font-medium">
-                        {isGlobalAdmin && p.source === 'csm' ? (
+                        {p.source === 'crm-ops' ? (
+                          <span>-</span>
+                        ) : isGlobalAdmin && p.source === 'csm' ? (
                           <button
                             onClick={() => setFeeEditData({
                               cardId: p.id,
