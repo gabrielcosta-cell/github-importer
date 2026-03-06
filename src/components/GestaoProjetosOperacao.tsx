@@ -520,35 +520,40 @@ export const GestaoProjetosOperacao = () => {
   }, [periodData])
 
   const downloadCSV = () => {
-    const headers = ['ID', 'Nome', 'Origem', 'Tipo Receita', 'Squad', 'Plano', 'Etapa Formal', 'Fase do Projeto', 'Fee (MRR)', 'Vendas CRM', 'Total', 'Serviço', 'Data Assinatura', 'Tempo de DOT', 'Tempo Contrato', 'Valor Contrato', 'Nicho', 'Comissão', 'Criativos Estáticos', 'Criativos Vídeo', 'LPs', 'Limite Investimento', 'Churn', 'Motivo']
+    const headers = ['ID', 'Nome', 'Origem', 'Tipo Receita', 'Squad', 'Plano', 'Etapa Formal', 'Fase do Projeto', 'Fee (MRR)', 'Vendas CRM', 'Var. Mídia', 'Var. Vendas', 'Total', 'Serviço', 'Data Assinatura', 'Tempo de DOT', 'Tempo Contrato', 'Valor Contrato', 'Nicho', 'Comissão', 'Criativos Estáticos', 'Criativos Vídeo', 'LPs', 'Limite Investimento', 'Churn', 'Motivo']
     const csv = [
       headers.join(','),
-      ...displayData.map(p => [
-        p.display_id ? `#${String(p.display_id).padStart(4, '0')}` : '-',
-        p.company_name || p.title || '-',
-        p.source === 'crm-ops' ? 'Venda Ops' : 'CSM',
-        p.tipo_receita || '-',
-        p.squad || '-',
-        p.plano || '-',
-        calcEtapaFormal(p.data_inicio),
-        p.fase_projeto || '-',
-        p.monthly_revenue || 0,
-        p.crm_revenue || 0,
-        (p.monthly_revenue || 0) + (p.crm_revenue || 0),
-        p.servico_contratado || '-',
-        p.data_contrato || '-',
-        calcTempoDOT(p.data_inicio, p.data_perda),
-        p.tempo_contrato || '-',
-        p.valor_contrato || 0,
-        p.niche || '-',
-        p.existe_comissao ? 'Sim' : 'Não',
-        p.criativos_estaticos ?? '-',
-        p.criativos_video ?? '-',
-        p.lps ?? '-',
-        p.limite_investimento ?? '-',
-        p.data_perda || '-',
-        p.motivo_perda || '-',
-      ].map(f => `"${f}"`).join(','))
+      ...displayData.map(p => {
+        const origem = p.source === 'crm-ops' ? (p.pipeline_name || 'Venda Ops') : 'CSM'
+        return [
+          p.display_id ? `#${String(p.display_id).padStart(4, '0')}` : '-',
+          p.company_name || p.title || '-',
+          origem,
+          p.tipo_receita || '-',
+          p.squad || '-',
+          p.plano || '-',
+          calcEtapaFormal(p.data_inicio),
+          p.fase_projeto || '-',
+          p.monthly_revenue || 0,
+          p.crm_revenue || 0,
+          p.variavel_midia_revenue || 0,
+          p.variavel_vendas_revenue || 0,
+          (p.monthly_revenue || 0) + (p.crm_revenue || 0) + (p.variavel_midia_revenue || 0) + (p.variavel_vendas_revenue || 0),
+          p.servico_contratado || '-',
+          p.data_contrato || '-',
+          calcTempoDOT(p.data_inicio, p.data_perda),
+          p.tempo_contrato || '-',
+          p.valor_contrato || 0,
+          p.niche || '-',
+          p.existe_comissao ? 'Sim' : 'Não',
+          p.criativos_estaticos ?? '-',
+          p.criativos_video ?? '-',
+          p.lps ?? '-',
+          p.limite_investimento ?? '-',
+          p.data_perda || '-',
+          p.motivo_perda || '-',
+        ].map(f => `"${f}"`).join(',')
+      })
     ].join('\n')
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
