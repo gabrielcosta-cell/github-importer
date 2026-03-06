@@ -1,21 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
 
-const SDR_PIPELINE_NAME = 'SDR | Principal';
 const CLOSER_PIPELINE_NAME = 'Upsell | CrossSell';
 const CLOSER_PIPELINE_LEGACY_NAME = 'Closer | Principal';
-
-const SDR_STAGES = [
-  { name: 'Dia 1 (urgente lead novo)', color: '#EF4444', position: 0 },
-  { name: 'Dia 2', color: '#F59E0B', position: 1 },
-  { name: 'Dia 3', color: '#F59E0B', position: 2 },
-  { name: 'Dia 4', color: '#F59E0B', position: 3 },
-  { name: 'Dia 5 (descanso)', color: '#10B981', position: 4 },
-  { name: 'Dia 6', color: '#10B981', position: 5 },
-  { name: 'Dia 7 (descanso)', color: '#10B981', position: 6 },
-  { name: 'Dia 8 (descanso)', color: '#10B981', position: 7 },
-  { name: 'Dia 9', color: '#EF4444', position: 8 },
-  { name: 'Contato Futuro', color: '#EF4444', position: 9 },
-];
+const VARIAVEL_MIDIA_PIPELINE_NAME = 'Variável | Verba de Mídia';
+const VARIAVEL_VENDAS_PIPELINE_NAME = 'Variável | Vendas do cliente';
 
 const CLOSER_STAGES = [
   { name: 'Oportunidades', color: '#3B82F6', position: 0 },
@@ -23,6 +11,10 @@ const CLOSER_STAGES = [
   { name: 'Apresentação', color: '#6366F1', position: 2 },
   { name: 'Negociação', color: '#8B5CF6', position: 3 },
   { name: 'Em assinatura', color: '#10B981', position: 4 },
+];
+
+const VARIAVEL_STAGES = [
+  { name: 'Comissões a receber', color: '#10B981', position: 0 },
 ];
 
 // Stage names from the old Closer pipeline that should be removed
@@ -58,7 +50,6 @@ async function deduplicatePipelines(pipelineName: string): Promise<string | null
   const deleteIds = allPipelines.slice(1).map(p => p.id);
 
   for (const id of deleteIds) {
-    // Move cards from duplicate pipelines to the kept one before deleting
     await supabase.from('csm_cards').update({ pipeline_id: keepId } as any).eq('pipeline_id', id);
     await supabase.from('csm_stages').delete().eq('pipeline_id', id);
   }
@@ -82,14 +73,13 @@ async function deduplicateStages(pipelineId: string): Promise<void> {
 
   if (!allStages || allStages.length === 0) return;
 
-  const keepMap = new Map<string, string>(); // name → oldest id
+  const keepMap = new Map<string, string>();
   const deleteIds: string[] = [];
 
   for (const stage of allStages) {
     if (!keepMap.has(stage.name)) {
       keepMap.set(stage.name, stage.id);
     } else {
-      // Move cards from duplicate stage to the kept one
       const keepId = keepMap.get(stage.name)!;
       await supabase.from('csm_cards').update({ stage_id: keepId } as any).eq('stage_id', stage.id);
       deleteIds.push(stage.id);
@@ -104,7 +94,6 @@ async function deduplicateStages(pipelineId: string): Promise<void> {
 
 // Migrate legacy "Closer | Principal" pipeline to "Upsell | CrossSell" with new stages
 async function migrateLegacyCloserPipeline(): Promise<string | null> {
-  // Check for pipeline with either legacy or new name
   const { data: legacyPipelines } = await supabase
     .from('csm_pipelines')
     .select('id, name')
@@ -113,10 +102,8 @@ async function migrateLegacyCloserPipeline(): Promise<string | null> {
 
   if (!legacyPipelines || legacyPipelines.length === 0) return null;
 
-  // If we have duplicates across both names, merge them
   const pipelineId = legacyPipelines[0].id;
 
-  // Move cards and delete duplicate pipelines
   for (let i = 1; i < legacyPipelines.length; i++) {
     const dupeId = legacyPipelines[i].id;
     await supabase.from('csm_cards').update({ pipeline_id: pipelineId } as any).eq('pipeline_id', dupeId);
@@ -124,7 +111,6 @@ async function migrateLegacyCloserPipeline(): Promise<string | null> {
     await supabase.from('csm_pipelines').delete().eq('id', dupeId);
   }
 
-  // Ensure pipeline has the new name
   if (legacyPipelines[0].name !== CLOSER_PIPELINE_NAME) {
     await supabase
       .from('csm_pipelines')
@@ -133,7 +119,6 @@ async function migrateLegacyCloserPipeline(): Promise<string | null> {
     console.log(`Pipeline renomeado: "${CLOSER_PIPELINE_LEGACY_NAME}" → "${CLOSER_PIPELINE_NAME}"`);
   }
 
-  // Get current stages
   const { data: currentStages } = await supabase
     .from('csm_stages')
     .select('id, name')
@@ -141,16 +126,12 @@ async function migrateLegacyCloserPipeline(): Promise<string | null> {
 
   if (!currentStages) return pipelineId;
 
-  // Check if any legacy stages still exist
   const legacyStages = currentStages.filter(s => LEGACY_STAGE_NAMES.includes(s.name));
   const newStageNames = CLOSER_STAGES.map(s => s.name);
   const existingNewStages = currentStages.filter(s => newStageNames.includes(s.name));
 
-  // If legacy stages exist, we need to migrate cards and clean up
   if (legacyStages.length > 0) {
-    // Ensure new stages exist
     if (existingNewStages.length === 0) {
-      // Create new stages
       const { data: createdStages } = await supabase
         .from('csm_stages')
         .insert(
@@ -169,10 +150,8 @@ async function migrateLegacyCloserPipeline(): Promise<string | null> {
       }
     }
 
-    // Build lookup: new stage name → id
     const newStageMap = new Map(existingNewStages.map(s => [s.name, s.id]));
 
-    // Move cards from legacy stages to new stages
     for (const oldStage of legacyStages) {
       const targetName = LEGACY_STAGE_MAPPING[oldStage.name];
       const targetId = targetName ? newStageMap.get(targetName) : null;
@@ -185,13 +164,11 @@ async function migrateLegacyCloserPipeline(): Promise<string | null> {
       }
     }
 
-    // Delete legacy stages
     const legacyIds = legacyStages.map(s => s.id);
     await supabase.from('csm_stages').delete().in('id', legacyIds);
     console.log('Etapas antigas removidas após migração');
   }
 
-  // Clean up any duplicate stages with the same name
   await deduplicateStages(pipelineId);
 
   return pipelineId;
@@ -199,7 +176,7 @@ async function migrateLegacyCloserPipeline(): Promise<string | null> {
 
 async function ensurePipelineWithStages(
   pipelineName: string,
-  stages: typeof SDR_STAGES,
+  stages: typeof CLOSER_STAGES,
   userId: string,
   position: number
 ): Promise<string | null> {
@@ -259,25 +236,25 @@ async function ensurePipelineWithStages(
   }
 }
 
-export async function setupCRMOpsPipelines(): Promise<{ sdrId: string | null; closerId: string | null }> {
-  // Prevent concurrent execution (React StrictMode double-render)
-  if (migrationRunning) return { sdrId: null, closerId: null };
+export async function setupCRMOpsPipelines(): Promise<{ closerId: string | null; varMidiaId: string | null; varVendasId: string | null }> {
+  if (migrationRunning) return { closerId: null, varMidiaId: null, varVendasId: null };
   migrationRunning = true;
 
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { sdrId: null, closerId: null };
+    if (!user) return { closerId: null, varMidiaId: null, varVendasId: null };
 
-    // First, migrate legacy Closer pipeline if it exists
+    // Migrate legacy Closer pipeline if it exists
     const migratedId = await migrateLegacyCloserPipeline();
 
-    const sdrId = await ensurePipelineWithStages(SDR_PIPELINE_NAME, SDR_STAGES, user.id, 10);
     const closerId = migratedId || await ensurePipelineWithStages(CLOSER_PIPELINE_NAME, CLOSER_STAGES, user.id, 11);
+    const varMidiaId = await ensurePipelineWithStages(VARIAVEL_MIDIA_PIPELINE_NAME, VARIAVEL_STAGES, user.id, 12);
+    const varVendasId = await ensurePipelineWithStages(VARIAVEL_VENDAS_PIPELINE_NAME, VARIAVEL_STAGES, user.id, 13);
 
-    return { sdrId, closerId };
+    return { closerId, varMidiaId, varVendasId };
   } finally {
     migrationRunning = false;
   }
 }
 
-export const CRM_OPS_PIPELINE_NAMES = [SDR_PIPELINE_NAME, CLOSER_PIPELINE_NAME, CLOSER_PIPELINE_LEGACY_NAME];
+export const CRM_OPS_PIPELINE_NAMES = [CLOSER_PIPELINE_NAME, CLOSER_PIPELINE_LEGACY_NAME, VARIAVEL_MIDIA_PIPELINE_NAME, VARIAVEL_VENDAS_PIPELINE_NAME];
