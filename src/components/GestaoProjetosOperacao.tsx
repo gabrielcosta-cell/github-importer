@@ -49,10 +49,14 @@ export interface ProjetoRow {
   migrado_csm?: boolean
   categoria?: string
   receita_gerada_cliente?: number
+  pipeline_id?: string
+  pipeline_name?: string
   // Campos de merge CRM
   crm_revenue?: number
   crm_tipo_receita?: string
   crm_card_id?: string
+  variavel_midia_revenue?: number
+  variavel_vendas_revenue?: number
 }
 
 const calcEtapaFormal = (dataInicio?: string | null): string => {
