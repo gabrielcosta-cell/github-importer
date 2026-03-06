@@ -1,28 +1,40 @@
 
 
-## Atualizar data de cancelamento de dois clientes
+## Adicionar MRR Perdido e Clientes Perdidos no header da aba Projetos
 
 ### O que será feito
 
-Atualizar o campo `data_perda` dos seguintes cards CSM:
+Adicionar dois indicadores no header (junto aos totais existentes de MRR, CRM e Total):
+- **Clientes Perdidos**: quantidade de clientes cuja `data_perda` cai no mês selecionado
+- **MRR Perdido**: soma do `monthly_revenue` (Fee MRR) desses clientes
 
-- **ID0016 — Style Brazil**: `data_perda` → `'2026-02-27'`
-- **ID0017 — Rede Conecta**: `data_perda` → `'2026-02-27'`
+### Alteração
 
-### Como
+**`src/components/GestaoProjetosOperacao.tsx`**
 
-Usar o insert tool (para operações de UPDATE) com SQL:
+1. Adicionar um `useMemo` que filtra `liveData` para encontrar clientes com `data_perda` dentro do mês/ano selecionado, calculando:
+   - `churnCount`: total de cards com `data_perda` no mês
+   - `churnMRR`: soma do `monthly_revenue` desses cards
 
-```sql
-UPDATE csm_cards SET data_perda = '2026-02-27' WHERE display_id = 16;
-UPDATE csm_cards SET data_perda = '2026-02-27' WHERE display_id = 17;
+2. Exibir no header (linhas ~529-534), após o Total, dois novos indicadores com estilo vermelho:
+   - `Churn: X clientes`
+   - `MRR Perdido: R$ X.XXX,XX`
+
+### Lógica de filtro
+
+```typescript
+const { churnCount, churnMRR } = useMemo(() => {
+  const churned = liveData.filter(p => {
+    if (!p.data_perda) return false
+    const d = parseISO(p.data_perda)
+    return d.getMonth() === selectedPeriod.month && d.getFullYear() === selectedPeriod.year
+  })
+  return {
+    churnCount: churned.length,
+    churnMRR: churned.reduce((sum, p) => sum + (p.monthly_revenue || 0), 0)
+  }
+}, [liveData, selectedPeriod])
 ```
 
-### Resultado esperado
-
-Com `data_perda = 2026-02-27`:
-- **Janeiro**: ambos aparecem como ativos (data_inicio ≤ fim de jan, data_perda > início de jan)
-- **Fevereiro**: aparecem na listagem de cancelados (data_perda dentro de fev) e também como ativos até 27/02
-
-Nenhuma alteração de código é necessária — apenas atualização de dados no banco.
+Usa `liveData` (antes dos filtros de busca/coluna) para garantir que o valor reflita todos os cancelamentos do mês, independente de filtros aplicados na tabela.
 
