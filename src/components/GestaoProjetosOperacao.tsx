@@ -544,14 +544,10 @@ export const GestaoProjetosOperacao = () => {
               <span className="text-sm font-medium">CRM: {formatCurrency(totalCRM)}</span>
               <span className="text-muted-foreground">|</span>
               <span className="text-sm font-medium">Total: {formatCurrency(totalGeral)}</span>
-              {churnCount > 0 && (
-                <>
-                  <span className="text-muted-foreground">|</span>
-                  <span className="text-sm font-medium text-destructive">Churn: {churnCount} {churnCount === 1 ? 'cliente' : 'clientes'}</span>
-                  <span className="text-muted-foreground">|</span>
-                  <span className="text-sm font-medium text-destructive">MRR Perdido: {formatCurrency(churnMRR)}</span>
-                </>
-              )}
+              <span className="text-muted-foreground">|</span>
+              <span className={`text-sm font-medium ${churnCount > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>Churn: {churnCount} {churnCount === 1 ? 'cliente' : 'clientes'}</span>
+              <span className="text-muted-foreground">|</span>
+              <span className={`text-sm font-medium ${churnCount > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>MRR Perdido: {formatCurrency(churnMRR)}</span>
               {activeFilterCount > 0 && (
                 <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setColumnFilters({})}>
                   Limpar filtros ({activeFilterCount})
