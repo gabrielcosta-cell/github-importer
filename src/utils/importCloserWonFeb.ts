@@ -25,17 +25,29 @@ export async function importCloserWonFeb(): Promise<{ success: number; skipped: 
     return result;
   }
 
-  // Find "Closer | Principal" pipeline
-  const { data: pipeline, error: pipeErr } = await supabase
+  // Find "Upsell | CrossSell" pipeline (or legacy "Closer | Principal")
+  let { data: pipeline, error: pipeErr } = await supabase
     .from('csm_pipelines')
     .select('id')
-    .eq('name', 'Closer | Principal')
+    .eq('name', 'Upsell | CrossSell')
     .eq('is_active', true)
     .limit(1)
     .single();
 
   if (pipeErr || !pipeline) {
-    result.errors.push('Pipeline "Closer | Principal" não encontrado');
+    // Fallback to legacy name
+    const legacy = await supabase
+      .from('csm_pipelines')
+      .select('id')
+      .eq('name', 'Closer | Principal')
+      .eq('is_active', true)
+      .limit(1)
+      .single();
+    pipeline = legacy.data;
+  }
+
+  if (!pipeline) {
+    result.errors.push('Pipeline "Upsell | CrossSell" não encontrado');
     return result;
   }
 
