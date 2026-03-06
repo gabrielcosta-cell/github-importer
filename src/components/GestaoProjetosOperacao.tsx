@@ -454,6 +454,18 @@ export const GestaoProjetosOperacao = () => {
   const totalCRM = useMemo(() => displayData.reduce((sum, p) => sum + (p.crm_revenue || 0), 0), [displayData])
   const totalGeral = useMemo(() => totalMRR + totalCRM, [totalMRR, totalCRM])
 
+  const { churnCount, churnMRR } = useMemo(() => {
+    const churned = liveData.filter(p => {
+      if (!p.data_perda) return false
+      const d = parseISO(p.data_perda)
+      return d.getMonth() === selectedPeriod.month && d.getFullYear() === selectedPeriod.year
+    })
+    return {
+      churnCount: churned.length,
+      churnMRR: churned.reduce((sum, p) => sum + (p.monthly_revenue || 0), 0)
+    }
+  }, [liveData, selectedPeriod])
+
   // Unique filter values computed from period-filtered data (before column filters)
   const periodData = useMemo(() => {
     return liveData.filter(p => wasRelevantInMonth(p, selectedPeriod.month, selectedPeriod.year))
@@ -532,6 +544,14 @@ export const GestaoProjetosOperacao = () => {
               <span className="text-sm font-medium">CRM: {formatCurrency(totalCRM)}</span>
               <span className="text-muted-foreground">|</span>
               <span className="text-sm font-medium">Total: {formatCurrency(totalGeral)}</span>
+              {churnCount > 0 && (
+                <>
+                  <span className="text-muted-foreground">|</span>
+                  <span className="text-sm font-medium text-destructive">Churn: {churnCount} {churnCount === 1 ? 'cliente' : 'clientes'}</span>
+                  <span className="text-muted-foreground">|</span>
+                  <span className="text-sm font-medium text-destructive">MRR Perdido: {formatCurrency(churnMRR)}</span>
+                </>
+              )}
               {activeFilterCount > 0 && (
                 <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setColumnFilters({})}>
                   Limpar filtros ({activeFilterCount})
