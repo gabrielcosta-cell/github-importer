@@ -488,8 +488,8 @@ export const GestaoProjetosOperacao = () => {
     return filtered
   }, [liveData, searchTerm, selectedPeriod, sortColumn, sortDirection, columnFilters])
 
-  const totalMRR = useMemo(() => displayData.reduce((sum, p) => sum + (p.monthly_revenue || 0), 0), [displayData])
-  const totalCRM = useMemo(() => displayData.reduce((sum, p) => sum + (p.crm_revenue || 0), 0), [displayData])
+  const totalMRR = useMemo(() => displayData.filter(p => p.source !== 'crm-ops').reduce((sum, p) => sum + (p.monthly_revenue || 0), 0), [displayData])
+  const totalCRM = useMemo(() => displayData.reduce((sum, p) => sum + (p.crm_revenue || 0) + (p.source === 'crm-ops' ? (p.monthly_revenue || 0) : 0), 0), [displayData])
   const totalVarMidia = useMemo(() => displayData.reduce((sum, p) => sum + (p.variavel_midia_revenue || 0), 0), [displayData])
   const totalVarVendas = useMemo(() => displayData.reduce((sum, p) => sum + (p.variavel_vendas_revenue || 0), 0), [displayData])
   const totalGeral = useMemo(() => totalMRR + totalCRM + totalVarMidia + totalVarVendas, [totalMRR, totalCRM, totalVarMidia, totalVarVendas])
