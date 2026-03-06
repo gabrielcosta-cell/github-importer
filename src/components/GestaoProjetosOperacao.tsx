@@ -678,7 +678,7 @@ export const GestaoProjetosOperacao = () => {
                       <TableCell>
                         {p.source === 'crm-ops' ? (
                           <Badge className="text-[10px] px-1.5 py-0 bg-orange-500/10 border-orange-500/30 text-orange-600 dark:text-orange-400" variant="outline">
-                            Venda Ops
+                            {p.pipeline_name || 'Venda Ops'}
                           </Badge>
                         ) : (
                           <Badge className="text-[10px] px-1.5 py-0 bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400" variant="outline">
