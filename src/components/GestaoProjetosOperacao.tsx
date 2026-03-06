@@ -196,7 +196,10 @@ const SortableHeader = ({ label, columnKey, sortColumn, sortDirection, onSort, f
 const COLUMN_ACCESSORS: Record<string, (p: ProjetoRow) => string | number | undefined> = {
   display_id: p => p.display_id,
   nome: p => (p.company_name || p.title || '').toLowerCase(),
-  origem: p => p.source === 'crm-ops' ? 'Venda Ops' : 'CSM',
+  origem: p => {
+    if (p.source === 'crm-ops' && p.pipeline_name) return p.pipeline_name
+    return p.source === 'crm-ops' ? 'Venda Ops' : 'CSM'
+  },
   tipo_receita: p => {
     const map: Record<string, string> = { venda_unica: 'Venda Única', variavel_midia: 'Var. Mídia', variavel_meta: 'Var. Meta', venda_recorrente: 'Recorrente' }
     return p.tipo_receita ? (map[p.tipo_receita] || p.tipo_receita) : '-'
@@ -207,7 +210,9 @@ const COLUMN_ACCESSORS: Record<string, (p: ProjetoRow) => string | number | unde
   fase_projeto: p => p.fase_projeto || '-',
   monthly_revenue: p => p.monthly_revenue || 0,
   crm_revenue: p => p.crm_revenue || 0,
-  total_revenue: p => (p.monthly_revenue || 0) + (p.crm_revenue || 0),
+  variavel_midia_revenue: p => p.variavel_midia_revenue || 0,
+  variavel_vendas_revenue: p => p.variavel_vendas_revenue || 0,
+  total_revenue: p => (p.monthly_revenue || 0) + (p.crm_revenue || 0) + (p.variavel_midia_revenue || 0) + (p.variavel_vendas_revenue || 0),
   servico: p => p.servico_contratado || '-',
   data_contrato: p => p.data_contrato || '',
   tempo_dot: p => {
@@ -227,7 +232,10 @@ const COLUMN_ACCESSORS: Record<string, (p: ProjetoRow) => string | number | unde
 }
 
 const FILTERABLE_COLUMNS: Record<string, (p: ProjetoRow) => string | undefined> = {
-  origem: p => p.source === 'crm-ops' ? 'Venda Ops' : 'CSM',
+  origem: p => {
+    if (p.source === 'crm-ops' && p.pipeline_name) return p.pipeline_name
+    return p.source === 'crm-ops' ? 'Venda Ops' : 'CSM'
+  },
   tipo_receita: p => {
     const map: Record<string, string> = { venda_unica: 'Venda Única', variavel_midia: 'Var. Mídia', variavel_meta: 'Var. Meta', venda_recorrente: 'Recorrente' }
     return p.tipo_receita ? (map[p.tipo_receita] || p.tipo_receita) : undefined
