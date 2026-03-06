@@ -454,6 +454,18 @@ export const GestaoProjetosOperacao = () => {
   const totalCRM = useMemo(() => displayData.reduce((sum, p) => sum + (p.crm_revenue || 0), 0), [displayData])
   const totalGeral = useMemo(() => totalMRR + totalCRM, [totalMRR, totalCRM])
 
+  const { churnCount, churnMRR } = useMemo(() => {
+    const churned = liveData.filter(p => {
+      if (!p.data_perda) return false
+      const d = parseISO(p.data_perda)
+      return d.getMonth() === selectedPeriod.month && d.getFullYear() === selectedPeriod.year
+    })
+    return {
+      churnCount: churned.length,
+      churnMRR: churned.reduce((sum, p) => sum + (p.monthly_revenue || 0), 0)
+    }
+  }, [liveData, selectedPeriod])
+
   // Unique filter values computed from period-filtered data (before column filters)
   const periodData = useMemo(() => {
     return liveData.filter(p => wasRelevantInMonth(p, selectedPeriod.month, selectedPeriod.year))
