@@ -553,7 +553,7 @@ export const GestaoProjetosOperacao = () => {
                   Limpar filtros ({activeFilterCount})
                 </Button>
               )}
-              <Button onClick={downloadCSV} variant="outline" size="icon" className="h-9 w-9">
+              <Button onClick={downloadCSV} variant="ghost" size="icon" className="h-9 w-9 border-0 shadow-none">
                 <Download className="h-4 w-4" />
               </Button>
             </div>
