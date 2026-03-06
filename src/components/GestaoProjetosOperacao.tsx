@@ -641,6 +641,8 @@ export const GestaoProjetosOperacao = () => {
                     <SortableHeader label="Fase do Projeto" columnKey="fase_projeto" {...sharedHeaderProps} filterValues={filterOptions.fase_projeto} activeFilters={columnFilters.fase_projeto} className="min-w-[120px]" />
                     <SortableHeader label="Fee (MRR)" columnKey="monthly_revenue" {...sharedHeaderProps} className="min-w-[110px] text-right" />
                     <SortableHeader label="Vendas CRM" columnKey="crm_revenue" {...sharedHeaderProps} className="min-w-[110px] text-right" />
+                    <SortableHeader label="Var. Mídia" columnKey="variavel_midia_revenue" {...sharedHeaderProps} className="min-w-[100px] text-right" />
+                    <SortableHeader label="Var. Vendas" columnKey="variavel_vendas_revenue" {...sharedHeaderProps} className="min-w-[100px] text-right" />
                     <SortableHeader label="Total" columnKey="total_revenue" {...sharedHeaderProps} className="min-w-[110px] text-right" />
                     <SortableHeader label="Serviço" columnKey="servico" {...sharedHeaderProps} filterValues={filterOptions.servico} activeFilters={columnFilters.servico} className="min-w-[130px]" />
                     <SortableHeader label="Data Assinatura" columnKey="data_contrato" {...sharedHeaderProps} className="min-w-[110px]" />
