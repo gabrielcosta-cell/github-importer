@@ -1,56 +1,33 @@
 
 
-## Renomear funil Closer e ajustar etapas + renomear coluna Receita CRM
+## Editar Squad por mês na planilha de Projetos
 
-### Abordagem
-
-A renomeação precisa acontecer tanto no código (constantes) quanto no banco de dados (pipeline e stages existentes). Os cards existentes não serão alterados — apenas o nome do pipeline e os nomes das etapas mudam.
+### Contexto
+A tabela `csm_project_snapshots` já possui a coluna `squad`. Atualmente os snapshots só armazenam/leem `monthly_revenue`. Precisamos expandir para também suportar squad por mês.
 
 ### Alterações
 
-**1. `src/utils/setupCRMOpsPipelines.ts`**
-- Renomear constante: `CLOSER_PIPELINE_NAME = 'Upsell | CrossSell'`
-- Adicionar constante legacy: `const CLOSER_PIPELINE_LEGACY_NAME = 'Closer | Principal'` para migração
-- Atualizar `CLOSER_STAGES` para as novas etapas:
-  - Oportunidades (position 0), Orçamento (1), Apresentação (2), Negociação (3), Em assinatura (4)
-- Adicionar função de migração no `setupCRMOpsPipelines()`:
-  - Buscar pipeline com nome `'Closer | Principal'`
-  - Se encontrar, renomear para `'Upsell | CrossSell'` via UPDATE
-  - Renomear/recriar as etapas existentes: mapear as 7 etapas antigas para as 5 novas, mantendo os cards nas etapas mais próximas (cards de R1/R1 Delay → Oportunidades, R2/R2 Delay → Orçamento, R3 → Apresentação, Follow Up → Negociação, Em assinatura → Em assinatura)
-- Atualizar `CRM_OPS_PIPELINE_NAMES` para incluir o novo nome
+**1. Novo componente `src/components/projetos/SquadEditDialog.tsx`**
+- Dialog similar ao `FeeEditDialog`, com:
+  - Título "Editar Squad" + nome da empresa + mês/ano
+  - Squad atual exibido como Badge
+  - Select/RadioGroup com as opções de squad do sistema (Apollo, Artemis, Athena, Ares, Atlas)
+  - Propagação: apenas este mês / este e anteriores / este e seguintes / todos os meses
+  - Ao salvar: upsert em `csm_project_snapshots` com o campo `squad` nos meses afetados
+  - Registro de atividade em `csm_activities` (activity_type: 'squad_change', descrição com squad anterior, novo, propagação, usuário, data/hora)
+- Acesso permitido para admins e admin global (`profile?.role === 'admin' || isGlobalAdmin`)
 
-**2. `src/utils/importCloserWonFeb.ts`**
-- Atualizar referência de `'Closer | Principal'` para `'Upsell | CrossSell'`
-- Manter referência a `'Em assinatura'` (etapa continua existindo)
+**2. Alterações em `src/components/GestaoProjetosOperacao.tsx`**
 
-**3. `src/components/GestaoProjetosOperacao.tsx`**
-- Renomear label `"Receita CRM"` para `"Vendas CRM"` em:
-  - Header da tabela (SortableHeader label, linha 581)
-  - CSV export headers (linha 471)
-  - Qualquer outro ponto que exiba esse texto (totalizadores no header)
+- **fetchSnapshots**: Expandir select para incluir `squad` além de `monthly_revenue`. Criar um `squadSnapshotsMap` (Map<string, string>) paralelo ao `snapshotsMap` existente
+- **liveData merge**: Aplicar squad do snapshot quando disponível (similar ao override de revenue)
+- **Coluna Squad na tabela** (~linha 668-674): Para admins/global admins com source CSM, tornar o Badge clicável com ícone de lápis (igual ao Fee), abrindo o `SquadEditDialog`
+- **State**: Adicionar `squadEditData` similar ao `feeEditData`
+- **Renderizar** o `SquadEditDialog` no final do componente, similar ao `FeeEditDialog`
 
-### Migração de etapas (lógica no setupCRMOpsPipelines)
+### Detalhes técnicos
 
-Os cards existentes precisam ser movidos para as novas etapas. A estratégia:
-1. Buscar todas as etapas atuais do pipeline
-2. Criar as novas etapas
-3. Mover cards das etapas antigas para as novas (mapeamento por posição/nome)
-4. Desativar ou excluir etapas antigas sem cards
-
-Mapeamento:
-```text
-Antiga          → Nova
-R1              → Oportunidades
-R1 Delay        → Oportunidades
-R2              → Orçamento
-R2 Delay        → Orçamento
-R3              → Apresentação
-Follow Up       → Negociação
-Em assinatura   → Em assinatura
-```
-
-### O que NÃO muda
-- Nenhuma lógica de soma de valores ou cálculo de receita
-- Nenhuma integração existente além da atualização de nomes
-- Cards existentes mantêm todos os dados (valor, datas, etc.)
+- Snapshot upsert usa `onConflict: 'card_id,snapshot_month,snapshot_year'` (mesmo constraint existente)
+- O `generateAffectedMonths` será reutilizado (exportado do FeeEditDialog ou extraído para utils)
+- Badge do squad com snapshot terá cor amber (indicador visual igual ao fee com snapshot)
 
