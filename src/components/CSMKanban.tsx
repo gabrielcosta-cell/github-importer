@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { syncSquadSnapshotsToCards } from '@/utils/syncSquadSnapshots';
 
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useSearchParams } from 'react-router-dom';
@@ -476,10 +477,19 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
   }, [pipelines, selectedPipeline, stages, cards, cardTagsMap, availableTags]);
 
   // Efeito para carregar dados quando o pipeline mudar
+  // Sync squad snapshots before loading cards
+  const hasRunSquadSync = useRef(false);
   useEffect(() => {
     if (selectedPipeline) {
-      fetchStages(selectedPipeline);
-      fetchCards(selectedPipeline);
+      const load = async () => {
+        if (!hasRunSquadSync.current) {
+          hasRunSquadSync.current = true;
+          await syncSquadSnapshotsToCards();
+        }
+        fetchStages(selectedPipeline);
+        fetchCards(selectedPipeline);
+      };
+      load();
     }
   }, [selectedPipeline]);
 
