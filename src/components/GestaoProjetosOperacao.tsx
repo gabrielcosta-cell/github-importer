@@ -253,19 +253,20 @@ const FILTERABLE_COLUMNS: Record<string, (p: ProjetoRow) => string | undefined> 
   comissao: p => p.existe_comissao ? 'Sim' : 'Não',
 }
 
-export const GestaoProjetosOperacao = () => {
-  const now = new Date()
-  const [selectedPeriod, setSelectedPeriod] = useState<{ month: number; year: number }>({ month: now.getMonth(), year: now.getFullYear() })
-  const [rawCsmRows, setRawCsmRows] = useState<ProjetoRow[]>([])
-  const [rawCrmRows, setRawCrmRows] = useState<ProjetoRow[]>([])
-  const [loading, setLoading] = useState(true)
+interface GestaoProjetosOperacaoProps {
+  liveData: ProjetoRow[]
+  loading: boolean
+  selectedPeriod: { month: number; year: number }
+  onPeriodChange: (period: { month: number; year: number }) => void
+  fetchSnapshots: () => Promise<void>
+}
+
+export const GestaoProjetosOperacao = ({ liveData, loading, selectedPeriod, onPeriodChange, fetchSnapshots }: GestaoProjetosOperacaoProps) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [squads, setSquads] = useState<Array<{ id: string; name: string }>>([])
   const [sortColumn, setSortColumn] = useState<string | null>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const [columnFilters, setColumnFilters] = useState<Record<string, string[]>>({})
-  const [snapshotsMap, setSnapshotsMap] = useState<Map<string, number>>(new Map())
-  const [squadSnapshotsMap, setSquadSnapshotsMap] = useState<Map<string, string>>(new Map())
   const [feeEditData, setFeeEditData] = useState<{ cardId: string; companyName: string; currentFee: number; dataInicio?: string | null; dataPerda?: string | null } | null>(null)
   const [squadEditData, setSquadEditData] = useState<{ cardId: string; companyName: string; currentSquad: string; dataInicio?: string | null; dataPerda?: string | null } | null>(null)
   const { toast } = useToast()
@@ -276,59 +277,6 @@ export const GestaoProjetosOperacao = () => {
     supabase.from('squads').select('id, name').eq('is_active', true).order('position').then(({ data }) => {
       setSquads(data || [])
     })
-  }, [])
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true)
-      const { data: csmData } = await supabase
-        .from('csm_cards')
-        .select('id, display_id, company_name, title, squad, plano, fase_projeto, monthly_revenue, servico_contratado, data_contrato, data_inicio, tempo_contrato, valor_contrato, niche, existe_comissao, observacao_comissao, criativos_estaticos, criativos_video, lps, limite_investimento, data_perda, motivo_perda, client_status, created_at, categoria, receita_gerada_cliente')
-        .eq('pipeline_id', PIPELINE_CLIENTES_ATIVOS)
-        .order('display_id', { ascending: true, nullsFirst: false })
-
-      const csmRows: ProjetoRow[] = (csmData || []).map(row => ({ ...row, source: 'csm' as const }))
-
-      const { data: crmPipelines } = await supabase
-        .from('csm_pipelines')
-        .select('id, name')
-        .in('name', CRM_OPS_PIPELINE_NAMES)
-        .eq('is_active', true)
-
-      let crmOpsRows: ProjetoRow[] = []
-      const pipelineNameMap = new Map<string, string>()
-      if (crmPipelines && crmPipelines.length > 0) {
-        const pipelineIds = crmPipelines.map(p => p.id)
-        for (const p of crmPipelines) pipelineNameMap.set(p.id, p.name)
-        const { data: crmData } = await supabase
-          .from('csm_cards')
-          .select('id, display_id, company_name, title, squad, plano, fase_projeto, monthly_revenue, servico_contratado, data_contrato, data_inicio, tempo_contrato, valor_contrato, niche, existe_comissao, observacao_comissao, criativos_estaticos, criativos_video, lps, limite_investimento, data_perda, motivo_perda, client_status, created_at, tipo_receita, data_ganho, migrado_csm, pipeline_id')
-          .in('pipeline_id', pipelineIds)
-          .gt('monthly_revenue', 0)
-          .order('created_at', { ascending: false })
-
-        crmOpsRows = (crmData || []).map(row => {
-          const pName = pipelineNameMap.get((row as any).pipeline_id) || ''
-          const shortName = pName === 'Variável | Verba de Mídia' ? 'Var. Mídia' :
-                           pName === 'Variável | Vendas do cliente' ? 'Var. Vendas' :
-                           pName === 'Upsell | CrossSell' ? 'Upsell' : 'Venda Ops'
-          return {
-            ...row,
-            source: 'crm-ops' as const,
-            tipo_receita: (row as any).tipo_receita,
-            data_ganho: (row as any).data_ganho,
-            migrado_csm: (row as any).migrado_csm,
-            pipeline_id: (row as any).pipeline_id,
-            pipeline_name: shortName,
-          }
-        })
-      }
-
-      setRawCsmRows(csmRows)
-      setRawCrmRows(crmOpsRows)
-      setLoading(false)
-    }
-    fetchData()
   }, [])
 
   // Fetch snapshots for selected period
