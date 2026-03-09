@@ -262,7 +262,9 @@ export const GestaoProjetosOperacao = () => {
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const [columnFilters, setColumnFilters] = useState<Record<string, string[]>>({})
   const [snapshotsMap, setSnapshotsMap] = useState<Map<string, number>>(new Map())
+  const [squadSnapshotsMap, setSquadSnapshotsMap] = useState<Map<string, string>>(new Map())
   const [feeEditData, setFeeEditData] = useState<{ cardId: string; companyName: string; currentFee: number; dataInicio?: string | null; dataPerda?: string | null } | null>(null)
+  const [squadEditData, setSquadEditData] = useState<{ cardId: string; companyName: string; currentSquad: string; dataInicio?: string | null; dataPerda?: string | null } | null>(null)
   const { toast } = useToast()
   const { user, profile } = useAuth()
   const isGlobalAdmin = profile?.is_global_admin === true
