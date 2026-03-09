@@ -28,7 +28,6 @@ import { useAutoMoveCards } from '@/hooks/useAutoMoveCards';
 import { DotLogo } from '@/components/DotLogo';
 import { MonthYearPicker } from '@/components/MonthYearPicker';
 import { readCSMKanbanCache, writeCSMKanbanCache } from '@/utils/csmKanbanSessionCache';
-import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { MobileStageSwiper } from './kanban/MobileStageSwiper';
 import { useIsMobile } from '@/hooks/use-mobile';
