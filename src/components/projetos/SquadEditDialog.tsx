@@ -72,6 +72,17 @@ export const SquadEditDialog = ({
 
       if (error) throw error
 
+      // Update csm_cards.squad if change affects current or future months
+      const now = new Date()
+      const currentMonth = now.getMonth()
+      const currentYear = now.getFullYear()
+      const affectsCurrentOrFuture = affectedMonths.some(m =>
+        m.year > currentYear || (m.year === currentYear && m.month >= currentMonth)
+      )
+      if (affectsCurrentOrFuture) {
+        await supabase.from('csm_cards').update({ squad: newSquad }).eq('id', cardId)
+      }
+
       const propagationDesc = getPropagationDescription(mode, selectedMonth, selectedYear)
       const now = new Date()
       const dateStr = format(now, "dd/MM/yy 'às' HH:mm", { locale: ptBR })
