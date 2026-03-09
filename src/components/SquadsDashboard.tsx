@@ -146,11 +146,11 @@ export const SquadsDashboard = () => {
       const baseNovosChurn = relevantCsm.length
 
       const mrrRecorrente = activeCsm
-        .filter(r => r.categoria === 'MRR Recorrente')
+        .filter(r => !r.categoria || r.categoria === 'MRR Recorrente')
         .reduce((sum, r) => sum + (r.monthly_revenue || 0), 0)
 
       const mrrBase = relevantCsm
-        .filter(r => r.categoria === 'MRR Recorrente')
+        .filter(r => !r.categoria || r.categoria === 'MRR Recorrente')
         .reduce((sum, r) => sum + (r.monthly_revenue || 0), 0)
 
       const mrrVendido = activeCsm
