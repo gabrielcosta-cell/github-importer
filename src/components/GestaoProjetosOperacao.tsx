@@ -412,7 +412,7 @@ export const GestaoProjetosOperacao = () => {
     const unmatchedCrm = rawCrmRows.filter(crm => !crm.display_id || !matchedDisplayIds.has(crm.display_id))
 
     return [...mergedCsm, ...unmatchedCrm]
-  }, [rawCsmRows, rawCrmRows, selectedPeriod, snapshotsMap])
+  }, [rawCsmRows, rawCrmRows, selectedPeriod, snapshotsMap, squadSnapshotsMap])
 
   const wasRelevantInMonth = (p: ProjetoRow, month: number, year: number): boolean => {
     if (p.source === 'crm-ops') {
