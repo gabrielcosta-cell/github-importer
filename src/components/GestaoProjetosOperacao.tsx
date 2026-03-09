@@ -582,7 +582,28 @@ export const GestaoProjetosOperacao = ({ liveData, loading, selectedPeriod, onPe
                           </Badge>
                         ) : '-'}
                       </TableCell>
-                      <TableCell className="text-sm">{p.stage_name || '-'}</TableCell>
+                      <TableCell className="text-sm">
+                        {(profile?.role === 'admin' || isGlobalAdmin) && p.source === 'csm' ? (
+                          <button
+                            onClick={() => {
+                              const stageId = stagesList.find(s => s.name === p.stage_name)?.id || ''
+                              setStageEditData({
+                                cardId: p.id,
+                                companyName: p.company_name || p.title || '',
+                                currentStageName: p.stage_name || '-',
+                                currentStageId: stageId,
+                              })
+                            }}
+                            className="inline-flex items-center gap-1 hover:text-primary transition-colors group cursor-pointer"
+                            title="Editar Fase do contrato"
+                          >
+                            <span>{p.stage_name || '-'}</span>
+                            <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity" />
+                          </button>
+                        ) : (
+                          p.stage_name || '-'
+                        )}
+                      </TableCell>
                       <TableCell className="text-sm">{p.fase_projeto || '-'}</TableCell>
                       <TableCell className="text-sm text-right font-medium">
                         {p.source === 'crm-ops' ? (
