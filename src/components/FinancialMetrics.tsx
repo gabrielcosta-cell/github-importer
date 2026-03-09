@@ -73,17 +73,35 @@ const isNewInMonth = (card: CardData, month: number, year: number): boolean => {
 };
 
 const calcMonthMetrics = (cards: CardData[], upsellRecords: UpsellRecord[], month: number, year: number) => {
-  const recorrentes = cards.filter(c => c.categoria === 'MRR recorrente' || c.categoria === 'MRR Recorrente');
-  const relevantCards = recorrentes.filter(c => wasRelevantInMonth(c, month, year));
-  const activeCards = recorrentes.filter(c => isActiveInMonth(c, month, year));
-  const churnedCards = recorrentes.filter(c => isChurnedInMonth(c, month, year));
-  const newCards = recorrentes.filter(c => isNewInMonth(c, month, year));
+  const allCards = cards;
+  const recorrentes = allCards.filter(c => c.categoria === 'MRR recorrente' || c.categoria === 'MRR Recorrente');
+  const vendidos = allCards.filter(c => c.categoria === 'MRR Vendido');
 
-  const mrrBase = relevantCards.reduce((sum, c) => sum + c.monthly_revenue, 0);
-  const mrrActive = activeCards.reduce((sum, c) => sum + c.monthly_revenue, 0);
+  // Recorrente metrics
+  const activeRecorrentes = recorrentes.filter(c => isActiveInMonth(c, month, year));
+  const mrrRecorrente = activeRecorrentes.reduce((sum, c) => sum + c.monthly_revenue, 0);
+
+  // Vendido metrics
+  const activeVendidos = vendidos.filter(c => isActiveInMonth(c, month, year));
+  const mrrVendido = activeVendidos.reduce((sum, c) => sum + c.monthly_revenue, 0);
+
+  // Total MRR = Recorrente + Vendido
+  const mrrTotal = mrrRecorrente + mrrVendido;
+  const totalActiveCards = [...activeRecorrentes, ...activeVendidos];
+
+  // Churned: all cards churned in month (any category)
+  const churnedCards = allCards.filter(c => isChurnedInMonth(c, month, year));
   const mrrPerdido = churnedCards.reduce((sum, c) => sum + c.monthly_revenue, 0);
+
+  // New cards (recorrentes only for backward compat)
+  const newCards = recorrentes.filter(c => isNewInMonth(c, month, year));
   const mrrNovos = newCards.reduce((sum, c) => sum + c.monthly_revenue, 0);
-  const ticketMedio = activeCards.length > 0 ? mrrActive / activeCards.length : 0;
+
+  // Base MRR (relevant recorrentes - used for churn % calculation)
+  const relevantRecorrentes = recorrentes.filter(c => wasRelevantInMonth(c, month, year));
+  const mrrBase = relevantRecorrentes.reduce((sum, c) => sum + c.monthly_revenue, 0);
+
+  const ticketMedio = totalActiveCards.length > 0 ? mrrTotal / totalActiveCards.length : 0;
   const ticketMedioPerdido = churnedCards.length > 0 ? mrrPerdido / churnedCards.length : 0;
   const revenueChurnPercent = mrrBase > 0 ? (mrrPerdido / mrrBase) * 100 : 0;
 
@@ -95,10 +113,11 @@ const calcMonthMetrics = (cards: CardData[], upsellRecords: UpsellRecord[], mont
   const churnLiquidoPercent = mrrBase > 0 ? ((mrrPerdido - upsellRecorrente) / mrrBase) * 100 : 0;
 
   return {
-    mrrBase, mrrActive, mrrPerdido, mrrNovos, ticketMedio, ticketMedioPerdido,
-    revenueChurnPercent, churnLiquidoPercent,
+    mrrRecorrente, mrrVendido, mrrTotal, mrrBase, mrrPerdido, mrrNovos,
+    ticketMedio, ticketMedioPerdido, revenueChurnPercent, churnLiquidoPercent,
     receitaAdicionalTotal, upsellRecorrente, upsells, crosssells,
-    relevantCards, activeCards, churnedCards, newCards,
+    activeRecorrentes, activeVendidos, totalActiveCards, churnedCards, newCards,
+    relevantRecorrentes,
   };
 };
 
