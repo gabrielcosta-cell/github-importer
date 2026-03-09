@@ -14,7 +14,7 @@ export const ProjetosView = ({ initialTab = 'clientes' }: ProjetosViewProps) => 
   const now = new Date();
   const [selectedPeriod, setSelectedPeriod] = useState<{ month: number; year: number }>({ month: now.getMonth(), year: now.getFullYear() });
 
-  const { liveData, loading, fetchSnapshots } = useProjetosData(selectedPeriod);
+  const { liveData, loading, fetchSnapshots, refetchData, stagesList } = useProjetosData(selectedPeriod);
 
   const tabs = [
     { key: 'clientes' as const, label: 'Clientes', icon: Users },
