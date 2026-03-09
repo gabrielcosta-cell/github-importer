@@ -944,16 +944,16 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
       <div className="hidden md:flex md:flex-row md:items-center justify-between w-full mb-4 flex-shrink-0 gap-3 relative z-10">
         {/* Left: Toggle + Search */}
         <div className="flex items-center gap-3 h-full flex-1 min-w-0">
-          {/* Desktop global search */}
-          <DesktopGlobalSearch
-            currentPipelineId={selectedPipeline}
-            pipelines={pipelines}
-            currentCards={cards}
-            currentStages={stages}
-            onSelectCard={handleGlobalCardSelect}
-            searchTerm={searchTerm}
-            onSearchChange={handleSearchChange}
-          />
+          {/* Inline search */}
+          <div className="relative flex-1 min-w-0 md:max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar cliente..."
+              value={searchTerm}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-9 h-9"
+            />
+          </div>
 
         </div>
         {/* Right side: Controls */}
