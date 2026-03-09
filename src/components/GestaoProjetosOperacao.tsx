@@ -598,11 +598,15 @@ export const GestaoProjetosOperacao = () => {
               />
             </div>
             <div className="flex items-center gap-3 flex-wrap">
-              <span className="text-sm font-medium">MRR: {formatCurrency(totalMRR)} <span className="text-muted-foreground font-normal">({displayData.filter(p => p.source !== 'crm-ops').length} clientes)</span></span>
+              <span className="text-sm font-medium">MRR Base: {formatCurrency(mrrRecorrente)} <span className="text-muted-foreground font-normal">({mrrRecorrenteCount} clientes)</span></span>
+              <span className="text-muted-foreground">|</span>
+              <span className="text-sm font-medium">MRR Vendido: {formatCurrency(mrrVendido)} <span className="text-muted-foreground font-normal">({mrrVendidoCount} clientes)</span></span>
+              <span className="text-muted-foreground">|</span>
+              <span className="text-sm font-medium">Total MRR: {formatCurrency(totalMRR)}</span>
               <span className="text-muted-foreground">|</span>
               <span className="text-sm font-medium">CRM: {formatCurrency(totalCRM + totalVarMidia + totalVarVendas)} <span className="text-muted-foreground font-normal">({displayData.filter(p => p.source === 'crm-ops').length} vendas)</span></span>
               <span className="text-muted-foreground">|</span>
-              <span className="text-sm font-medium">Total: {formatCurrency(totalGeral)}</span>
+              <span className="text-sm font-medium">Faturamento: {formatCurrency(totalGeral)}</span>
               <span className="text-muted-foreground">|</span>
               <span className={`text-sm font-medium ${churnCount > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>Churn: {churnCount} {churnCount === 1 ? 'cliente' : 'clientes'}</span>
               <span className="text-muted-foreground">|</span>
