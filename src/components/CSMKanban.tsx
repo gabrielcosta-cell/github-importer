@@ -5,7 +5,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ToolbarButton } from '@/components/ui/toolbar-button';
-import { Plus, LayoutGrid, Rocket, Moon, Shield, Flame, Sunrise, DollarSign, Info, ArrowUpDown, UserPlus, Settings, Pencil, Tag, Zap, Trophy, ThumbsDown, ListChecks, FileDown } from 'lucide-react';
+import { Plus, LayoutGrid, Rocket, Moon, Shield, Flame, Sunrise, DollarSign, Info, ArrowUpDown, UserPlus, Settings, Pencil, Tag, Zap, Trophy, ThumbsDown, ListChecks, FileDown, Search } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,7 +28,7 @@ import { useAutoMoveCards } from '@/hooks/useAutoMoveCards';
 import { DotLogo } from '@/components/DotLogo';
 import { MonthYearPicker } from '@/components/MonthYearPicker';
 import { readCSMKanbanCache, writeCSMKanbanCache } from '@/utils/csmKanbanSessionCache';
-import { MobileGlobalSearch, DesktopGlobalSearch } from './kanban/MobileGlobalSearch';
+import { Input } from '@/components/ui/input';
 import { MobileStageSwiper } from './kanban/MobileStageSwiper';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/contexts/AuthContext';
@@ -943,16 +943,16 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
       <div className="hidden md:flex md:flex-row md:items-center justify-between w-full mb-4 flex-shrink-0 gap-3 relative z-10">
         {/* Left: Toggle + Search */}
         <div className="flex items-center gap-3 h-full flex-1 min-w-0">
-          {/* Desktop global search */}
-          <DesktopGlobalSearch
-            currentPipelineId={selectedPipeline}
-            pipelines={pipelines}
-            currentCards={cards}
-            currentStages={stages}
-            onSelectCard={handleGlobalCardSelect}
-            searchTerm={searchTerm}
-            onSearchChange={handleSearchChange}
-          />
+          {/* Inline search */}
+          <div className="relative flex-1 min-w-0 md:max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar cliente..."
+              value={searchTerm}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-9 h-9"
+            />
+          </div>
 
         </div>
         {/* Right side: Controls */}
@@ -1157,14 +1157,22 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
         )}
       </div>
 
-      {/* Mobile bottom search bar */}
-      <MobileGlobalSearch
-        currentPipelineId={selectedPipeline}
-        pipelines={pipelines}
-        currentCards={cards}
-        currentStages={stages}
-        onSelectCard={handleGlobalCardSelect}
-      />
+      {/* Mobile inline search */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-border/40 bg-background/80 backdrop-blur-xl"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 8px)' }}
+      >
+        <div className="px-4 py-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar cliente..."
+              value={searchTerm}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-9 h-10 rounded-full"
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Stage Manager Dialog */}
       {showStageManager && selectedPipeline && (
