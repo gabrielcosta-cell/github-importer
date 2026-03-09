@@ -705,7 +705,7 @@ export const GestaoProjetosOperacao = () => {
                               <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity text-muted-foreground" />
                             </button>
                           ) : (
-                            <Badge className={`text-xs ${(p as any)._hasSquadSnapshot ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' : (SQUAD_COLORS[p.squad] || 'bg-muted text-muted-foreground')}`}>
+                            <Badge className={`text-xs ${SQUAD_COLORS[p.squad] || 'bg-muted text-muted-foreground'}`}>
                               {p.squad}
                             </Badge>
                           )

@@ -56,6 +56,17 @@ export const FeeEditDialog = ({
     try {
       const affectedMonths = generateAffectedMonths(mode, selectedMonth, selectedYear, dataInicio, dataPerda)
 
+      // Fetch existing snapshots to preserve squad
+      const { data: existingSnaps } = await supabase
+        .from('csm_project_snapshots')
+        .select('snapshot_month, snapshot_year, squad')
+        .eq('card_id', cardId)
+
+      const existingMap = new Map<string, string | null>()
+      for (const s of existingSnaps || []) {
+        existingMap.set(`${s.snapshot_month}-${s.snapshot_year}`, s.squad)
+      }
+
       // Batch upsert snapshots
       const rows = affectedMonths.map(m => ({
         card_id: cardId,
@@ -63,6 +74,7 @@ export const FeeEditDialog = ({
         snapshot_year: m.year,
         monthly_revenue: newFee,
         company_name: companyName,
+        squad: existingMap.get(`${m.month + 1}-${m.year}`) ?? null,
       }))
 
       const { error } = await supabase
