@@ -576,34 +576,65 @@ export const FinancialMetrics = () => {
             <DialogTitle>{detailModal?.title}</DialogTitle>
           </DialogHeader>
           <ScrollArea className="h-[60vh]">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Squad</TableHead>
-                  <TableHead>Plano</TableHead>
-                  <TableHead className="text-right">MRR</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(detailModal?.clients || [])
-                  .sort((a, b) => b.monthly_revenue - a.monthly_revenue)
-                  .map((client) => (
-                    <TableRow key={client.id}>
-                      <TableCell className="font-medium">{client.title}</TableCell>
-                      <TableCell>{client.squad || '-'}</TableCell>
-                      <TableCell>{client.plano || '-'}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(client.monthly_revenue)}</TableCell>
-                    </TableRow>
-                  ))}
-                <TableRow className="border-t-2 font-bold">
-                  <TableCell colSpan={3}>Total ({detailModal?.clients?.length || 0} clientes)</TableCell>
-                  <TableCell className="text-right">
-                    {formatCurrency((detailModal?.clients || []).reduce((sum, c) => sum + c.monthly_revenue, 0))}
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
+            {detailModal?.upsellRecords ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Tipo Pagamento</TableHead>
+                    <TableHead>Notas</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {detailModal.upsellRecords
+                    .sort((a, b) => b.upsell_value - a.upsell_value)
+                    .map((record, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell className="font-medium">{record.card_title || '-'}</TableCell>
+                        <TableCell className="capitalize">{record.payment_type}</TableCell>
+                        <TableCell className="max-w-[200px] truncate text-muted-foreground text-xs">{record.notes || '-'}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(record.upsell_value)}</TableCell>
+                      </TableRow>
+                    ))}
+                  <TableRow className="border-t-2 font-bold">
+                    <TableCell colSpan={3}>Total ({detailModal.upsellRecords.length} registros)</TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(detailModal.upsellRecords.reduce((sum, r) => sum + r.upsell_value, 0))}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Squad</TableHead>
+                    <TableHead>Plano</TableHead>
+                    <TableHead className="text-right">MRR</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(detailModal?.clients || [])
+                    .sort((a, b) => b.monthly_revenue - a.monthly_revenue)
+                    .map((client) => (
+                      <TableRow key={client.id}>
+                        <TableCell className="font-medium">{client.title}</TableCell>
+                        <TableCell>{client.squad || '-'}</TableCell>
+                        <TableCell>{client.plano || '-'}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(client.monthly_revenue)}</TableCell>
+                      </TableRow>
+                    ))}
+                  <TableRow className="border-t-2 font-bold">
+                    <TableCell colSpan={3}>Total ({detailModal?.clients?.length || 0} clientes)</TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency((detailModal?.clients || []).reduce((sum, c) => sum + c.monthly_revenue, 0))}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            )}
           </ScrollArea>
         </DialogContent>
       </Dialog>
