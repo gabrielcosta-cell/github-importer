@@ -62,20 +62,6 @@ export interface ProjetoRow {
   variavel_vendas_revenue?: number
 }
 
-const calcEtapaFormal = (dataInicio?: string | null): string => {
-  if (!dataInicio) return '-'
-  try {
-    const start = parseISO(dataInicio)
-    const diff = differenceInMonths(new Date(), start)
-    if (diff <= 0) return 'Onboarding'
-    if (diff === 1) return 'Implementação'
-    if (diff === 2) return 'Refinamento'
-    if (diff === 3) return 'Escala'
-    if (diff === 4) return 'Expansão'
-    if (diff === 5) return 'Renovação'
-    return 'Retenção'
-  } catch { return '-' }
-}
 
 const calcTempoDOT = (dataInicio?: string | null, dataPerda?: string | null): string => {
   if (!dataInicio) return '-'
