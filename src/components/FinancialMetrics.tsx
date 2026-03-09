@@ -73,17 +73,35 @@ const isNewInMonth = (card: CardData, month: number, year: number): boolean => {
 };
 
 const calcMonthMetrics = (cards: CardData[], upsellRecords: UpsellRecord[], month: number, year: number) => {
-  const recorrentes = cards.filter(c => c.categoria === 'MRR recorrente' || c.categoria === 'MRR Recorrente');
-  const relevantCards = recorrentes.filter(c => wasRelevantInMonth(c, month, year));
-  const activeCards = recorrentes.filter(c => isActiveInMonth(c, month, year));
-  const churnedCards = recorrentes.filter(c => isChurnedInMonth(c, month, year));
-  const newCards = recorrentes.filter(c => isNewInMonth(c, month, year));
+  const allCards = cards;
+  const recorrentes = allCards.filter(c => c.categoria === 'MRR recorrente' || c.categoria === 'MRR Recorrente');
+  const vendidos = allCards.filter(c => c.categoria === 'MRR Vendido');
 
-  const mrrBase = relevantCards.reduce((sum, c) => sum + c.monthly_revenue, 0);
-  const mrrActive = activeCards.reduce((sum, c) => sum + c.monthly_revenue, 0);
+  // Recorrente metrics
+  const activeRecorrentes = recorrentes.filter(c => isActiveInMonth(c, month, year));
+  const mrrRecorrente = activeRecorrentes.reduce((sum, c) => sum + c.monthly_revenue, 0);
+
+  // Vendido metrics
+  const activeVendidos = vendidos.filter(c => isActiveInMonth(c, month, year));
+  const mrrVendido = activeVendidos.reduce((sum, c) => sum + c.monthly_revenue, 0);
+
+  // Total MRR = Recorrente + Vendido
+  const mrrTotal = mrrRecorrente + mrrVendido;
+  const totalActiveCards = [...activeRecorrentes, ...activeVendidos];
+
+  // Churned: all cards churned in month (any category)
+  const churnedCards = allCards.filter(c => isChurnedInMonth(c, month, year));
   const mrrPerdido = churnedCards.reduce((sum, c) => sum + c.monthly_revenue, 0);
+
+  // New cards (recorrentes only for backward compat)
+  const newCards = recorrentes.filter(c => isNewInMonth(c, month, year));
   const mrrNovos = newCards.reduce((sum, c) => sum + c.monthly_revenue, 0);
-  const ticketMedio = activeCards.length > 0 ? mrrActive / activeCards.length : 0;
+
+  // Base MRR (relevant recorrentes - used for churn % calculation)
+  const relevantRecorrentes = recorrentes.filter(c => wasRelevantInMonth(c, month, year));
+  const mrrBase = relevantRecorrentes.reduce((sum, c) => sum + c.monthly_revenue, 0);
+
+  const ticketMedio = totalActiveCards.length > 0 ? mrrTotal / totalActiveCards.length : 0;
   const ticketMedioPerdido = churnedCards.length > 0 ? mrrPerdido / churnedCards.length : 0;
   const revenueChurnPercent = mrrBase > 0 ? (mrrPerdido / mrrBase) * 100 : 0;
 
@@ -95,10 +113,11 @@ const calcMonthMetrics = (cards: CardData[], upsellRecords: UpsellRecord[], mont
   const churnLiquidoPercent = mrrBase > 0 ? ((mrrPerdido - upsellRecorrente) / mrrBase) * 100 : 0;
 
   return {
-    mrrBase, mrrActive, mrrPerdido, mrrNovos, ticketMedio, ticketMedioPerdido,
-    revenueChurnPercent, churnLiquidoPercent,
+    mrrRecorrente, mrrVendido, mrrTotal, mrrBase, mrrPerdido, mrrNovos,
+    ticketMedio, ticketMedioPerdido, revenueChurnPercent, churnLiquidoPercent,
     receitaAdicionalTotal, upsellRecorrente, upsells, crosssells,
-    relevantCards, activeCards, churnedCards, newCards,
+    activeRecorrentes, activeVendidos, totalActiveCards, churnedCards, newCards,
+    relevantRecorrentes,
   };
 };
 
@@ -212,7 +231,7 @@ export const FinancialMetrics = () => {
   // MRR Evolution chart data (Jan 2025 → current month)
   const chartData = useMemo(() => {
     const startYear = 2025;
-    const startMonth = 0; // January
+    const startMonth = 0;
     const data: { name: string; mrrAtivo: number; mrrPerdido: number; mrrNovos: number; clientes: number }[] = [];
 
     let m = startMonth, y = startYear;
@@ -220,16 +239,18 @@ export const FinancialMetrics = () => {
 
     while (y < endY || (y === endY && m <= endM)) {
       const recorrentes = cards.filter(c => c.categoria === 'MRR recorrente' || c.categoria === 'MRR Recorrente');
-      const active = recorrentes.filter(c => isActiveInMonth(c, m, y));
-      const churned = recorrentes.filter(c => isChurnedInMonth(c, m, y));
+      const vendidos = cards.filter(c => c.categoria === 'MRR Vendido');
+      const activeRec = recorrentes.filter(c => isActiveInMonth(c, m, y));
+      const activeVend = vendidos.filter(c => isActiveInMonth(c, m, y));
+      const churned = cards.filter(c => isChurnedInMonth(c, m, y));
       const novos = recorrentes.filter(c => isNewInMonth(c, m, y));
 
       data.push({
         name: `${MONTH_LABELS[m]}/${y.toString().slice(2)}`,
-        mrrAtivo: active.reduce((s, c) => s + c.monthly_revenue, 0),
+        mrrAtivo: activeRec.reduce((s, c) => s + c.monthly_revenue, 0) + activeVend.reduce((s, c) => s + c.monthly_revenue, 0),
         mrrPerdido: churned.reduce((s, c) => s + c.monthly_revenue, 0),
         mrrNovos: novos.reduce((s, c) => s + c.monthly_revenue, 0),
-        clientes: active.length,
+        clientes: activeRec.length + activeVend.length,
       });
 
       m++;
@@ -273,22 +294,32 @@ export const FinancialMetrics = () => {
       <ResponsiveGrid cols={{ default: 1, md: 2, xl: 3 }} gap={{ default: 6 }}>
         <KPICard
           title="MRR Total"
-          value={formatCurrency(current.mrrActive)}
-          subtitle={`${current.activeCards.length} clientes ativos no mês`}
+          value={formatCurrency(current.mrrTotal)}
+          subtitle={`${current.totalActiveCards.length} clientes ativos (Recorrente + Vendido)`}
           icon={DollarSign}
           variant="default"
           iconColor="text-red-500"
-          trend={calcTrend(current.mrrActive, prev.mrrActive)}
+          trend={calcTrend(current.mrrTotal, prev.mrrTotal)}
         />
 
         <KPICard
-          title="MRR da Base"
-          value={formatCurrency(current.mrrBase)}
-          subtitle={`${current.relevantCards.length} clientes na base`}
+          title="MRR Recorrente"
+          value={formatCurrency(current.mrrRecorrente)}
+          subtitle={`${current.activeRecorrentes.length} clientes recorrentes ativos`}
           icon={Users}
           variant="default"
           iconColor="text-blue-500"
-          trend={calcTrend(current.mrrBase, prev.mrrBase)}
+          trend={calcTrend(current.mrrRecorrente, prev.mrrRecorrente)}
+        />
+
+        <KPICard
+          title="MRR Vendido"
+          value={formatCurrency(current.mrrVendido)}
+          subtitle={`${current.activeVendidos.length} clientes vendidos ativos`}
+          icon={UserPlus}
+          variant="success"
+          iconColor="text-green-500"
+          trend={calcTrend(current.mrrVendido, prev.mrrVendido)}
         />
 
         <KPICard
@@ -299,16 +330,6 @@ export const FinancialMetrics = () => {
           variant="danger"
           iconColor="text-red-500"
           trend={calcTrend(current.mrrPerdido, prev.mrrPerdido, true)}
-        />
-
-        <KPICard
-          title="MRR Vendido"
-          value={formatCurrency(current.mrrNovos)}
-          subtitle={`${current.newCards.length} novos clientes`}
-          icon={UserPlus}
-          variant="success"
-          iconColor="text-green-500"
-          trend={calcTrend(current.mrrNovos, prev.mrrNovos)}
         />
 
         <KPICard
@@ -334,7 +355,7 @@ export const FinancialMetrics = () => {
         <KPICard
           title="Ticket Médio MRR"
           value={formatCurrency(current.ticketMedio)}
-          subtitle={`Média por cliente ativo (${current.activeCards.length})`}
+          subtitle={`Média por cliente ativo (${current.totalActiveCards.length})`}
           icon={TrendingUp}
           variant="default"
           iconColor="text-green-500"
