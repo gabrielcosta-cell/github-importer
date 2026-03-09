@@ -1,56 +1,39 @@
 
 
-## Renomear funil Closer e ajustar etapas + renomear coluna Receita CRM
+## Refletir alteracao de Squad no CSM
 
-### Abordagem
+### Problema
+O `SquadEditDialog` salva apenas em `csm_project_snapshots`. O CSM Kanban le `csm_cards.squad` diretamente, entao alteracoes feitas na planilha de Projetos nao aparecem no CSM.
 
-A renomeação precisa acontecer tanto no código (constantes) quanto no banco de dados (pipeline e stages existentes). Os cards existentes não serão alterados — apenas o nome do pipeline e os nomes das etapas mudam.
+### Solucao
 
-### Alterações
+**Arquivo: `src/components/projetos/SquadEditDialog.tsx`**
 
-**1. `src/utils/setupCRMOpsPipelines.ts`**
-- Renomear constante: `CLOSER_PIPELINE_NAME = 'Upsell | CrossSell'`
-- Adicionar constante legacy: `const CLOSER_PIPELINE_LEGACY_NAME = 'Closer | Principal'` para migração
-- Atualizar `CLOSER_STAGES` para as novas etapas:
-  - Oportunidades (position 0), Orçamento (1), Apresentação (2), Negociação (3), Em assinatura (4)
-- Adicionar função de migração no `setupCRMOpsPipelines()`:
-  - Buscar pipeline com nome `'Closer | Principal'`
-  - Se encontrar, renomear para `'Upsell | CrossSell'` via UPDATE
-  - Renomear/recriar as etapas existentes: mapear as 7 etapas antigas para as 5 novas, mantendo os cards nas etapas mais próximas (cards de R1/R1 Delay → Oportunidades, R2/R2 Delay → Orçamento, R3 → Apresentação, Follow Up → Negociação, Em assinatura → Em assinatura)
-- Atualizar `CRM_OPS_PIPELINE_NAMES` para incluir o novo nome
+No `handleSave`, apos o upsert nos snapshots, verificar se os meses afetados incluem o mes atual ou meses futuros. Se sim, atualizar `csm_cards.squad` diretamente:
 
-**2. `src/utils/importCloserWonFeb.ts`**
-- Atualizar referência de `'Closer | Principal'` para `'Upsell | CrossSell'`
-- Manter referência a `'Em assinatura'` (etapa continua existindo)
+```ts
+// Verificar se afeta o mes atual ou futuro
+const now = new Date()
+const currentMonth = now.getMonth()
+const currentYear = now.getFullYear()
 
-**3. `src/components/GestaoProjetosOperacao.tsx`**
-- Renomear label `"Receita CRM"` para `"Vendas CRM"` em:
-  - Header da tabela (SortableHeader label, linha 581)
-  - CSV export headers (linha 471)
-  - Qualquer outro ponto que exiba esse texto (totalizadores no header)
+const affectsCurrentOrFuture = affectedMonths.some(m => 
+  m.year > currentYear || (m.year === currentYear && m.month >= currentMonth)
+)
 
-### Migração de etapas (lógica no setupCRMOpsPipelines)
-
-Os cards existentes precisam ser movidos para as novas etapas. A estratégia:
-1. Buscar todas as etapas atuais do pipeline
-2. Criar as novas etapas
-3. Mover cards das etapas antigas para as novas (mapeamento por posição/nome)
-4. Desativar ou excluir etapas antigas sem cards
-
-Mapeamento:
-```text
-Antiga          → Nova
-R1              → Oportunidades
-R1 Delay        → Oportunidades
-R2              → Orçamento
-R2 Delay        → Orçamento
-R3              → Apresentação
-Follow Up       → Negociação
-Em assinatura   → Em assinatura
+if (affectsCurrentOrFuture) {
+  await supabase
+    .from('csm_cards')
+    .update({ squad: newSquad })
+    .eq('id', cardId)
+}
 ```
 
-### O que NÃO muda
-- Nenhuma lógica de soma de valores ou cálculo de receita
-- Nenhuma integração existente além da atualização de nomes
-- Cards existentes mantêm todos os dados (valor, datas, etc.)
+Isso garante que:
+- "Apenas este mes" (marco): se marco >= mes atual, atualiza o card
+- "Este e seguintes": atualiza o card (inclui meses futuros)
+- "Todos os meses": atualiza o card
+- "Este e anteriores": so atualiza se o mes selecionado >= mes atual
+
+Uma unica alteracao de ~10 linhas no `handleSave` do `SquadEditDialog`.
 
