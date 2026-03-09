@@ -16,6 +16,7 @@ import { CRM_OPS_PIPELINE_NAMES } from '@/utils/setupCRMOpsPipelines'
 import { useAuth } from '@/contexts/AuthContext'
 import { FeeEditDialog } from '@/components/projetos/FeeEditDialog'
 import { SquadEditDialog } from '@/components/projetos/SquadEditDialog'
+import { wasRelevantInMonth } from '@/hooks/useProjetosData'
 
 const PIPELINE_CLIENTES_ATIVOS = '749ccdc2-5127-41a1-997b-3dcb47979555'
 
