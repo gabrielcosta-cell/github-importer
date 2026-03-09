@@ -555,6 +555,45 @@ export const FinancialMetrics = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Client Detail Modal */}
+      <Dialog open={!!detailModal} onOpenChange={(open) => !open && setDetailModal(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>{detailModal?.title}</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh]">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Squad</TableHead>
+                  <TableHead>Plano</TableHead>
+                  <TableHead className="text-right">MRR</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(detailModal?.clients || [])
+                  .sort((a, b) => b.monthly_revenue - a.monthly_revenue)
+                  .map((client) => (
+                    <TableRow key={client.id}>
+                      <TableCell className="font-medium">{client.id.substring(0, 8)}...</TableCell>
+                      <TableCell>{client.squad || '-'}</TableCell>
+                      <TableCell>{client.plano || '-'}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(client.monthly_revenue)}</TableCell>
+                    </TableRow>
+                  ))}
+                <TableRow className="border-t-2 font-bold">
+                  <TableCell colSpan={3}>Total ({detailModal?.clients?.length || 0} clientes)</TableCell>
+                  <TableCell className="text-right">
+                    {formatCurrency((detailModal?.clients || []).reduce((sum, c) => sum + c.monthly_revenue, 0))}
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
