@@ -254,14 +254,29 @@ const FILTERABLE_COLUMNS: Record<string, (p: ProjetoRow) => string | undefined> 
 }
 
 interface GestaoProjetosOperacaoProps {
-  liveData: ProjetoRow[]
-  loading: boolean
-  selectedPeriod: { month: number; year: number }
-  onPeriodChange: (period: { month: number; year: number }) => void
-  fetchSnapshots: () => Promise<void>
+  liveData?: ProjetoRow[]
+  loading?: boolean
+  selectedPeriod?: { month: number; year: number }
+  onPeriodChange?: (period: { month: number; year: number }) => void
+  fetchSnapshots?: () => Promise<void>
 }
 
-export const GestaoProjetosOperacao = ({ liveData, loading, selectedPeriod, onPeriodChange, fetchSnapshots }: GestaoProjetosOperacaoProps) => {
+export const GestaoProjetosOperacao = (props: GestaoProjetosOperacaoProps) => {
+  const now = new Date()
+  // If used standalone (no props), manage own data
+  const standaloneHook = props.liveData === undefined
+  const [internalPeriod, setInternalPeriod] = useState<{ month: number; year: number }>({ month: now.getMonth(), year: now.getFullYear() })
+  const standaloneData = standaloneHook ? (() => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const hook = require('@/hooks/useProjetosData')
+    return hook.useProjetosData(internalPeriod)
+  })() : null
+
+  const liveData = props.liveData ?? standaloneData?.liveData ?? []
+  const loading = props.loading ?? standaloneData?.loading ?? true
+  const selectedPeriod = props.selectedPeriod ?? internalPeriod
+  const onPeriodChange = props.onPeriodChange ?? setInternalPeriod
+  const fetchSnapshots = props.fetchSnapshots ?? standaloneData?.fetchSnapshots ?? (async () => {})
   const [searchTerm, setSearchTerm] = useState('')
   const [squads, setSquads] = useState<Array<{ id: string; name: string }>>([])
   const [sortColumn, setSortColumn] = useState<string | null>(null)
