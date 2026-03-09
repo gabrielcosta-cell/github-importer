@@ -433,7 +433,7 @@ export const GestaoProjetosOperacao = ({ liveData, loading, selectedPeriod, onPe
               <MonthYearPicker
                 selectedPeriods={[selectedPeriod]}
                 onPeriodsChange={(periods) => {
-                  if (periods.length > 0) setSelectedPeriod(periods[0])
+                  if (periods.length > 0) onPeriodChange(periods[0])
                 }}
                 singleSelect
               />
