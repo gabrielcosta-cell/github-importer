@@ -167,7 +167,51 @@ export const useProjetosData = (selectedPeriod: { month: number; year: number })
     return [...mergedCsm, ...unmatchedCrm]
   }, [rawCsmRows, rawCrmRows, selectedPeriod, snapshotsMap, squadSnapshotsMap])
 
-  return { liveData, rawCsmRows, rawCrmRows, loading, fetchSnapshots }
+  const refetchData = useCallback(async () => {
+    setLoading(true)
+    const { data: stagesData } = await supabase
+      .from('csm_stages')
+      .select('id, name')
+      .eq('pipeline_id', PIPELINE_CLIENTES_ATIVOS)
+      .eq('is_active', true)
+
+    const stMap = new Map<string, string>()
+    if (stagesData) {
+      for (const s of stagesData) stMap.set(s.id, s.name)
+    }
+
+    const { data: csmData } = await supabase
+      .from('csm_cards')
+      .select('id, display_id, company_name, title, squad, plano, fase_projeto, monthly_revenue, servico_contratado, data_contrato, data_inicio, tempo_contrato, valor_contrato, niche, existe_comissao, observacao_comissao, criativos_estaticos, criativos_video, lps, limite_investimento, data_perda, motivo_perda, client_status, created_at, categoria, receita_gerada_cliente, stage_id')
+      .eq('pipeline_id', PIPELINE_CLIENTES_ATIVOS)
+      .order('display_id', { ascending: true, nullsFirst: false })
+
+    const csmRows: ProjetoRow[] = (csmData || []).map(row => ({
+      ...row,
+      source: 'csm' as const,
+      stage_name: row.stage_id ? stMap.get(row.stage_id) || '-' : '-',
+    }))
+
+    setRawCsmRows(csmRows)
+    setLoading(false)
+    await fetchSnapshots()
+  }, [fetchSnapshots])
+
+  // Expose stages list for dialogs
+  const [stagesList, setStagesList] = useState<Array<{ id: string; name: string }>>([])
+  useEffect(() => {
+    supabase
+      .from('csm_stages')
+      .select('id, name, position')
+      .eq('pipeline_id', PIPELINE_CLIENTES_ATIVOS)
+      .eq('is_active', true)
+      .order('position')
+      .then(({ data }) => {
+        setStagesList((data || []).map(s => ({ id: s.id, name: s.name })))
+      })
+  }, [])
+
+  return { liveData, rawCsmRows, rawCrmRows, loading, fetchSnapshots, refetchData, stagesList }
 }
 
 // Shared filter functions
