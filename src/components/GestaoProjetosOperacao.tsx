@@ -251,7 +251,7 @@ interface GestaoProjetosOperacaoProps {
   stagesList: Array<{ id: string; name: string }>
 }
 
-export const GestaoProjetosOperacao = ({ liveData, loading, selectedPeriod, onPeriodChange, fetchSnapshots }: GestaoProjetosOperacaoProps) => {
+export const GestaoProjetosOperacao = ({ liveData, loading, selectedPeriod, onPeriodChange, fetchSnapshots, refetchData, stagesList }: GestaoProjetosOperacaoProps) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [squads, setSquads] = useState<Array<{ id: string; name: string }>>([])
   const [sortColumn, setSortColumn] = useState<string | null>(null)
@@ -259,6 +259,7 @@ export const GestaoProjetosOperacao = ({ liveData, loading, selectedPeriod, onPe
   const [columnFilters, setColumnFilters] = useState<Record<string, string[]>>({})
   const [feeEditData, setFeeEditData] = useState<{ cardId: string; companyName: string; currentFee: number; dataInicio?: string | null; dataPerda?: string | null } | null>(null)
   const [squadEditData, setSquadEditData] = useState<{ cardId: string; companyName: string; currentSquad: string; dataInicio?: string | null; dataPerda?: string | null } | null>(null)
+  const [stageEditData, setStageEditData] = useState<{ cardId: string; companyName: string; currentStageName: string; currentStageId: string } | null>(null)
   const { toast } = useToast()
   const { user, profile } = useAuth()
   const isGlobalAdmin = profile?.is_global_admin === true
