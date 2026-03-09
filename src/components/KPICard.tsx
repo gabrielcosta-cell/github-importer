@@ -20,6 +20,7 @@ interface KPICardProps {
   showVisibilityToggle?: boolean;
   filterComponent?: React.ReactNode;
   trend?: TrendData;
+  onValueClick?: () => void;
 }
 
 export const KPICard: React.FC<KPICardProps> = ({
