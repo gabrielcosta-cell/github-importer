@@ -73,9 +73,9 @@ export const SquadEditDialog = ({
       if (error) throw error
 
       // Update csm_cards.squad if change affects current or future months
-      const now = new Date()
-      const currentMonth = now.getMonth()
-      const currentYear = now.getFullYear()
+      const currentDate = new Date()
+      const currentMonth = currentDate.getMonth()
+      const currentYear = currentDate.getFullYear()
       const affectsCurrentOrFuture = affectedMonths.some(m =>
         m.year > currentYear || (m.year === currentYear && m.month >= currentMonth)
       )
