@@ -731,6 +731,21 @@ export const GestaoProjetosOperacao = () => {
                          p.tipo_receita === 'venda_recorrente' ? 'Recorrente' : '-'}
                       </TableCell>
                       <TableCell>
+                        {p.categoria ? (
+                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 border-0 ${
+                            p.categoria === 'MRR Recorrente' || p.categoria === 'MRR recorrente'
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                              : p.categoria === 'MRR Vendido'
+                              ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400'
+                              : p.categoria === 'MRR Operação'
+                              ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400'
+                              : 'bg-muted text-muted-foreground'
+                          }`}>
+                            {p.categoria}
+                          </Badge>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell>
                         {p.plano ? (
                           <Badge className={`text-xs ${PLANO_COLORS[p.plano] || 'bg-muted text-muted-foreground'}`}>
                             {p.plano}
