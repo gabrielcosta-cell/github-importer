@@ -1608,47 +1608,60 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
     }
   };
 
-  // Função para converter para lead (cria uma CÓPIA no SDR Principal, card original permanece no CSM)
-  const handleConvertToLead = async () => {
-    if (!confirm('Tem certeza que deseja criar uma cópia deste card como lead no funil SDR Principal?')) {
+  // Função para criar oportunidade no funil Upsell | CrossSell
+  const handleCreateOpportunity = async () => {
+    if (!confirm('Tem certeza que deseja criar uma oportunidade de Upsell/CrossSell para este cliente?')) {
       return;
     }
 
     setLoading(true);
     try {
-      // Buscar o pipeline SDR Principal
-      const { data: sdrPipeline, error: pipelineError } = await supabase
+      // Buscar o pipeline Upsell | CrossSell
+      const { data: upsellPipeline, error: pipelineError } = await supabase
         .from('csm_pipelines')
         .select('id')
-        .eq('name', 'SDR | Principal')
+        .eq('name', 'Upsell | CrossSell')
         .single();
 
       if (pipelineError) throw pipelineError;
 
-      if (!sdrPipeline) {
-        toast.error('Pipeline "SDR | Principal" não encontrado');
+      if (!upsellPipeline) {
+        toast.error('Pipeline "Upsell | CrossSell" não encontrado');
         return;
       }
 
-      // Buscar a primeira etapa do pipeline SDR Principal
-      const { data: firstStage, error: stageError } = await supabase
+      // Buscar a etapa "Oportunidades" do pipeline
+      const { data: opportunityStage, error: stageError } = await supabase
         .from('csm_stages')
         .select('id')
-        .eq('pipeline_id', sdrPipeline.id)
-        .order('position')
+        .eq('pipeline_id', upsellPipeline.id)
+        .ilike('name', '%Oportunidade%')
         .limit(1)
         .single();
 
-      if (stageError) throw stageError;
+      if (stageError || !opportunityStage) {
+        // Fallback: buscar primeira etapa
+        const { data: firstStage } = await supabase
+          .from('csm_stages')
+          .select('id')
+          .eq('pipeline_id', upsellPipeline.id)
+          .order('position')
+          .limit(1)
+          .single();
 
-      if (!firstStage) {
-        toast.error('Nenhuma etapa encontrada no pipeline SDR Principal');
-        return;
+        if (!firstStage) {
+          toast.error('Nenhuma etapa encontrada no pipeline Upsell | CrossSell');
+          return;
+        }
+
+        var targetStageId = firstStage.id;
+      } else {
+        var targetStageId = opportunityStage.id;
       }
 
       const userId = (await supabase.auth.getUser()).data.user?.id;
 
-      // Criar uma CÓPIA do card no pipeline SDR Principal
+      // Criar uma CÓPIA do card no pipeline Upsell | CrossSell
       const { data: newCard, error: insertError } = await supabase
         .from('csm_cards')
         .insert({
@@ -1662,8 +1675,9 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
           value: card.value || 0,
           niche: card.niche,
           description: card.description,
-          pipeline_id: sdrPipeline.id,
-          stage_id: firstStage.id,
+          squad: (card as any).squad,
+          pipeline_id: upsellPipeline.id,
+          stage_id: targetStageId,
           position: 0,
           created_by: userId || card.created_by,
         })
@@ -1678,10 +1692,10 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
           .from('csm_card_stage_history')
           .insert({
             card_id: newCard.id,
-            stage_id: firstStage.id,
+            stage_id: targetStageId,
             entered_at: new Date().toISOString(),
             moved_by: userId,
-            reason: 'Convertido para lead a partir do CSM',
+            reason: 'Oportunidade criada a partir do CSM',
           });
       }
 
@@ -1691,17 +1705,17 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
         .insert({
           card_id: card.id,
           activity_type: 'comment',
-          title: 'Lead criado no CRM Ops',
-          description: `Uma cópia deste card foi criada como lead no funil "SDR | Principal"`,
+          title: 'Oportunidade criada',
+          description: `Uma oportunidade de Upsell/CrossSell foi criada no funil "Upsell | CrossSell"`,
           status: 'completed',
           created_by: userId,
         });
 
-      toast.success('Lead criado no CRM Ops com sucesso!');
+      toast.success('Oportunidade criada com sucesso!');
       onUpdate?.();
     } catch (error) {
-      console.error('Erro ao converter para lead:', error);
-      toast.error('Erro ao converter para lead');
+      console.error('Erro ao criar oportunidade:', error);
+      toast.error('Erro ao criar oportunidade');
     } finally {
       setLoading(false);
     }
