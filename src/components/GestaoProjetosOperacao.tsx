@@ -210,7 +210,7 @@ const COLUMN_ACCESSORS: Record<string, (p: ProjetoRow) => string | number | unde
   },
   squad: p => p.squad || '-',
   plano: p => p.plano || '-',
-  etapa_formal: p => calcEtapaFormal(p.data_inicio),
+  fase_contrato: p => p.stage_name || '-',
   fase_projeto: p => p.fase_projeto || '-',
   monthly_revenue: p => p.monthly_revenue || 0,
   crm_revenue: p => p.crm_revenue || 0,
