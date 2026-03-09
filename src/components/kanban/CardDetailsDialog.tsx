@@ -3060,6 +3060,19 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                   {isCSMPipeline ? 'Churn' : 'Perdido'}
                 </Button>
               )}
+              {/* Botão Oportunidade - apenas CSM e não cancelado */}
+              {isCSMPipeline && (card as any).client_status !== 'cancelado' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCreateOpportunity}
+                  className="bg-green-600 text-white hover:bg-green-700 border-green-600 h-8"
+                  disabled={loading}
+                >
+                  <TrendingUp className="h-4 w-4 mr-1" />
+                  Oportunidade
+                </Button>
+              )}
 
               {/* Menu de opções com 3 pontos */}
               <DropdownMenu>
