@@ -242,6 +242,7 @@ const FILTERABLE_COLUMNS: Record<string, (p: ProjetoRow) => string | undefined> 
     const map: Record<string, string> = { venda_unica: 'Venda Única', variavel_midia: 'Var. Mídia', variavel_meta: 'Var. Meta', venda_recorrente: 'Recorrente' }
     return p.tipo_receita ? (map[p.tipo_receita] || p.tipo_receita) : undefined
   },
+  categoria_mrr: p => p.categoria || undefined,
   squad: p => p.squad || undefined,
   plano: p => p.plano || undefined,
   etapa_formal: p => { const v = calcEtapaFormal(p.data_inicio); return v !== '-' ? v : undefined },
@@ -653,6 +654,7 @@ export const GestaoProjetosOperacao = () => {
                     <SortableHeader label="Squad" columnKey="squad" {...sharedHeaderProps} filterValues={filterOptions.squad} activeFilters={columnFilters.squad} className="sticky left-[240px] z-10 bg-primary text-primary-foreground min-w-[90px]" />
                     <SortableHeader label="Origem" columnKey="origem" {...sharedHeaderProps} filterValues={filterOptions.origem} activeFilters={columnFilters.origem} className="min-w-[80px]" />
                     <SortableHeader label="Tipo Receita" columnKey="tipo_receita" {...sharedHeaderProps} filterValues={filterOptions.tipo_receita} activeFilters={columnFilters.tipo_receita} className="min-w-[120px]" />
+                    <SortableHeader label="Categoria MRR" columnKey="categoria_mrr" {...sharedHeaderProps} filterValues={filterOptions.categoria_mrr} activeFilters={columnFilters.categoria_mrr} className="min-w-[130px]" />
                     <SortableHeader label="Plano" columnKey="plano" {...sharedHeaderProps} filterValues={filterOptions.plano} activeFilters={columnFilters.plano} className="min-w-[90px]" />
                     <SortableHeader label="Etapa Formal" columnKey="etapa_formal" {...sharedHeaderProps} filterValues={filterOptions.etapa_formal} activeFilters={columnFilters.etapa_formal} className="min-w-[110px]" />
                     <SortableHeader label="Fase do Projeto" columnKey="fase_projeto" {...sharedHeaderProps} filterValues={filterOptions.fase_projeto} activeFilters={columnFilters.fase_projeto} className="min-w-[120px]" />
@@ -727,6 +729,21 @@ export const GestaoProjetosOperacao = () => {
                          p.tipo_receita === 'variavel_midia' ? 'Var. Mídia' :
                          p.tipo_receita === 'variavel_meta' ? 'Var. Meta' :
                          p.tipo_receita === 'venda_recorrente' ? 'Recorrente' : '-'}
+                      </TableCell>
+                      <TableCell>
+                        {p.categoria ? (
+                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 border-0 ${
+                            p.categoria === 'MRR Recorrente' || p.categoria === 'MRR recorrente'
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                              : p.categoria === 'MRR Vendido'
+                              ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400'
+                              : p.categoria === 'MRR Operação'
+                              ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400'
+                              : 'bg-muted text-muted-foreground'
+                          }`}>
+                            {p.categoria}
+                          </Badge>
+                        ) : '-'}
                       </TableCell>
                       <TableCell>
                         {p.plano ? (
