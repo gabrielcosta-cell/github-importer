@@ -2366,9 +2366,6 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
                   <DropdownMenuItem onClick={fetchAvailableCards}>
                     <GitMerge className="h-4 w-4 mr-2" />Mesclar
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleConvertToLead}>
-                    <ArrowRight className="h-4 w-4 mr-2" />Converter para lead
-                  </DropdownMenuItem>
                   {(profile?.is_global_admin || profile?.role === 'admin') && (
                     <DropdownMenuItem onClick={handleDeleteCard} className="text-destructive focus:text-destructive">
                       <Trash2 className="h-4 w-4 mr-2" />Excluir
