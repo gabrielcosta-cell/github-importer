@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast'
 import { formatCurrency } from '@/utils/formatCurrency'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { generateAffectedMonths, getPropagationDescription, MONTHS_FULL, type PropagationMode } from '@/utils/generateAffectedMonths'
 
 interface FeeEditDialogProps {
   open: boolean
