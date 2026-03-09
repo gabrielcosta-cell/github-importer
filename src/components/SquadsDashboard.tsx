@@ -238,7 +238,7 @@ export const SquadsDashboard = () => {
     const count = squadMetrics.length || 1
     t.ltMedio = squadMetrics.reduce((s, m) => s + m.ltMedio, 0) / count
     t.mpa = squadMetrics.reduce((s, m) => s + m.mpa, 0) / count
-    t.revenueChurnPercent = t.mrrBase > 0 ? (t.revenueChurn / t.mrrBase) * 100 : 0
+    t.revenueChurnPercent = squadMetrics.reduce((s, m) => s + m.revenueChurnPercent, 0) / count
     t.tmChurn = squadMetrics.reduce((s, m) => s + m.tmChurn, 0) / count
     t.logoChurnPercent = squadMetrics.reduce((s, m) => s + m.logoChurnPercent, 0) / count
     t.roi = t.vmInvestida > 0 ? t.vendasGeradas / t.vmInvestida : 0
