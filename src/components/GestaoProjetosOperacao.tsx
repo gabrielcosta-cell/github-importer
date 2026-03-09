@@ -15,6 +15,7 @@ import { differenceInMonths, parseISO, format } from 'date-fns'
 import { CRM_OPS_PIPELINE_NAMES } from '@/utils/setupCRMOpsPipelines'
 import { useAuth } from '@/contexts/AuthContext'
 import { FeeEditDialog } from '@/components/projetos/FeeEditDialog'
+import { SquadEditDialog } from '@/components/projetos/SquadEditDialog'
 
 const PIPELINE_CLIENTES_ATIVOS = '749ccdc2-5127-41a1-997b-3dcb47979555'
 
@@ -261,7 +262,9 @@ export const GestaoProjetosOperacao = () => {
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const [columnFilters, setColumnFilters] = useState<Record<string, string[]>>({})
   const [snapshotsMap, setSnapshotsMap] = useState<Map<string, number>>(new Map())
+  const [squadSnapshotsMap, setSquadSnapshotsMap] = useState<Map<string, string>>(new Map())
   const [feeEditData, setFeeEditData] = useState<{ cardId: string; companyName: string; currentFee: number; dataInicio?: string | null; dataPerda?: string | null } | null>(null)
+  const [squadEditData, setSquadEditData] = useState<{ cardId: string; companyName: string; currentSquad: string; dataInicio?: string | null; dataPerda?: string | null } | null>(null)
   const { toast } = useToast()
   const { user, profile } = useAuth()
   const isGlobalAdmin = profile?.is_global_admin === true
@@ -329,17 +332,20 @@ export const GestaoProjetosOperacao = () => {
   const fetchSnapshots = useCallback(async () => {
     const { data } = await supabase
       .from('csm_project_snapshots')
-      .select('card_id, monthly_revenue')
-      .eq('snapshot_month', selectedPeriod.month + 1) // DB is 1-indexed
+      .select('card_id, monthly_revenue, squad')
+      .eq('snapshot_month', selectedPeriod.month + 1)
       .eq('snapshot_year', selectedPeriod.year)
 
     const map = new Map<string, number>()
+    const sqMap = new Map<string, string>()
     if (data) {
       for (const s of data) {
         if (s.monthly_revenue != null) map.set(s.card_id, s.monthly_revenue)
+        if (s.squad) sqMap.set(s.card_id, s.squad)
       }
     }
     setSnapshotsMap(map)
+    setSquadSnapshotsMap(sqMap)
   }, [selectedPeriod])
 
   useEffect(() => {
@@ -360,8 +366,11 @@ export const GestaoProjetosOperacao = () => {
     // Build CSM rows with CRM revenue merged only for the selected month
     const mergedCsm = rawCsmRows.map(csm => {
       const snapshotRevenue = snapshotsMap.get(csm.id)
+      const snapshotSquad = squadSnapshotsMap.get(csm.id)
       const effectiveRevenue = snapshotRevenue !== undefined ? snapshotRevenue : csm.monthly_revenue
+      const effectiveSquad = snapshotSquad || csm.squad
       const hasSnapshot = snapshotRevenue !== undefined
+      const hasSquadSnapshot = !!snapshotSquad
 
       const matchingCrm = rawCrmRows.filter(crm =>
         crm.display_id && crm.display_id === csm.display_id && isInMonth(crm)
@@ -386,8 +395,10 @@ export const GestaoProjetosOperacao = () => {
 
       return {
         ...csm,
+        squad: effectiveSquad,
         monthly_revenue: effectiveRevenue,
         _hasSnapshot: hasSnapshot,
+        _hasSquadSnapshot: hasSquadSnapshot,
         crm_revenue: crmRev,
         crm_tipo_receita: crmTipo,
         crm_card_id: crmCardId,
@@ -401,7 +412,7 @@ export const GestaoProjetosOperacao = () => {
     const unmatchedCrm = rawCrmRows.filter(crm => !crm.display_id || !matchedDisplayIds.has(crm.display_id))
 
     return [...mergedCsm, ...unmatchedCrm]
-  }, [rawCsmRows, rawCrmRows, selectedPeriod, snapshotsMap])
+  }, [rawCsmRows, rawCrmRows, selectedPeriod, snapshotsMap, squadSnapshotsMap])
 
   const wasRelevantInMonth = (p: ProjetoRow, month: number, year: number): boolean => {
     if (p.source === 'crm-ops') {
@@ -667,9 +678,28 @@ export const GestaoProjetosOperacao = () => {
                       </TableCell>
                       <TableCell className="sticky left-[240px] z-10 bg-background">
                         {p.squad ? (
-                          <Badge className={`text-xs ${SQUAD_COLORS[p.squad] || 'bg-muted text-muted-foreground'}`}>
-                            {p.squad}
-                          </Badge>
+                          (profile?.role === 'admin' || isGlobalAdmin) && p.source !== 'crm-ops' ? (
+                            <button
+                              onClick={() => setSquadEditData({
+                                cardId: p.id,
+                                companyName: p.company_name || p.title || '',
+                                currentSquad: p.squad || '',
+                                dataInicio: p.data_inicio,
+                                dataPerda: p.data_perda,
+                              })}
+                              className="inline-flex items-center gap-1 hover:opacity-80 transition-opacity group cursor-pointer"
+                              title="Editar Squad"
+                            >
+                              <Badge className={`text-xs ${(p as any)._hasSquadSnapshot ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' : (SQUAD_COLORS[p.squad] || 'bg-muted text-muted-foreground')}`}>
+                                {p.squad}
+                              </Badge>
+                              <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity text-muted-foreground" />
+                            </button>
+                          ) : (
+                            <Badge className={`text-xs ${(p as any)._hasSquadSnapshot ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' : (SQUAD_COLORS[p.squad] || 'bg-muted text-muted-foreground')}`}>
+                              {p.squad}
+                            </Badge>
+                          )
                         ) : '-'}
                       </TableCell>
                       <TableCell>
@@ -785,6 +815,24 @@ export const GestaoProjetosOperacao = () => {
           dataPerda={feeEditData.dataPerda}
           userId={user.id}
           userName={profile.name}
+          onSaved={fetchSnapshots}
+        />
+      )}
+
+      {squadEditData && user && profile && (
+        <SquadEditDialog
+          open={!!squadEditData}
+          onOpenChange={(open) => { if (!open) setSquadEditData(null) }}
+          cardId={squadEditData.cardId}
+          companyName={squadEditData.companyName}
+          currentSquad={squadEditData.currentSquad}
+          selectedMonth={selectedPeriod.month}
+          selectedYear={selectedPeriod.year}
+          dataInicio={squadEditData.dataInicio}
+          dataPerda={squadEditData.dataPerda}
+          userId={user.id}
+          userName={profile.name}
+          squads={squads}
           onSaved={fetchSnapshots}
         />
       )}

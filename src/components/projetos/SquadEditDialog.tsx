@@ -3,52 +3,54 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { MRRInput } from '@/components/kanban/MRRInput'
+import { Badge } from '@/components/ui/badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
-import { formatCurrency } from '@/utils/formatCurrency'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { SQUAD_COLORS } from '@/components/GestaoProjetosOperacao'
 import { generateAffectedMonths, getPropagationDescription, MONTHS_FULL, type PropagationMode } from '@/utils/generateAffectedMonths'
 
-interface FeeEditDialogProps {
+interface SquadEditDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   cardId: string
   companyName: string
-  currentFee: number
-  selectedMonth: number // 0-indexed
+  currentSquad: string
+  selectedMonth: number
   selectedYear: number
   dataInicio?: string | null
   dataPerda?: string | null
   userId: string
   userName: string
+  squads: Array<{ id: string; name: string }>
   onSaved: () => void
 }
 
-
-export const FeeEditDialog = ({
+export const SquadEditDialog = ({
   open,
   onOpenChange,
   cardId,
   companyName,
-  currentFee,
+  currentSquad,
   selectedMonth,
   selectedYear,
   dataInicio,
   dataPerda,
   userId,
   userName,
+  squads,
   onSaved,
-}: FeeEditDialogProps) => {
-  const [newFee, setNewFee] = useState<number | null>(currentFee)
+}: SquadEditDialogProps) => {
+  const [newSquad, setNewSquad] = useState<string>(currentSquad)
   const [mode, setMode] = useState<PropagationMode>('only_this')
   const [saving, setSaving] = useState(false)
   const { toast } = useToast()
 
   const handleSave = async () => {
-    if (newFee === null || newFee === currentFee) {
-      toast({ title: 'Informe um valor diferente do atual', variant: 'destructive' })
+    if (!newSquad || newSquad === currentSquad) {
+      toast({ title: 'Selecione um squad diferente do atual', variant: 'destructive' })
       return
     }
 
@@ -56,12 +58,11 @@ export const FeeEditDialog = ({
     try {
       const affectedMonths = generateAffectedMonths(mode, selectedMonth, selectedYear, dataInicio, dataPerda)
 
-      // Batch upsert snapshots
       const rows = affectedMonths.map(m => ({
         card_id: cardId,
-        snapshot_month: m.month + 1, // DB uses 1-indexed months
+        snapshot_month: m.month + 1,
         snapshot_year: m.year,
-        monthly_revenue: newFee,
+        squad: newSquad,
         company_name: companyName,
       }))
 
@@ -71,25 +72,24 @@ export const FeeEditDialog = ({
 
       if (error) throw error
 
-      // Create audit log in csm_activities
       const propagationDesc = getPropagationDescription(mode, selectedMonth, selectedYear)
       const now = new Date()
-      const dateStr = format(now, "dd/MM/yy", { locale: ptBR })
-      const description = `MRR alterado de ${formatCurrency(currentFee)} para ${formatCurrency(newFee)} ${propagationDesc} por ${userName} - em ${dateStr}`
+      const dateStr = format(now, "dd/MM/yy 'às' HH:mm", { locale: ptBR })
+      const description = `Squad alterado de ${currentSquad} para ${newSquad} ${propagationDesc} por ${userName} - em ${dateStr}`
 
       await supabase.from('csm_activities').insert({
         card_id: cardId,
-        activity_type: 'fee_change',
-        title: 'Alteração de Fee (MRR)',
+        activity_type: 'squad_change',
+        title: 'Alteração de Squad',
         description,
         created_by: userId,
       })
 
-      toast({ title: 'Fee atualizado com sucesso', description: `${affectedMonths.length} mês(es) afetado(s)` })
+      toast({ title: 'Squad atualizado com sucesso', description: `${affectedMonths.length} mês(es) afetado(s)` })
       onSaved()
       onOpenChange(false)
     } catch (err: any) {
-      console.error('Error saving fee:', err)
+      console.error('Error saving squad:', err)
       toast({ title: 'Erro ao salvar', description: err.message, variant: 'destructive' })
     } finally {
       setSaving(false)
@@ -102,7 +102,7 @@ export const FeeEditDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Editar Fee (MRR)</DialogTitle>
+          <DialogTitle>Editar Squad</DialogTitle>
           <DialogDescription>
             {companyName} — {monthLabel}
           </DialogDescription>
@@ -110,39 +110,54 @@ export const FeeEditDialog = ({
 
         <div className="space-y-4">
           <div>
-            <Label className="text-xs text-muted-foreground">Valor atual</Label>
-            <p className="text-sm font-medium">{formatCurrency(currentFee)}</p>
+            <Label className="text-xs text-muted-foreground">Squad atual</Label>
+            <div className="mt-1">
+              <Badge className={`text-xs ${SQUAD_COLORS[currentSquad] || 'bg-muted text-muted-foreground'}`}>
+                {currentSquad || 'Sem squad'}
+              </Badge>
+            </div>
           </div>
 
           <div>
-            <Label>Novo valor</Label>
-            <MRRInput value={newFee} onChange={setNewFee} />
+            <Label>Novo squad</Label>
+            <Select value={newSquad} onValueChange={setNewSquad}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Selecione o squad" />
+              </SelectTrigger>
+              <SelectContent>
+                {squads.map(s => (
+                  <SelectItem key={s.id} value={s.name} disabled={s.name === currentSquad}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
-            <Label>Aplicar este valor para:</Label>
+            <Label>Aplicar esta alteração para:</Label>
             <RadioGroup value={mode} onValueChange={(v) => setMode(v as PropagationMode)}>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="only_this" id="only_this" />
-                <Label htmlFor="only_this" className="font-normal cursor-pointer">
+                <RadioGroupItem value="only_this" id="sq_only_this" />
+                <Label htmlFor="sq_only_this" className="font-normal cursor-pointer">
                   Apenas {monthLabel}
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="this_and_previous" id="this_and_previous" />
-                <Label htmlFor="this_and_previous" className="font-normal cursor-pointer">
+                <RadioGroupItem value="this_and_previous" id="sq_this_and_previous" />
+                <Label htmlFor="sq_this_and_previous" className="font-normal cursor-pointer">
                   {monthLabel} e todos os anteriores
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="this_and_next" id="this_and_next" />
-                <Label htmlFor="this_and_next" className="font-normal cursor-pointer">
+                <RadioGroupItem value="this_and_next" id="sq_this_and_next" />
+                <Label htmlFor="sq_this_and_next" className="font-normal cursor-pointer">
                   {monthLabel} e todos os seguintes
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="all" id="all" />
-                <Label htmlFor="all" className="font-normal cursor-pointer">
+                <RadioGroupItem value="all" id="sq_all" />
+                <Label htmlFor="sq_all" className="font-normal cursor-pointer">
                   Todos os meses
                 </Label>
               </div>
