@@ -160,7 +160,7 @@ export const FinancialMetrics = () => {
           .eq('pipeline_id', PIPELINE_CLIENTES_ATIVOS),
         supabase
           .from('csm_card_upsell_history')
-          .select('upsell_type, upsell_value, payment_type, upsell_month, upsell_year')
+          .select('upsell_type, upsell_value, payment_type, upsell_month, upsell_year, notes, card_id, csm_cards(title, squad, plano)')
       ]);
 
       setCards((cardsRes.data || []).map((card: any) => ({
