@@ -202,7 +202,7 @@ export const SquadsDashboard = () => {
         mrrFinal,
         receitaLiquida,
       }
-    })
+    }).filter(m => m.baseNovosChurn > 0 || m.mrrVendidoOperacao > 0 || m.comissoes > 0)
 
     return metrics
   }, [rawCsmRows, rawCrmRows, selectedPeriod])
