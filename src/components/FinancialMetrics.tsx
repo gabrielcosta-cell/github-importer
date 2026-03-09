@@ -161,6 +161,7 @@ export const FinancialMetrics = () => {
 
       setCards((cardsRes.data || []).map((card: any) => ({
         id: card.id,
+        title: card.title || 'Sem nome',
         monthly_revenue: Number(card.monthly_revenue) || 0,
         plano: card.plano || 'Starter',
         data_inicio: card.data_inicio,
