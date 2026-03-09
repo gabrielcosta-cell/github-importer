@@ -818,6 +818,24 @@ export const GestaoProjetosOperacao = () => {
           onSaved={fetchSnapshots}
         />
       )}
+
+      {squadEditData && user && profile && (
+        <SquadEditDialog
+          open={!!squadEditData}
+          onOpenChange={(open) => { if (!open) setSquadEditData(null) }}
+          cardId={squadEditData.cardId}
+          companyName={squadEditData.companyName}
+          currentSquad={squadEditData.currentSquad}
+          selectedMonth={selectedPeriod.month}
+          selectedYear={selectedPeriod.year}
+          dataInicio={squadEditData.dataInicio}
+          dataPerda={squadEditData.dataPerda}
+          userId={user.id}
+          userName={profile.name}
+          squads={squads}
+          onSaved={fetchSnapshots}
+        />
+      )}
     </div>
   )
 }
