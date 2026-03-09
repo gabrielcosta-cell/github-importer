@@ -175,6 +175,7 @@ export const FinancialMetrics = () => {
   const [selectedCrosssellPayment, setSelectedCrosssellPayment] = useState<string>("todos");
   const [loading, setLoading] = useState(true);
   const [detailModal, setDetailModal] = useState<{ title: string; clients?: CardData[]; upsellRecords?: UpsellRecord[] } | null>(null);
+  const [activeTab, setActiveTab] = useState<'mrr' | 'churn' | 'ticket' | 'vendas'>('mrr');
 
   useEffect(() => {
     const fetchData = async () => {
