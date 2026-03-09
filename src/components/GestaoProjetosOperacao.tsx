@@ -389,7 +389,7 @@ export const GestaoProjetosOperacao = ({ liveData, loading, selectedPeriod, onPe
           p.tipo_receita || '-',
           p.squad || '-',
           p.plano || '-',
-          calcEtapaFormal(p.data_inicio),
+          p.stage_name || '-',
           p.fase_projeto || '-',
           p.monthly_revenue || 0,
           p.crm_revenue || 0,

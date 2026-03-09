@@ -35,7 +35,11 @@ export const useProjetosData = (selectedPeriod: { month: number; year: number })
         .eq('pipeline_id', PIPELINE_CLIENTES_ATIVOS)
         .order('display_id', { ascending: true, nullsFirst: false })
 
-      const csmRows: ProjetoRow[] = (csmData || []).map(row => ({ ...row, source: 'csm' as const }))
+      const csmRows: ProjetoRow[] = (csmData || []).map(row => ({
+        ...row,
+        source: 'csm' as const,
+        stage_name: row.stage_id ? stagesMap.get(row.stage_id) || '-' : '-',
+      }))
 
       const { data: crmPipelines } = await supabase
         .from('csm_pipelines')
