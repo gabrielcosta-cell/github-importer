@@ -579,7 +579,7 @@ export const FinancialMetrics = () => {
                   .sort((a, b) => b.monthly_revenue - a.monthly_revenue)
                   .map((client) => (
                     <TableRow key={client.id}>
-                      <TableCell className="font-medium">{client.id.substring(0, 8)}...</TableCell>
+                      <TableCell className="font-medium">{client.title}</TableCell>
                       <TableCell>{client.squad || '-'}</TableCell>
                       <TableCell>{client.plano || '-'}</TableCell>
                       <TableCell className="text-right">{formatCurrency(client.monthly_revenue)}</TableCell>
