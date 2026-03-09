@@ -247,6 +247,8 @@ interface GestaoProjetosOperacaoProps {
   selectedPeriod: { month: number; year: number }
   onPeriodChange: (period: { month: number; year: number }) => void
   fetchSnapshots: () => Promise<void>
+  refetchData: () => Promise<void>
+  stagesList: Array<{ id: string; name: string }>
 }
 
 export const GestaoProjetosOperacao = ({ liveData, loading, selectedPeriod, onPeriodChange, fetchSnapshots }: GestaoProjetosOperacaoProps) => {
