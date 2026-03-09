@@ -498,6 +498,7 @@ export const FinancialMetrics = () => {
 
       {/* Churn Tab */}
       {activeTab === 'churn' && (
+        <>
         <ResponsiveGrid cols={{ default: 1, md: 2, xl: 3 }} gap={{ default: 6 }}>
           <KPICard
             title="Revenue Churn"
