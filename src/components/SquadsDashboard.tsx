@@ -1,15 +1,19 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { supabase } from '@/integrations/supabase/client'
 import { formatCurrency } from '@/utils/formatCurrency'
 import { MonthYearPicker } from '@/components/MonthYearPicker'
 import { differenceInMonths, parseISO } from 'date-fns'
 import { SQUAD_COLORS, type ProjetoRow } from '@/components/GestaoProjetosOperacao'
-import { CRM_OPS_PIPELINE_NAMES } from '@/utils/setupCRMOpsPipelines'
+import { wasRelevantInMonth, isChurnedInMonth, isActiveInMonth } from '@/hooks/useProjetosData'
 
-const PIPELINE_CLIENTES_ATIVOS = '749ccdc2-5127-41a1-997b-3dcb47979555'
+interface SquadsDashboardProps {
+  liveData: ProjetoRow[]
+  loading: boolean
+  selectedPeriod: { month: number; year: number }
+  onPeriodChange: (period: { month: number; year: number }) => void
+}
 
 interface SquadMetrics {
   squad: string
@@ -32,140 +36,60 @@ interface SquadMetrics {
   receitaLiquida: number
 }
 
-export const SquadsDashboard = () => {
-  const now = new Date()
-  const [selectedPeriod, setSelectedPeriod] = useState<{ month: number; year: number }>({ month: now.getMonth(), year: now.getFullYear() })
-  const [rawCsmRows, setRawCsmRows] = useState<ProjetoRow[]>([])
-  const [rawCrmRows, setRawCrmRows] = useState<ProjetoRow[]>([])
-  const [loading, setLoading] = useState(true)
+const calcTempoDOTMonths = (dataInicio?: string | null, dataPerda?: string | null): number => {
+  if (!dataInicio) return 0
+  try {
+    const start = parseISO(dataInicio)
+    const end = dataPerda ? parseISO(dataPerda) : new Date()
+    return Math.max(0, differenceInMonths(end, start))
+  } catch { return 0 }
+}
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true)
-      const { data: csmData } = await supabase
-        .from('csm_cards')
-        .select('id, display_id, company_name, title, squad, monthly_revenue, data_inicio, data_perda, client_status, created_at, data_contrato, categoria, limite_investimento, receita_gerada_cliente')
-        .eq('pipeline_id', PIPELINE_CLIENTES_ATIVOS)
-
-      const csmRows: ProjetoRow[] = (csmData || []).map(row => ({ ...row, source: 'csm' as const }))
-
-      const { data: crmPipelines } = await supabase
-        .from('csm_pipelines')
-        .select('id, name')
-        .in('name', CRM_OPS_PIPELINE_NAMES)
-        .eq('is_active', true)
-
-      let crmOpsRows: ProjetoRow[] = []
-      if (crmPipelines && crmPipelines.length > 0) {
-        const pipelineIds = crmPipelines.map(p => p.id)
-        const { data: crmData } = await supabase
-          .from('csm_cards')
-          .select('id, display_id, company_name, title, squad, monthly_revenue, created_at, tipo_receita, data_ganho, migrado_csm')
-          .in('pipeline_id', pipelineIds)
-          .gt('monthly_revenue', 0)
-
-        crmOpsRows = (crmData || []).map(row => ({
-          ...row,
-          source: 'crm-ops' as const,
-          tipo_receita: (row as any).tipo_receita,
-          data_ganho: (row as any).data_ganho,
-          migrado_csm: (row as any).migrado_csm,
-        }))
-      }
-
-      setRawCsmRows(csmRows)
-      setRawCrmRows(crmOpsRows)
-      setLoading(false)
-    }
-    fetchData()
-  }, [])
-
-  const wasRelevantInMonth = (p: ProjetoRow, month: number, year: number): boolean => {
-    const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59)
-    const startDateStr = p.data_inicio || p.data_contrato || p.created_at
-    if (startDateStr) {
-      const dateOnly = startDateStr.substring(0, 10)
-      const startDate = new Date(dateOnly + 'T12:00:00')
-      if (startDate > endOfMonth) return false
-    }
-    if (p.client_status !== 'cancelado') return true
-    if (!p.data_perda) return false
-    const perdaDate = parseISO(p.data_perda)
-    const perdaMonth = perdaDate.getMonth()
-    const perdaYear = perdaDate.getFullYear()
-    if (perdaYear > year) return true
-    if (perdaYear === year && perdaMonth >= month) return true
-    return false
-  }
-
-  const isChurnedInMonth = (p: ProjetoRow, month: number, year: number): boolean => {
-    if (p.client_status !== 'cancelado' || !p.data_perda) return false
-    const perdaDate = parseISO(p.data_perda)
-    return perdaDate.getMonth() === month && perdaDate.getFullYear() === year
-  }
-
-  const isActiveInMonth = (p: ProjetoRow, month: number, year: number): boolean => {
-    return wasRelevantInMonth(p, month, year) && !isChurnedInMonth(p, month, year)
-  }
-
-  const isCrmInMonth = (p: ProjetoRow, month: number, year: number): boolean => {
-    if (p.migrado_csm) return false
-    const dateStr = (p.data_ganho || p.created_at || '').substring(0, 10)
-    if (!dateStr) return false
-    const d = new Date(dateStr + 'T12:00:00')
-    return d.getMonth() === month && d.getFullYear() === year
-  }
-
-  const calcTempoDOTMonths = (dataInicio?: string | null, dataPerda?: string | null): number => {
-    if (!dataInicio) return 0
-    try {
-      const start = parseISO(dataInicio)
-      const end = dataPerda ? parseISO(dataPerda) : new Date()
-      return Math.max(0, differenceInMonths(end, start))
-    } catch { return 0 }
-  }
-
+export const SquadsDashboard = ({ liveData, loading, selectedPeriod, onPeriodChange }: SquadsDashboardProps) => {
   const squadMetrics = useMemo(() => {
     const { month, year } = selectedPeriod
 
-    // Get all unique squads from CSM
+    // Get all unique squads
     const squadsSet = new Set<string>()
-    rawCsmRows.forEach(r => { if (r.squad) squadsSet.add(r.squad) })
+    liveData.forEach(r => { if (r.squad) squadsSet.add(r.squad) })
     const squadNames = Array.from(squadsSet).sort()
 
     const metrics: SquadMetrics[] = squadNames.map(squad => {
-      // CSM cards for this squad
-      const squadCsm = rawCsmRows.filter(r => r.squad === squad)
-      const relevantCsm = squadCsm.filter(r => wasRelevantInMonth(r, month, year))
-      const activeCsm = squadCsm.filter(r => isActiveInMonth(r, month, year))
-      const churnedCsm = squadCsm.filter(r => isChurnedInMonth(r, month, year))
+      // Filter liveData by squad
+      const squadData = liveData.filter(r => r.squad === squad)
+      const relevantData = squadData.filter(r => wasRelevantInMonth(r, month, year))
+      const activeData = squadData.filter(r => isActiveInMonth(r, month, year))
+      const churnedData = squadData.filter(r => isChurnedInMonth(r, month, year))
 
-      // CRM cards for this squad in this month
-      const squadCrm = rawCrmRows.filter(r => r.squad === squad && isCrmInMonth(r, month, year))
+      // Only CSM source for base metrics
+      const relevantCsm = relevantData.filter(r => r.source !== 'crm-ops')
+      const activeCsm = activeData.filter(r => r.source !== 'crm-ops')
+      const churnedCsm = churnedData.filter(r => r.source !== 'crm-ops')
+
+      // CRM-ops cards for this squad in this month
+      const crmOpsInMonth = relevantData.filter(r => r.source === 'crm-ops')
 
       const baseNovosChurn = relevantCsm.length
 
       const mrrRecorrente = activeCsm
-        .filter(r => !r.categoria || r.categoria === 'MRR Recorrente')
+        .filter(r => !r.categoria || r.categoria === 'MRR Recorrente' || r.categoria === 'MRR recorrente')
         .reduce((sum, r) => sum + (r.monthly_revenue || 0), 0)
 
       const mrrBase = relevantCsm
-        .filter(r => !r.categoria || r.categoria === 'MRR Recorrente')
+        .filter(r => !r.categoria || r.categoria === 'MRR Recorrente' || r.categoria === 'MRR recorrente')
         .reduce((sum, r) => sum + (r.monthly_revenue || 0), 0)
 
       const mrrVendido = activeCsm
         .filter(r => r.categoria === 'MRR Vendido')
         .reduce((sum, r) => sum + (r.monthly_revenue || 0), 0)
 
-      const mrrVendidoOperacao = squadCrm
-        .filter(r => r.tipo_receita === 'venda_unica' || r.tipo_receita === 'venda_recorrente')
-        .reduce((sum, r) => sum + (r.monthly_revenue || 0), 0)
+      // CRM revenue from merged data (crm_revenue, variavel_midia, variavel_vendas on CSM rows)
+      const mrrVendidoOperacao = activeCsm.reduce((sum, r) => sum + (r.crm_revenue || 0), 0)
+        + crmOpsInMonth.reduce((sum, r) => sum + (r.monthly_revenue || 0), 0)
 
-      const comissoes = squadCrm
-        .filter(r => r.tipo_receita === 'variavel_midia' || r.tipo_receita === 'variavel_meta')
-        .reduce((sum, r) => sum + (r.monthly_revenue || 0), 0)
+      const comissoes = activeCsm.reduce((sum, r) => sum + (r.variavel_midia_revenue || 0) + (r.variavel_vendas_revenue || 0), 0)
 
-      // LT Médio: average months of all relevant clients
+      // LT Médio
       const ltValues = relevantCsm.map(r => calcTempoDOTMonths(r.data_inicio, r.data_perda))
       const ltMedio = ltValues.length > 0 ? ltValues.reduce((a, b) => a + b, 0) / ltValues.length : 0
 
@@ -178,40 +102,24 @@ export const SquadsDashboard = () => {
       const vendasGeradas = activeCsm.reduce((sum, r) => sum + (r.receita_gerada_cliente || 0), 0)
       const roi = vmInvestida > 0 ? vendasGeradas / vmInvestida : 0
 
-      // MPA: média de meses apenas dos ativos
       const mpaValues = activeCsm.map(r => calcTempoDOTMonths(r.data_inicio, null))
       const mpa = mpaValues.length > 0 ? mpaValues.reduce((a, b) => a + b, 0) / mpaValues.length : 0
 
       const mrrFinal = activeCsm
-        .filter(r => !r.categoria || r.categoria === 'MRR Recorrente')
+        .filter(r => !r.categoria || r.categoria === 'MRR Recorrente' || r.categoria === 'MRR recorrente')
         .reduce((sum, r) => sum + (r.monthly_revenue || 0), 0)
 
       const receitaLiquida = mrrFinal - revenueChurn
 
       return {
-        squad,
-        baseNovosChurn,
-        mrrRecorrente,
-        mrrBase,
-        mrrVendido,
-        mrrVendidoOperacao,
-        comissoes,
-        ltMedio,
-        revenueChurn,
-        revenueChurnPercent,
-        tmChurn,
-        logoChurnPercent,
-        vmInvestida,
-        vendasGeradas,
-        roi,
-        mpa,
-        mrrFinal,
-        receitaLiquida,
+        squad, baseNovosChurn, mrrRecorrente, mrrBase, mrrVendido, mrrVendidoOperacao, comissoes,
+        ltMedio, revenueChurn, revenueChurnPercent, tmChurn, logoChurnPercent,
+        vmInvestida, vendasGeradas, roi, mpa, mrrFinal, receitaLiquida,
       }
     }).filter(m => m.baseNovosChurn > 0 || m.mrrVendidoOperacao > 0 || m.comissoes > 0)
 
     return metrics
-  }, [rawCsmRows, rawCrmRows, selectedPeriod])
+  }, [liveData, selectedPeriod])
 
   // Totals row
   const totals = useMemo(() => {
@@ -234,7 +142,6 @@ export const SquadsDashboard = () => {
       t.mrrFinal += m.mrrFinal
       t.receitaLiquida += m.receitaLiquida
     }
-    // Averages
     const count = squadMetrics.length || 1
     t.ltMedio = squadMetrics.reduce((s, m) => s + m.ltMedio, 0) / count
     t.mpa = squadMetrics.reduce((s, m) => s + m.mpa, 0) / count
@@ -285,7 +192,7 @@ export const SquadsDashboard = () => {
               <MonthYearPicker
                 selectedPeriods={[selectedPeriod]}
                 onPeriodsChange={(periods) => {
-                  if (periods.length > 0) setSelectedPeriod(periods[0])
+                  if (periods.length > 0) onPeriodChange(periods[0])
                 }}
                 singleSelect
               />
@@ -341,7 +248,6 @@ export const SquadsDashboard = () => {
                       ))}
                     </TableRow>
                   ))}
-                  {/* Totals row */}
                   <TableRow className="bg-muted/50 font-semibold border-t-2">
                     {columns.map((col) => (
                       <TableCell
