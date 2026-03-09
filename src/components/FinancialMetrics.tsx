@@ -111,14 +111,40 @@ const calcMonthMetrics = (cards: CardData[], upsellRecords: UpsellRecord[], mont
 
   const ticketMedio = totalActiveCards.length > 0 ? mrrTotal / totalActiveCards.length : 0;
   const ticketMedioPerdido = churnedCards.length > 0 ? mrrPerdido / churnedCards.length : 0;
-  const revenueChurnPercent = mrrBase > 0 ? (mrrPerdido / mrrBase) * 100 : 0;
+  // Revenue Churn % and Churn Líquido % as simple average per squad (matching Squads tab)
+  const squadsSet = new Set<string>();
+  allCards.forEach(c => { if (c.squad) squadsSet.add(c.squad); });
+  const squadNames = Array.from(squadsSet);
 
   const monthUpsells = upsellRecords.filter(r => r.upsell_month === month && r.upsell_year === year);
   const upsells = monthUpsells.filter(r => r.upsell_type === 'upsell');
   const crosssells = monthUpsells.filter(r => r.upsell_type === 'crosssell');
   const receitaAdicionalTotal = monthUpsells.reduce((sum, r) => sum + r.upsell_value, 0);
   const upsellRecorrente = upsells.filter(r => r.payment_type === 'recorrente').reduce((sum, r) => sum + r.upsell_value, 0);
-  const churnLiquidoPercent = mrrBase > 0 ? ((mrrPerdido - upsellRecorrente) / mrrBase) * 100 : 0;
+
+  let revenueChurnPercent = 0;
+  let churnLiquidoPercent = 0;
+
+  if (squadNames.length > 0) {
+    const squadPercentages = squadNames.map(squad => {
+      const squadRecorrentes = recorrentes.filter(c => c.squad === squad);
+      const squadRelevant = squadRecorrentes.filter(c => wasRelevantInMonth(c, month, year));
+      const squadMrrBase = squadRelevant.reduce((sum, c) => sum + c.monthly_revenue, 0);
+      const squadChurned = squadRecorrentes.filter(c => isChurnedInMonth(c, month, year));
+      const squadMrrPerdido = squadChurned.reduce((sum, c) => sum + c.monthly_revenue, 0);
+      const squadRevChurn = squadMrrBase > 0 ? (squadMrrPerdido / squadMrrBase) * 100 : 0;
+      const squadChurnLiquido = squadMrrBase > 0 ? ((squadMrrPerdido - upsellRecorrente) / squadMrrBase) * 100 : 0;
+      return { revChurn: squadRevChurn, churnLiquido: squadChurnLiquido, hasData: squadRelevant.length > 0 };
+    }).filter(s => s.hasData);
+
+    if (squadPercentages.length > 0) {
+      revenueChurnPercent = squadPercentages.reduce((s, p) => s + p.revChurn, 0) / squadPercentages.length;
+      churnLiquidoPercent = squadPercentages.reduce((s, p) => s + p.churnLiquido, 0) / squadPercentages.length;
+    }
+  } else {
+    revenueChurnPercent = mrrBase > 0 ? (mrrPerdido / mrrBase) * 100 : 0;
+    churnLiquidoPercent = mrrBase > 0 ? ((mrrPerdido - upsellRecorrente) / mrrBase) * 100 : 0;
+  }
 
   return {
     mrrRecorrente, mrrVendido, mrrTotal, mrrBase, mrrPerdido, mrrNovos,
