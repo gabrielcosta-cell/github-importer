@@ -53,6 +53,7 @@ export interface ProjetoRow {
   receita_gerada_cliente?: number
   pipeline_id?: string
   pipeline_name?: string
+  stage_name?: string
   // Campos de merge CRM
   crm_revenue?: number
   crm_tipo_receita?: string
