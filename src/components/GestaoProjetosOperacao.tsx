@@ -592,7 +592,7 @@ export const GestaoProjetosOperacao = ({ liveData, loading, selectedPeriod, onPe
                           </Badge>
                         ) : '-'}
                       </TableCell>
-                      <TableCell className="text-sm">{calcEtapaFormal(p.data_inicio)}</TableCell>
+                      <TableCell className="text-sm">{p.stage_name || '-'}</TableCell>
                       <TableCell className="text-sm">{p.fase_projeto || '-'}</TableCell>
                       <TableCell className="text-sm text-right font-medium">
                         {p.source === 'crm-ops' ? (
