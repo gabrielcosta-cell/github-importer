@@ -678,9 +678,28 @@ export const GestaoProjetosOperacao = () => {
                       </TableCell>
                       <TableCell className="sticky left-[240px] z-10 bg-background">
                         {p.squad ? (
-                          <Badge className={`text-xs ${SQUAD_COLORS[p.squad] || 'bg-muted text-muted-foreground'}`}>
-                            {p.squad}
-                          </Badge>
+                          (profile?.role === 'admin' || isGlobalAdmin) && p.source !== 'crm-ops' ? (
+                            <button
+                              onClick={() => setSquadEditData({
+                                cardId: p.id,
+                                companyName: p.company_name || p.title || '',
+                                currentSquad: p.squad || '',
+                                dataInicio: p.data_inicio,
+                                dataPerda: p.data_perda,
+                              })}
+                              className="inline-flex items-center gap-1 hover:opacity-80 transition-opacity group cursor-pointer"
+                              title="Editar Squad"
+                            >
+                              <Badge className={`text-xs ${(p as any)._hasSquadSnapshot ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' : (SQUAD_COLORS[p.squad] || 'bg-muted text-muted-foreground')}`}>
+                                {p.squad}
+                              </Badge>
+                              <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity text-muted-foreground" />
+                            </button>
+                          ) : (
+                            <Badge className={`text-xs ${(p as any)._hasSquadSnapshot ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' : (SQUAD_COLORS[p.squad] || 'bg-muted text-muted-foreground')}`}>
+                              {p.squad}
+                            </Badge>
+                          )
                         ) : '-'}
                       </TableCell>
                       <TableCell>
