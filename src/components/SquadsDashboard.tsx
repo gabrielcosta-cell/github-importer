@@ -15,6 +15,7 @@ interface SquadMetrics {
   squad: string
   baseNovosChurn: number
   mrrRecorrente: number
+  mrrBase: number
   mrrVendido: number
   mrrVendidoOperacao: number
   comissoes: number
