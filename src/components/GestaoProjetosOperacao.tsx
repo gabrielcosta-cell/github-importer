@@ -366,8 +366,11 @@ export const GestaoProjetosOperacao = () => {
     // Build CSM rows with CRM revenue merged only for the selected month
     const mergedCsm = rawCsmRows.map(csm => {
       const snapshotRevenue = snapshotsMap.get(csm.id)
+      const snapshotSquad = squadSnapshotsMap.get(csm.id)
       const effectiveRevenue = snapshotRevenue !== undefined ? snapshotRevenue : csm.monthly_revenue
+      const effectiveSquad = snapshotSquad || csm.squad
       const hasSnapshot = snapshotRevenue !== undefined
+      const hasSquadSnapshot = !!snapshotSquad
 
       const matchingCrm = rawCrmRows.filter(crm =>
         crm.display_id && crm.display_id === csm.display_id && isInMonth(crm)
