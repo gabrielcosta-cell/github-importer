@@ -332,17 +332,20 @@ export const GestaoProjetosOperacao = () => {
   const fetchSnapshots = useCallback(async () => {
     const { data } = await supabase
       .from('csm_project_snapshots')
-      .select('card_id, monthly_revenue')
-      .eq('snapshot_month', selectedPeriod.month + 1) // DB is 1-indexed
+      .select('card_id, monthly_revenue, squad')
+      .eq('snapshot_month', selectedPeriod.month + 1)
       .eq('snapshot_year', selectedPeriod.year)
 
     const map = new Map<string, number>()
+    const sqMap = new Map<string, string>()
     if (data) {
       for (const s of data) {
         if (s.monthly_revenue != null) map.set(s.card_id, s.monthly_revenue)
+        if (s.squad) sqMap.set(s.card_id, s.squad)
       }
     }
     setSnapshotsMap(map)
+    setSquadSnapshotsMap(sqMap)
   }, [selectedPeriod])
 
   useEffect(() => {
