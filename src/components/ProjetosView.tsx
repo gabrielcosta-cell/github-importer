@@ -50,6 +50,8 @@ export const ProjetosView = ({ initialTab = 'clientes' }: ProjetosViewProps) => 
           selectedPeriod={selectedPeriod}
           onPeriodChange={setSelectedPeriod}
           fetchSnapshots={fetchSnapshots}
+          refetchData={refetchData}
+          stagesList={stagesList}
         />
       )}
       {activeTab === 'squads' && (

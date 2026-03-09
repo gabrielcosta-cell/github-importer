@@ -713,6 +713,21 @@ export const GestaoProjetosOperacao = ({ liveData, loading, selectedPeriod, onPe
           onSaved={fetchSnapshots}
         />
       )}
+
+      {stageEditData && user && profile && (
+        <StageEditDialog
+          open={!!stageEditData}
+          onOpenChange={(open) => { if (!open) setStageEditData(null) }}
+          cardId={stageEditData.cardId}
+          companyName={stageEditData.companyName}
+          currentStageName={stageEditData.currentStageName}
+          currentStageId={stageEditData.currentStageId}
+          stages={stagesList}
+          userId={user.id}
+          userName={profile.name}
+          onSaved={refetchData}
+        />
+      )}
     </div>
   )
 }
