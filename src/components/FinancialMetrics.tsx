@@ -353,7 +353,7 @@ export const FinancialMetrics = () => {
         <KPICard
           title="Ticket Médio MRR"
           value={formatCurrency(current.ticketMedio)}
-          subtitle={`Média por cliente ativo (${current.activeCards.length})`}
+          subtitle={`Média por cliente ativo (${current.totalActiveCards.length})`}
           icon={TrendingUp}
           variant="default"
           iconColor="text-green-500"
