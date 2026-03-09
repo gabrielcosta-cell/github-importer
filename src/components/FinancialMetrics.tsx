@@ -457,6 +457,7 @@ export const FinancialMetrics = () => {
           variant="default"
           iconColor="text-emerald-500"
           trend={calcTrend(current.upsellRecorrente, prev.upsellRecorrente)}
+          onValueClick={() => setDetailModal({ title: 'Upsell Recorrente', upsellRecords: current.upsells.filter(r => r.payment_type === 'recorrente') })}
         />
 
         <KPICard
