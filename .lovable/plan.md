@@ -1,56 +1,29 @@
 
 
-## Renomear funil Closer e ajustar etapas + renomear coluna Receita CRM
+## Busca inline por funil no CSM
 
-### Abordagem
-
-A renomeação precisa acontecer tanto no código (constantes) quanto no banco de dados (pipeline e stages existentes). Os cards existentes não serão alterados — apenas o nome do pipeline e os nomes das etapas mudam.
+### Problema
+A busca do CSM abre um modal centralizado (spotlight) e pesquisa em todos os funis. O usuário quer uma busca inline igual a de Projetos: um campo `Input` direto na toolbar que filtra cards do funil atual em tempo real.
 
 ### Alterações
 
-**1. `src/utils/setupCRMOpsPipelines.ts`**
-- Renomear constante: `CLOSER_PIPELINE_NAME = 'Upsell | CrossSell'`
-- Adicionar constante legacy: `const CLOSER_PIPELINE_LEGACY_NAME = 'Closer | Principal'` para migração
-- Atualizar `CLOSER_STAGES` para as novas etapas:
-  - Oportunidades (position 0), Orçamento (1), Apresentação (2), Negociação (3), Em assinatura (4)
-- Adicionar função de migração no `setupCRMOpsPipelines()`:
-  - Buscar pipeline com nome `'Closer | Principal'`
-  - Se encontrar, renomear para `'Upsell | CrossSell'` via UPDATE
-  - Renomear/recriar as etapas existentes: mapear as 7 etapas antigas para as 5 novas, mantendo os cards nas etapas mais próximas (cards de R1/R1 Delay → Oportunidades, R2/R2 Delay → Orçamento, R3 → Apresentação, Follow Up → Negociação, Em assinatura → Em assinatura)
-- Atualizar `CRM_OPS_PIPELINE_NAMES` para incluir o novo nome
+**`src/components/CSMKanban.tsx`**
 
-**2. `src/utils/importCloserWonFeb.ts`**
-- Atualizar referência de `'Closer | Principal'` para `'Upsell | CrossSell'`
-- Manter referência a `'Em assinatura'` (etapa continua existindo)
-
-**3. `src/components/GestaoProjetosOperacao.tsx`**
-- Renomear label `"Receita CRM"` para `"Vendas CRM"` em:
-  - Header da tabela (SortableHeader label, linha 581)
-  - CSV export headers (linha 471)
-  - Qualquer outro ponto que exiba esse texto (totalizadores no header)
-
-### Migração de etapas (lógica no setupCRMOpsPipelines)
-
-Os cards existentes precisam ser movidos para as novas etapas. A estratégia:
-1. Buscar todas as etapas atuais do pipeline
-2. Criar as novas etapas
-3. Mover cards das etapas antigas para as novas (mapeamento por posição/nome)
-4. Desativar ou excluir etapas antigas sem cards
-
-Mapeamento:
-```text
-Antiga          → Nova
-R1              → Oportunidades
-R1 Delay        → Oportunidades
-R2              → Orçamento
-R2 Delay        → Orçamento
-R3              → Apresentação
-Follow Up       → Negociação
-Em assinatura   → Em assinatura
+1. **Remover** imports de `MobileGlobalSearch` e `DesktopGlobalSearch`
+2. **Desktop toolbar (~linha 945-955)**: Substituir `<DesktopGlobalSearch .../>` por um `Input` inline com ícone de busca:
+```tsx
+<div className="relative flex-1 min-w-0 md:max-w-md">
+  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+  <Input
+    placeholder="Buscar cliente..."
+    value={searchTerm}
+    onChange={(e) => handleSearchChange(e.target.value)}
+    className="pl-9 h-9"
+  />
+</div>
 ```
+3. **Mobile toolbar**: Substituir `<MobileGlobalSearch .../>` por um campo de busca similar no header mobile
+4. A filtragem já existe no `filteredCards` useMemo (linhas 228-230) e funciona por `searchTerm` — nenhuma alteração necessária na lógica de filtro
 
-### O que NÃO muda
-- Nenhuma lógica de soma de valores ou cálculo de receita
-- Nenhuma integração existente além da atualização de nomes
-- Cards existentes mantêm todos os dados (valor, datas, etc.)
+**Nenhum arquivo novo necessário.** O componente `MobileGlobalSearch.tsx` pode ser mantido no projeto mas não será mais importado pelo CSM.
 
