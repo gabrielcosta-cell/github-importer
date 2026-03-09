@@ -37,6 +37,10 @@ interface UpsellRecord {
   payment_type: string;
   upsell_month: number;
   upsell_year: number;
+  card_title?: string;
+  squad?: string;
+  plano?: string;
+  notes?: string;
 }
 
 // Temporal filtering helpers
