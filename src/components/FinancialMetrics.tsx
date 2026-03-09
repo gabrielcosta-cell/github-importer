@@ -19,6 +19,7 @@ const MONTH_LABELS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'S
 
 interface CardData {
   id: string;
+  title: string;
   monthly_revenue: number;
   plano: string;
   data_inicio?: string | null;
