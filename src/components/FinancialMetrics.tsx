@@ -183,6 +183,10 @@ export const FinancialMetrics = () => {
         payment_type: r.payment_type || 'unico',
         upsell_month: r.upsell_month,
         upsell_year: r.upsell_year,
+        card_title: r.csm_cards?.title || 'Sem nome',
+        squad: r.csm_cards?.squad || '-',
+        plano: r.csm_cards?.plano || '-',
+        notes: r.notes || '',
       })));
 
       setLoading(false);
