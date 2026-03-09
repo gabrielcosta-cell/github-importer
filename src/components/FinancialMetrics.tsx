@@ -300,6 +300,30 @@ export const FinancialMetrics = () => {
     return data;
   }, [cards]);
 
+  // Churn Evolution chart data (Jan 2025 → current month)
+  const churnChartData = useMemo(() => {
+    const startYear = 2025;
+    const startMonth = 0;
+    const data: { name: string; revenueChurn: number; churnLiquido: number; mrrPerdido: number; cancelamentos: number }[] = [];
+
+    let m = startMonth, y = startYear;
+    const endM = now.getMonth(), endY = now.getFullYear();
+
+    while (y < endY || (y === endY && m <= endM)) {
+      const metrics = calcMonthMetrics(cards, upsellRecords, m, y);
+      data.push({
+        name: `${MONTH_LABELS[m]}/${y.toString().slice(2)}`,
+        revenueChurn: parseFloat(metrics.revenueChurnPercent.toFixed(2)),
+        churnLiquido: parseFloat(metrics.churnLiquidoPercent.toFixed(2)),
+        mrrPerdido: metrics.mrrPerdido,
+        cancelamentos: metrics.churnedCards.length,
+      });
+      m++;
+      if (m > 11) { m = 0; y++; }
+    }
+    return data;
+  }, [cards, upsellRecords]);
+
   const plans = ["Business", "Pro", "Conceito", "Social", "Starter"];
   const paymentTypes = [
     { value: "todos", label: "Todos" },
