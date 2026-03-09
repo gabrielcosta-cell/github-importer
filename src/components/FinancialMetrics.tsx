@@ -297,6 +297,17 @@ export const FinancialMetrics = () => {
 
       <ResponsiveGrid cols={{ default: 1, md: 2, xl: 3 }} gap={{ default: 6 }}>
         <KPICard
+          title="MRR da Base"
+          value={formatCurrency(current.mrrBase)}
+          subtitle={`${current.relevantRecorrentes.length} clientes relevantes no mês`}
+          icon={Database}
+          variant="default"
+          iconColor="text-indigo-500"
+          trend={calcTrend(current.mrrBase, prev.mrrBase)}
+          onValueClick={() => setDetailModal({ title: 'MRR da Base', clients: current.relevantRecorrentes })}
+        />
+
+        <KPICard
           title="MRR Recorrente"
           value={formatCurrency(current.mrrRecorrente)}
           subtitle={`${current.activeRecorrentes.length} clientes recorrentes ativos`}
@@ -304,6 +315,7 @@ export const FinancialMetrics = () => {
           variant="default"
           iconColor="text-blue-500"
           trend={calcTrend(current.mrrRecorrente, prev.mrrRecorrente)}
+          onValueClick={() => setDetailModal({ title: 'MRR Recorrente', clients: current.activeRecorrentes })}
         />
 
         <KPICard
@@ -314,6 +326,7 @@ export const FinancialMetrics = () => {
           variant="default"
           iconColor="text-red-500"
           trend={calcTrend(current.mrrTotal, prev.mrrTotal)}
+          onValueClick={() => setDetailModal({ title: 'MRR Total', clients: current.totalActiveCards })}
         />
 
         <KPICard
@@ -324,6 +337,7 @@ export const FinancialMetrics = () => {
           variant="success"
           iconColor="text-green-500"
           trend={calcTrend(current.mrrVendido, prev.mrrVendido)}
+          onValueClick={() => setDetailModal({ title: 'MRR Vendido', clients: current.activeVendidos })}
         />
 
         <KPICard
@@ -334,6 +348,7 @@ export const FinancialMetrics = () => {
           variant="danger"
           iconColor="text-red-500"
           trend={calcTrend(current.mrrPerdido, prev.mrrPerdido, true)}
+          onValueClick={() => setDetailModal({ title: 'MRR Perdido', clients: current.churnedCards })}
         />
 
         <KPICard
@@ -364,6 +379,7 @@ export const FinancialMetrics = () => {
           variant="default"
           iconColor="text-green-500"
           trend={calcTrend(current.ticketMedio, prev.ticketMedio)}
+          onValueClick={() => setDetailModal({ title: 'Ticket Médio MRR', clients: current.totalActiveCards })}
         />
 
         <KPICard
@@ -374,6 +390,7 @@ export const FinancialMetrics = () => {
           variant="danger"
           iconColor="text-red-400"
           trend={calcTrend(current.ticketMedioPerdido, prev.ticketMedioPerdido, true)}
+          onValueClick={() => setDetailModal({ title: 'Ticket Médio Perdido', clients: current.churnedCards })}
         />
 
         <KPICard
@@ -384,6 +401,7 @@ export const FinancialMetrics = () => {
           variant="default"
           iconColor="text-blue-500"
           trend={calcTrend(planMetrics.mrrPorPlano, planMetrics.mrrPorPlanoPrev)}
+          onValueClick={() => setDetailModal({ title: `MRR por Plano - ${selectedPlanMRR}`, clients: planMetrics.activeByPlanMRR })}
           filterComponent={
             <ToggleGroup type="single" value={selectedPlanMRR} onValueChange={(v) => v && setSelectedPlanMRR(v)} className="flex flex-wrap gap-2">
               {plans.map(plan => (
@@ -401,6 +419,7 @@ export const FinancialMetrics = () => {
           variant="default"
           iconColor="text-blue-600"
           trend={calcTrend(planMetrics.ticketMedioPorPlano, planMetrics.ticketMedioPorPlanoPrev)}
+          onValueClick={() => setDetailModal({ title: `Ticket Médio por Plano - ${selectedPlanTicket}`, clients: planMetrics.activeByPlanTicket })}
           filterComponent={
             <ToggleGroup type="single" value={selectedPlanTicket} onValueChange={(v) => v && setSelectedPlanTicket(v)} className="flex flex-wrap gap-2">
               {plans.map(plan => (
