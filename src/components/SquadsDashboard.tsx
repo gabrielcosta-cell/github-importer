@@ -158,6 +158,7 @@ export const SquadsDashboard = ({ liveData, loading, selectedPeriod, onPeriodCha
   const columns = [
     { key: 'squad', label: 'Squad', sticky: true },
     { key: 'baseNovosChurn', label: 'Base + Novos + Churn' },
+    { key: 'mrrBase', label: 'MRR da Base', currency: true },
     { key: 'mrrRecorrente', label: 'MRR Recorrente', currency: true },
     { key: 'mrrVendido', label: 'MRR Vendido', currency: true },
     { key: 'mrrVendidoOperacao', label: 'MRR Vendido Op.', currency: true },
