@@ -699,13 +699,13 @@ export const GestaoProjetosOperacao = () => {
                               className="inline-flex items-center gap-1 hover:opacity-80 transition-opacity group cursor-pointer"
                               title="Editar Squad"
                             >
-                              <Badge className={`text-xs ${SQUAD_COLORS[p.squad] || 'bg-muted text-muted-foreground'}`}>
+                               <Badge variant="outline" className={`text-xs border-0 ${SQUAD_COLORS[p.squad] || 'bg-muted text-muted-foreground'}`}>
                                 {p.squad}
                               </Badge>
                               <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity text-muted-foreground" />
                             </button>
                           ) : (
-                            <Badge className={`text-xs ${SQUAD_COLORS[p.squad] || 'bg-muted text-muted-foreground'}`}>
+                            <Badge variant="outline" className={`text-xs border-0 ${SQUAD_COLORS[p.squad] || 'bg-muted text-muted-foreground'}`}>
                               {p.squad}
                             </Badge>
                           )
