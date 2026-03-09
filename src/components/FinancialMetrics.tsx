@@ -143,6 +143,7 @@ export const FinancialMetrics = () => {
   const [selectedUpsellPayment, setSelectedUpsellPayment] = useState<string>("todos");
   const [selectedCrosssellPayment, setSelectedCrosssellPayment] = useState<string>("todos");
   const [loading, setLoading] = useState(true);
+  const [detailModal, setDetailModal] = useState<{ title: string; clients: CardData[] } | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
