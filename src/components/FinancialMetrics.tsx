@@ -152,7 +152,7 @@ export const FinancialMetrics = () => {
       const [cardsRes, upsellRes] = await Promise.all([
         supabase
           .from('csm_cards')
-          .select('id, monthly_revenue, plano, data_inicio, data_contrato, created_at, data_perda, client_status, categoria, squad')
+          .select('id, title, monthly_revenue, plano, data_inicio, data_contrato, created_at, data_perda, client_status, categoria, squad')
           .eq('pipeline_id', PIPELINE_CLIENTES_ATIVOS),
         supabase
           .from('csm_card_upsell_history')
