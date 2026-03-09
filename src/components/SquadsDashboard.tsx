@@ -245,7 +245,7 @@ export const SquadsDashboard = () => {
     return t
   }, [squadMetrics])
 
-  const formatPercent = (v: number) => `${v.toFixed(1)}%`
+  const formatPercent = (v: number) => `${v.toFixed(2)}%`
   const formatDecimal = (v: number) => v.toFixed(1)
 
   const columns = [
