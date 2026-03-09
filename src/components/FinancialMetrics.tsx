@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { KPICard } from "@/components/KPICard";
 import { ResponsiveGrid } from "@/components/ResponsiveGrid";
 import { DollarSign, TrendingUp, ArrowUpRight, ShoppingCart, TrendingDown, Users, UserMinus, UserPlus, Percent } from "lucide-react";
@@ -7,8 +8,11 @@ import { formatCurrency } from "@/utils/formatCurrency";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { MonthYearPicker } from "@/components/MonthYearPicker";
 import { parseISO } from "date-fns";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 const PIPELINE_CLIENTES_ATIVOS = '749ccdc2-5127-41a1-997b-3dcb47979555';
+
+const MONTH_LABELS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
 interface CardData {
   id: string;
@@ -30,6 +34,82 @@ interface UpsellRecord {
   upsell_month: number;
   upsell_year: number;
 }
+
+// Temporal filtering helpers
+const wasRelevantInMonth = (card: CardData, month: number, year: number): boolean => {
+  const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59);
+  const startDateStr = card.data_inicio || card.data_contrato || card.created_at;
+  if (startDateStr) {
+    const dateOnly = startDateStr.substring(0, 10);
+    const startDate = new Date(dateOnly + 'T12:00:00');
+    if (startDate > endOfMonth) return false;
+  }
+  if (card.client_status !== 'cancelado') return true;
+  if (!card.data_perda) return false;
+  const perdaDate = parseISO(card.data_perda);
+  const perdaMonth = perdaDate.getMonth();
+  const perdaYear = perdaDate.getFullYear();
+  if (perdaYear > year) return true;
+  if (perdaYear === year && perdaMonth >= month) return true;
+  return false;
+};
+
+const isChurnedInMonth = (card: CardData, month: number, year: number): boolean => {
+  if (card.client_status !== 'cancelado' || !card.data_perda) return false;
+  const perdaDate = parseISO(card.data_perda);
+  return perdaDate.getMonth() === month && perdaDate.getFullYear() === year;
+};
+
+const isActiveInMonth = (card: CardData, month: number, year: number): boolean => {
+  return wasRelevantInMonth(card, month, year) && !isChurnedInMonth(card, month, year);
+};
+
+const isNewInMonth = (card: CardData, month: number, year: number): boolean => {
+  const startDateStr = card.data_inicio || card.data_contrato || card.created_at;
+  if (!startDateStr) return false;
+  const dateOnly = startDateStr.substring(0, 10);
+  const d = new Date(dateOnly + 'T12:00:00');
+  return d.getMonth() === month && d.getFullYear() === year;
+};
+
+const calcMonthMetrics = (cards: CardData[], upsellRecords: UpsellRecord[], month: number, year: number) => {
+  const recorrentes = cards.filter(c => c.categoria === 'MRR recorrente' || c.categoria === 'MRR Recorrente');
+  const relevantCards = recorrentes.filter(c => wasRelevantInMonth(c, month, year));
+  const activeCards = recorrentes.filter(c => isActiveInMonth(c, month, year));
+  const churnedCards = recorrentes.filter(c => isChurnedInMonth(c, month, year));
+  const newCards = recorrentes.filter(c => isNewInMonth(c, month, year));
+
+  const mrrBase = relevantCards.reduce((sum, c) => sum + c.monthly_revenue, 0);
+  const mrrActive = activeCards.reduce((sum, c) => sum + c.monthly_revenue, 0);
+  const mrrPerdido = churnedCards.reduce((sum, c) => sum + c.monthly_revenue, 0);
+  const mrrNovos = newCards.reduce((sum, c) => sum + c.monthly_revenue, 0);
+  const ticketMedio = activeCards.length > 0 ? mrrActive / activeCards.length : 0;
+  const ticketMedioPerdido = churnedCards.length > 0 ? mrrPerdido / churnedCards.length : 0;
+  const revenueChurnPercent = mrrBase > 0 ? (mrrPerdido / mrrBase) * 100 : 0;
+
+  const monthUpsells = upsellRecords.filter(r => r.upsell_month === month && r.upsell_year === year);
+  const upsells = monthUpsells.filter(r => r.upsell_type === 'upsell');
+  const crosssells = monthUpsells.filter(r => r.upsell_type === 'crosssell');
+  const receitaAdicionalTotal = monthUpsells.reduce((sum, r) => sum + r.upsell_value, 0);
+  const upsellRecorrente = upsells.filter(r => r.payment_type === 'recorrente').reduce((sum, r) => sum + r.upsell_value, 0);
+  const churnLiquidoPercent = mrrBase > 0 ? ((mrrPerdido - upsellRecorrente) / mrrBase) * 100 : 0;
+
+  return {
+    mrrBase, mrrActive, mrrPerdido, mrrNovos, ticketMedio, ticketMedioPerdido,
+    revenueChurnPercent, churnLiquidoPercent,
+    receitaAdicionalTotal, upsellRecorrente, upsells, crosssells,
+    relevantCards, activeCards, churnedCards, newCards,
+  };
+};
+
+const calcTrend = (current: number, previous: number, invertColors = false) => {
+  if (previous === 0) return current > 0 ? { value: 100, label: 'vs mês anterior', invertColors } : { value: 0, label: 'vs mês anterior', invertColors };
+  return { value: ((current - previous) / Math.abs(previous)) * 100, label: 'vs mês anterior', invertColors };
+};
+
+const getPrevMonth = (month: number, year: number) => {
+  return month === 0 ? { month: 11, year: year - 1 } : { month: month - 1, year };
+};
 
 export const FinancialMetrics = () => {
   const now = new Date();
@@ -55,7 +135,7 @@ export const FinancialMetrics = () => {
           .select('upsell_type, upsell_value, payment_type, upsell_month, upsell_year')
       ]);
 
-      const parsedCards: CardData[] = (cardsRes.data || []).map((card: any) => ({
+      setCards((cardsRes.data || []).map((card: any) => ({
         id: card.id,
         monthly_revenue: Number(card.monthly_revenue) || 0,
         plano: card.plano || 'Starter',
@@ -66,120 +146,97 @@ export const FinancialMetrics = () => {
         client_status: card.client_status,
         categoria: card.categoria,
         squad: card.squad,
-      }));
+      })));
 
-      const parsedUpsells: UpsellRecord[] = (upsellRes.data || []).map((r: any) => ({
+      setUpsellRecords((upsellRes.data || []).map((r: any) => ({
         upsell_type: r.upsell_type || 'upsell',
         upsell_value: Number(r.upsell_value) || 0,
         payment_type: r.payment_type || 'unico',
         upsell_month: r.upsell_month,
         upsell_year: r.upsell_year,
-      }));
+      })));
 
-      setCards(parsedCards);
-      setUpsellRecords(parsedUpsells);
       setLoading(false);
     };
     fetchData();
   }, []);
 
-  // Temporal filtering logic (same as SquadsDashboard)
-  const wasRelevantInMonth = (card: CardData, month: number, year: number): boolean => {
-    const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59);
-    const startDateStr = card.data_inicio || card.data_contrato || card.created_at;
-    if (startDateStr) {
-      const dateOnly = startDateStr.substring(0, 10);
-      const startDate = new Date(dateOnly + 'T12:00:00');
-      if (startDate > endOfMonth) return false;
-    }
-    if (card.client_status !== 'cancelado') return true;
-    if (!card.data_perda) return false;
-    const perdaDate = parseISO(card.data_perda);
-    const perdaMonth = perdaDate.getMonth();
-    const perdaYear = perdaDate.getFullYear();
-    if (perdaYear > year) return true;
-    if (perdaYear === year && perdaMonth >= month) return true;
-    return false;
-  };
-
-  const isChurnedInMonth = (card: CardData, month: number, year: number): boolean => {
-    if (card.client_status !== 'cancelado' || !card.data_perda) return false;
-    const perdaDate = parseISO(card.data_perda);
-    return perdaDate.getMonth() === month && perdaDate.getFullYear() === year;
-  };
-
-  const isActiveInMonth = (card: CardData, month: number, year: number): boolean => {
-    return wasRelevantInMonth(card, month, year) && !isChurnedInMonth(card, month, year);
-  };
-
-  const isNewInMonth = (card: CardData, month: number, year: number): boolean => {
-    const startDateStr = card.data_inicio || card.data_contrato || card.created_at;
-    if (!startDateStr) return false;
-    const dateOnly = startDateStr.substring(0, 10);
-    const d = new Date(dateOnly + 'T12:00:00');
-    return d.getMonth() === month && d.getFullYear() === year;
-  };
-
-  const metrics = useMemo(() => {
+  // Current + previous month metrics
+  const { current, prev } = useMemo(() => {
     const { month, year } = selectedPeriod;
+    const p = getPrevMonth(month, year);
+    return {
+      current: calcMonthMetrics(cards, upsellRecords, month, year),
+      prev: calcMonthMetrics(cards, upsellRecords, p.month, p.year),
+    };
+  }, [cards, upsellRecords, selectedPeriod]);
+
+  // Plan-specific metrics (depend on toggle state)
+  const planMetrics = useMemo(() => {
+    const { month, year } = selectedPeriod;
+    const p = getPrevMonth(month, year);
     const recorrentes = cards.filter(c => c.categoria === 'MRR recorrente' || c.categoria === 'MRR Recorrente');
 
-    // Cards relevantes/ativos/churned no mês
-    const relevantCards = recorrentes.filter(c => wasRelevantInMonth(c, month, year));
-    const activeCards = recorrentes.filter(c => isActiveInMonth(c, month, year));
-    const churnedCards = recorrentes.filter(c => isChurnedInMonth(c, month, year));
-    const newCards = recorrentes.filter(c => isNewInMonth(c, month, year));
+    const curActiveMRR = recorrentes.filter(c => isActiveInMonth(c, month, year) && c.plano === selectedPlanMRR);
+    const prevActiveMRR = recorrentes.filter(c => isActiveInMonth(c, p.month, p.year) && c.plano === selectedPlanMRR);
+    const curActiveTicket = recorrentes.filter(c => isActiveInMonth(c, month, year) && c.plano === selectedPlanTicket);
+    const prevActiveTicket = recorrentes.filter(c => isActiveInMonth(c, p.month, p.year) && c.plano === selectedPlanTicket);
 
-    // MRR
-    const mrrBase = relevantCards.reduce((sum, c) => sum + c.monthly_revenue, 0);
-    const mrrActive = activeCards.reduce((sum, c) => sum + c.monthly_revenue, 0);
-    const mrrPerdido = churnedCards.reduce((sum, c) => sum + c.monthly_revenue, 0);
-    const mrrNovos = newCards.reduce((sum, c) => sum + c.monthly_revenue, 0);
-    const ticketMedio = activeCards.length > 0 ? mrrActive / activeCards.length : 0;
-    const ticketMedioPerdido = churnedCards.length > 0 ? mrrPerdido / churnedCards.length : 0;
+    return {
+      mrrPorPlano: curActiveMRR.reduce((s, c) => s + c.monthly_revenue, 0),
+      mrrPorPlanoPrev: prevActiveMRR.reduce((s, c) => s + c.monthly_revenue, 0),
+      activeByPlanMRR: curActiveMRR,
+      ticketMedioPorPlano: curActiveTicket.length > 0 ? curActiveTicket.reduce((s, c) => s + c.monthly_revenue, 0) / curActiveTicket.length : 0,
+      ticketMedioPorPlanoPrev: prevActiveTicket.length > 0 ? prevActiveTicket.reduce((s, c) => s + c.monthly_revenue, 0) / prevActiveTicket.length : 0,
+      activeByPlanTicket: curActiveTicket,
+    };
+  }, [cards, selectedPeriod, selectedPlanMRR, selectedPlanTicket]);
 
-    // By plan
-    const activeByPlanMRR = activeCards.filter(c => c.plano === selectedPlanMRR);
-    const mrrPorPlano = activeByPlanMRR.reduce((sum, c) => sum + c.monthly_revenue, 0);
-    const activeByPlanTicket = activeCards.filter(c => c.plano === selectedPlanTicket);
-    const ticketMedioPorPlano = activeByPlanTicket.length > 0
-      ? activeByPlanTicket.reduce((sum, c) => sum + c.monthly_revenue, 0) / activeByPlanTicket.length
-      : 0;
-
-    // Churn %
-    const revenueChurnPercent = mrrBase > 0 ? (mrrPerdido / mrrBase) * 100 : 0;
-    const logoChurnPercent = relevantCards.length > 0 ? (churnedCards.length / relevantCards.length) * 100 : 0;
-
-    // Upsell/Crosssell filtered by month
+  // Upsell/Crosssell with payment filter
+  const upsellFiltered = useMemo(() => {
+    const { month, year } = selectedPeriod;
     const monthUpsells = upsellRecords.filter(r => r.upsell_month === month && r.upsell_year === year);
     const upsells = monthUpsells.filter(r => r.upsell_type === 'upsell');
     const crosssells = monthUpsells.filter(r => r.upsell_type === 'crosssell');
 
-    const receitaAdicionalTotal = monthUpsells.reduce((sum, r) => sum + r.upsell_value, 0);
-    const upsellRecorrente = upsells.filter(r => r.payment_type === 'recorrente').reduce((sum, r) => sum + r.upsell_value, 0);
-
-    const filteredUpsells = selectedUpsellPayment === 'todos'
-      ? upsells
-      : upsells.filter(r => r.payment_type === selectedUpsellPayment);
-    const upsellTotal = filteredUpsells.reduce((sum, r) => sum + r.upsell_value, 0);
-
-    const filteredCrosssells = selectedCrosssellPayment === 'todos'
-      ? crosssells
-      : crosssells.filter(r => r.payment_type === selectedCrosssellPayment);
-    const crosssellTotal = filteredCrosssells.reduce((sum, r) => sum + r.upsell_value, 0);
-
-    // Churn líquido + upsell
-    const churnLiquidoPercent = mrrBase > 0 ? ((mrrPerdido - upsellRecorrente) / mrrBase) * 100 : 0;
+    const filteredUpsells = selectedUpsellPayment === 'todos' ? upsells : upsells.filter(r => r.payment_type === selectedUpsellPayment);
+    const filteredCrosssells = selectedCrosssellPayment === 'todos' ? crosssells : crosssells.filter(r => r.payment_type === selectedCrosssellPayment);
 
     return {
-      mrrBase, mrrActive, mrrPerdido, mrrNovos, ticketMedio, ticketMedioPerdido,
-      mrrPorPlano, activeByPlanMRR, ticketMedioPorPlano, activeByPlanTicket,
-      revenueChurnPercent, logoChurnPercent, churnLiquidoPercent,
-      receitaAdicionalTotal, upsellRecorrente, upsellTotal, crosssellTotal,
-      filteredUpsells, filteredCrosssells, upsells, crosssells,
-      relevantCards, activeCards, churnedCards, newCards,
+      upsellTotal: filteredUpsells.reduce((s, r) => s + r.upsell_value, 0),
+      crosssellTotal: filteredCrosssells.reduce((s, r) => s + r.upsell_value, 0),
+      filteredUpsells, filteredCrosssells,
     };
-  }, [cards, upsellRecords, selectedPeriod, selectedPlanMRR, selectedPlanTicket, selectedUpsellPayment, selectedCrosssellPayment]);
+  }, [upsellRecords, selectedPeriod, selectedUpsellPayment, selectedCrosssellPayment]);
+
+  // MRR Evolution chart data (Jan 2025 → current month)
+  const chartData = useMemo(() => {
+    const startYear = 2025;
+    const startMonth = 0; // January
+    const data: { name: string; mrrAtivo: number; mrrPerdido: number; mrrNovos: number; clientes: number }[] = [];
+
+    let m = startMonth, y = startYear;
+    const endM = now.getMonth(), endY = now.getFullYear();
+
+    while (y < endY || (y === endY && m <= endM)) {
+      const recorrentes = cards.filter(c => c.categoria === 'MRR recorrente' || c.categoria === 'MRR Recorrente');
+      const active = recorrentes.filter(c => isActiveInMonth(c, m, y));
+      const churned = recorrentes.filter(c => isChurnedInMonth(c, m, y));
+      const novos = recorrentes.filter(c => isNewInMonth(c, m, y));
+
+      data.push({
+        name: `${MONTH_LABELS[m]}/${y.toString().slice(2)}`,
+        mrrAtivo: active.reduce((s, c) => s + c.monthly_revenue, 0),
+        mrrPerdido: churned.reduce((s, c) => s + c.monthly_revenue, 0),
+        mrrNovos: novos.reduce((s, c) => s + c.monthly_revenue, 0),
+        clientes: active.length,
+      });
+
+      m++;
+      if (m > 11) { m = 0; y++; }
+    }
+    return data;
+  }, [cards]);
 
   const plans = ["Business", "Pro", "Conceito", "Social", "Starter"];
   const paymentTypes = [
@@ -198,6 +255,8 @@ export const FinancialMetrics = () => {
     );
   }
 
+  const formatTooltipValue = (value: number) => formatCurrency(value);
+
   return (
     <div className="p-6 space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -212,218 +271,246 @@ export const FinancialMetrics = () => {
       </div>
 
       <ResponsiveGrid cols={{ default: 1, md: 2, xl: 3 }} gap={{ default: 6 }}>
-        {/* MRR Total (ativos no mês) */}
         <KPICard
           title="MRR Total"
-          value={formatCurrency(metrics.mrrActive)}
-          subtitle={`${metrics.activeCards.length} clientes ativos no mês`}
+          value={formatCurrency(current.mrrActive)}
+          subtitle={`${current.activeCards.length} clientes ativos no mês`}
           icon={DollarSign}
           variant="default"
           iconColor="text-red-500"
+          trend={calcTrend(current.mrrActive, prev.mrrActive)}
         />
 
-        {/* MRR da Base (relevantes) */}
         <KPICard
           title="MRR da Base"
-          value={formatCurrency(metrics.mrrBase)}
-          subtitle={`${metrics.relevantCards.length} clientes na base`}
+          value={formatCurrency(current.mrrBase)}
+          subtitle={`${current.relevantCards.length} clientes na base`}
           icon={Users}
           variant="default"
           iconColor="text-blue-500"
+          trend={calcTrend(current.mrrBase, prev.mrrBase)}
         />
 
-        {/* MRR Perdido */}
         <KPICard
           title="MRR Perdido"
-          value={formatCurrency(metrics.mrrPerdido)}
-          subtitle={`${metrics.churnedCards.length} cancelamentos no mês`}
+          value={formatCurrency(current.mrrPerdido)}
+          subtitle={`${current.churnedCards.length} cancelamentos no mês`}
           icon={TrendingDown}
           variant="danger"
           iconColor="text-red-500"
+          trend={calcTrend(current.mrrPerdido, prev.mrrPerdido, true)}
         />
 
-        {/* MRR Vendido (novos) */}
         <KPICard
           title="MRR Vendido"
-          value={formatCurrency(metrics.mrrNovos)}
-          subtitle={`${metrics.newCards.length} novos clientes`}
+          value={formatCurrency(current.mrrNovos)}
+          subtitle={`${current.newCards.length} novos clientes`}
           icon={UserPlus}
           variant="success"
           iconColor="text-green-500"
+          trend={calcTrend(current.mrrNovos, prev.mrrNovos)}
         />
 
-        {/* Revenue Churn % */}
         <KPICard
           title="Revenue Churn"
-          value={`${metrics.revenueChurnPercent.toFixed(2)}%`}
+          value={`${current.revenueChurnPercent.toFixed(2)}%`}
           subtitle="MRR perdido / MRR base"
           icon={Percent}
-          variant={metrics.revenueChurnPercent > 5 ? "danger" : "default"}
+          variant={current.revenueChurnPercent > 5 ? "danger" : "default"}
           iconColor="text-orange-500"
+          trend={calcTrend(current.revenueChurnPercent, prev.revenueChurnPercent, true)}
         />
 
-        {/* Churn Líquido + Upsell */}
         <KPICard
           title="Churn Líquido + Upsell"
-          value={`${metrics.churnLiquidoPercent.toFixed(2)}%`}
+          value={`${current.churnLiquidoPercent.toFixed(2)}%`}
           subtitle="(MRR perdido - upsell recorrente) / MRR base"
           icon={Percent}
-          variant={metrics.churnLiquidoPercent > 5 ? "warning" : "default"}
+          variant={current.churnLiquidoPercent > 5 ? "warning" : "default"}
           iconColor="text-amber-500"
+          trend={calcTrend(current.churnLiquidoPercent, prev.churnLiquidoPercent, true)}
         />
 
-        {/* Ticket Médio MRR */}
         <KPICard
           title="Ticket Médio MRR"
-          value={formatCurrency(metrics.ticketMedio)}
-          subtitle={`Média por cliente ativo (${metrics.activeCards.length})`}
+          value={formatCurrency(current.ticketMedio)}
+          subtitle={`Média por cliente ativo (${current.activeCards.length})`}
           icon={TrendingUp}
           variant="default"
           iconColor="text-green-500"
+          trend={calcTrend(current.ticketMedio, prev.ticketMedio)}
         />
 
-        {/* Ticket Médio Perdido */}
         <KPICard
           title="Ticket Médio Perdido"
-          value={formatCurrency(metrics.ticketMedioPerdido)}
-          subtitle={`Média por churn (${metrics.churnedCards.length})`}
+          value={formatCurrency(current.ticketMedioPerdido)}
+          subtitle={`Média por churn (${current.churnedCards.length})`}
           icon={UserMinus}
           variant="danger"
           iconColor="text-red-400"
+          trend={calcTrend(current.ticketMedioPerdido, prev.ticketMedioPerdido, true)}
         />
 
-        {/* MRR por Plano */}
         <KPICard
           title="MRR por Plano"
-          value={formatCurrency(metrics.mrrPorPlano)}
-          subtitle={`Plano ${selectedPlanMRR} (${metrics.activeByPlanMRR.length} clientes)`}
+          value={formatCurrency(planMetrics.mrrPorPlano)}
+          subtitle={`Plano ${selectedPlanMRR} (${planMetrics.activeByPlanMRR.length} clientes)`}
           icon={DollarSign}
           variant="default"
           iconColor="text-blue-500"
+          trend={calcTrend(planMetrics.mrrPorPlano, planMetrics.mrrPorPlanoPrev)}
           filterComponent={
-            <ToggleGroup
-              type="single"
-              value={selectedPlanMRR}
-              onValueChange={(value) => value && setSelectedPlanMRR(value)}
-              className="flex flex-wrap gap-2"
-            >
+            <ToggleGroup type="single" value={selectedPlanMRR} onValueChange={(v) => v && setSelectedPlanMRR(v)} className="flex flex-wrap gap-2">
               {plans.map(plan => (
-                <ToggleGroupItem
-                  key={plan}
-                  value={plan}
-                  className="text-xs px-3 py-1 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-                >
-                  {plan}
-                </ToggleGroupItem>
+                <ToggleGroupItem key={plan} value={plan} className="text-xs px-3 py-1 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{plan}</ToggleGroupItem>
               ))}
             </ToggleGroup>
           }
         />
 
-        {/* Ticket Médio por Plano */}
         <KPICard
           title="Ticket Médio por Plano"
-          value={formatCurrency(metrics.ticketMedioPorPlano)}
-          subtitle={`Plano ${selectedPlanTicket} (${metrics.activeByPlanTicket.length} clientes)`}
+          value={formatCurrency(planMetrics.ticketMedioPorPlano)}
+          subtitle={`Plano ${selectedPlanTicket} (${planMetrics.activeByPlanTicket.length} clientes)`}
           icon={TrendingUp}
           variant="default"
           iconColor="text-blue-600"
+          trend={calcTrend(planMetrics.ticketMedioPorPlano, planMetrics.ticketMedioPorPlanoPrev)}
           filterComponent={
-            <ToggleGroup
-              type="single"
-              value={selectedPlanTicket}
-              onValueChange={(value) => value && setSelectedPlanTicket(value)}
-              className="flex flex-wrap gap-2"
-            >
+            <ToggleGroup type="single" value={selectedPlanTicket} onValueChange={(v) => v && setSelectedPlanTicket(v)} className="flex flex-wrap gap-2">
               {plans.map(plan => (
-                <ToggleGroupItem
-                  key={plan}
-                  value={plan}
-                  className="text-xs px-3 py-1 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-                >
-                  {plan}
-                </ToggleGroupItem>
+                <ToggleGroupItem key={plan} value={plan} className="text-xs px-3 py-1 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{plan}</ToggleGroupItem>
               ))}
             </ToggleGroup>
           }
         />
 
-        {/* Receita Adicional Total */}
         <KPICard
           title="Receita Adicional Total"
-          value={formatCurrency(metrics.receitaAdicionalTotal)}
-          subtitle={`${metrics.upsells.length} upsells + ${metrics.crosssells.length} crosssells no mês`}
+          value={formatCurrency(current.receitaAdicionalTotal)}
+          subtitle={`${current.upsells.length} upsells + ${current.crosssells.length} crosssells no mês`}
           icon={TrendingUp}
           variant="success"
           iconColor="text-green-500"
+          trend={calcTrend(current.receitaAdicionalTotal, prev.receitaAdicionalTotal)}
         />
 
-        {/* Upsell Recorrente */}
         <KPICard
           title="Upsell Recorrente"
-          value={formatCurrency(metrics.upsellRecorrente)}
-          subtitle={`Impacto no MRR (${metrics.upsells.filter(r => r.payment_type === 'recorrente').length} registros)`}
+          value={formatCurrency(current.upsellRecorrente)}
+          subtitle={`Impacto no MRR (${current.upsells.filter(r => r.payment_type === 'recorrente').length} registros)`}
           icon={ArrowUpRight}
           variant="default"
           iconColor="text-emerald-500"
+          trend={calcTrend(current.upsellRecorrente, prev.upsellRecorrente)}
         />
 
-        {/* Upsell Total com filtro */}
         <KPICard
           title="Upsell Total"
-          value={formatCurrency(metrics.upsellTotal)}
-          subtitle={`${metrics.filteredUpsells.length} registros`}
+          value={formatCurrency(upsellFiltered.upsellTotal)}
+          subtitle={`${upsellFiltered.filteredUpsells.length} registros`}
           icon={ArrowUpRight}
           variant="default"
           iconColor="text-purple-500"
           filterComponent={
-            <ToggleGroup
-              type="single"
-              value={selectedUpsellPayment}
-              onValueChange={(value) => value && setSelectedUpsellPayment(value)}
-              className="flex flex-wrap gap-2"
-            >
+            <ToggleGroup type="single" value={selectedUpsellPayment} onValueChange={(v) => v && setSelectedUpsellPayment(v)} className="flex flex-wrap gap-2">
               {paymentTypes.map(pt => (
-                <ToggleGroupItem
-                  key={pt.value}
-                  value={pt.value}
-                  className="text-xs px-3 py-1 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-                >
-                  {pt.label}
-                </ToggleGroupItem>
+                <ToggleGroupItem key={pt.value} value={pt.value} className="text-xs px-3 py-1 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{pt.label}</ToggleGroupItem>
               ))}
             </ToggleGroup>
           }
         />
 
-        {/* Crosssell Total com filtro */}
         <KPICard
           title="Crosssell Total"
-          value={formatCurrency(metrics.crosssellTotal)}
-          subtitle={`${metrics.filteredCrosssells.length} registros`}
+          value={formatCurrency(upsellFiltered.crosssellTotal)}
+          subtitle={`${upsellFiltered.filteredCrosssells.length} registros`}
           icon={ShoppingCart}
           variant="default"
           iconColor="text-orange-500"
           filterComponent={
-            <ToggleGroup
-              type="single"
-              value={selectedCrosssellPayment}
-              onValueChange={(value) => value && setSelectedCrosssellPayment(value)}
-              className="flex flex-wrap gap-2"
-            >
+            <ToggleGroup type="single" value={selectedCrosssellPayment} onValueChange={(v) => v && setSelectedCrosssellPayment(v)} className="flex flex-wrap gap-2">
               {paymentTypes.map(pt => (
-                <ToggleGroupItem
-                  key={pt.value}
-                  value={pt.value}
-                  className="text-xs px-3 py-1 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-                >
-                  {pt.label}
-                </ToggleGroupItem>
+                <ToggleGroupItem key={pt.value} value={pt.value} className="text-xs px-3 py-1 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{pt.label}</ToggleGroupItem>
               ))}
             </ToggleGroup>
           }
         />
       </ResponsiveGrid>
+
+      {/* MRR Evolution Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold">Evolução do MRR</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[350px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorMrrAtivo" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="colorMrrPerdido" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(0, 84%, 60%)" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(0, 84%, 60%)" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="colorMrrNovos" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(142, 71%, 45%)" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(142, 71%, 45%)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="name" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                <YAxis
+                  className="text-xs"
+                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  tickFormatter={(v) => `R$ ${(v / 1000).toFixed(0)}k`}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    color: 'hsl(var(--foreground))',
+                  }}
+                  formatter={(value: number, name: string) => [
+                    formatCurrency(value),
+                    name === 'mrrAtivo' ? 'MRR Ativo' : name === 'mrrPerdido' ? 'MRR Perdido' : 'MRR Novos'
+                  ]}
+                />
+                <Legend
+                  formatter={(value) =>
+                    value === 'mrrAtivo' ? 'MRR Ativo' : value === 'mrrPerdido' ? 'MRR Perdido' : 'MRR Novos'
+                  }
+                />
+                <Area
+                  type="monotone"
+                  dataKey="mrrAtivo"
+                  stroke="hsl(var(--primary))"
+                  fill="url(#colorMrrAtivo)"
+                  strokeWidth={2}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="mrrPerdido"
+                  stroke="hsl(0, 84%, 60%)"
+                  fill="url(#colorMrrPerdido)"
+                  strokeWidth={2}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="mrrNovos"
+                  stroke="hsl(142, 71%, 45%)"
+                  fill="url(#colorMrrNovos)"
+                  strokeWidth={2}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

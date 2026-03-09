@@ -1,7 +1,13 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+interface TrendData {
+  value: number; // percentage change
+  label?: string; // e.g. "vs mês anterior"
+  invertColors?: boolean; // true = positive is bad (e.g. churn going up)
+}
 
 interface KPICardProps {
   title: string;
@@ -13,6 +19,7 @@ interface KPICardProps {
   valueClassName?: string;
   showVisibilityToggle?: boolean;
   filterComponent?: React.ReactNode;
+  trend?: TrendData;
 }
 
 export const KPICard: React.FC<KPICardProps> = ({
@@ -23,7 +30,8 @@ export const KPICard: React.FC<KPICardProps> = ({
   variant = 'default',
   iconColor = 'text-primary',
   valueClassName,
-  filterComponent
+  filterComponent,
+  trend
 }) => {
   const getVariantClasses = () => {
     switch (variant) {
@@ -36,6 +44,30 @@ export const KPICard: React.FC<KPICardProps> = ({
       default:
         return '';
     }
+  };
+
+  const renderTrend = () => {
+    if (!trend) return null;
+    const isPositive = trend.value > 0;
+    const isNeutral = trend.value === 0;
+    const invert = trend.invertColors;
+
+    const colorClass = isNeutral
+      ? 'text-muted-foreground'
+      : (isPositive && !invert) || (!isPositive && invert)
+        ? 'text-green-500'
+        : 'text-red-500';
+
+    const TrendIcon = isNeutral ? Minus : isPositive ? TrendingUp : TrendingDown;
+    const sign = isPositive ? '+' : '';
+
+    return (
+      <div className={cn('flex items-center gap-1 text-xs font-medium mt-1', colorClass)}>
+        <TrendIcon className="h-3 w-3" />
+        <span>{sign}{trend.value.toFixed(1)}%</span>
+        {trend.label && <span className="text-muted-foreground font-normal">{trend.label}</span>}
+      </div>
+    );
   };
 
   return (
@@ -52,6 +84,7 @@ export const KPICard: React.FC<KPICardProps> = ({
         <div className={cn('text-2xl font-bold', valueClassName)}>
           {value}
         </div>
+        {renderTrend()}
         {subtitle && (
           <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
         )}
