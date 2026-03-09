@@ -501,8 +501,8 @@ export const GestaoProjetosOperacao = () => {
     return filtered
   }, [liveData, searchTerm, selectedPeriod, sortColumn, sortDirection, columnFilters])
 
-  const mrrRecorrente = useMemo(() => displayData.filter(p => p.source !== 'crm-ops' && (p.categoria === 'MRR recorrente' || p.categoria === 'MRR Recorrente')).reduce((sum, p) => sum + (p.monthly_revenue || 0), 0), [displayData])
-  const mrrRecorrenteCount = useMemo(() => displayData.filter(p => p.source !== 'crm-ops' && (p.categoria === 'MRR recorrente' || p.categoria === 'MRR Recorrente')).length, [displayData])
+  const mrrRecorrente = useMemo(() => displayData.filter(p => p.source !== 'crm-ops' && (!p.categoria || p.categoria === 'MRR recorrente' || p.categoria === 'MRR Recorrente')).reduce((sum, p) => sum + (p.monthly_revenue || 0), 0), [displayData])
+  const mrrRecorrenteCount = useMemo(() => displayData.filter(p => p.source !== 'crm-ops' && (!p.categoria || p.categoria === 'MRR recorrente' || p.categoria === 'MRR Recorrente')).length, [displayData])
   const mrrVendido = useMemo(() => displayData.filter(p => p.source !== 'crm-ops' && p.categoria === 'MRR Vendido').reduce((sum, p) => sum + (p.monthly_revenue || 0), 0), [displayData])
   const mrrVendidoCount = useMemo(() => displayData.filter(p => p.source !== 'crm-ops' && p.categoria === 'MRR Vendido').length, [displayData])
   const totalMRR = useMemo(() => mrrRecorrente + mrrVendido, [mrrRecorrente, mrrVendido])

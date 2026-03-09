@@ -1,30 +1,56 @@
 
 
-## Corrigir categorias nulas e ajustar filtros de cálculo
+## Renomear funil Closer e ajustar etapas + renomear coluna Receita CRM
 
-### Problema
-Cards com `categoria: null` não são contabilizados nos cálculos de MRR Base e Revenue Churn, gerando percentuais incorretos (ex: Apollo com 0% mesmo tendo R$26.900 em perdas).
+### Abordagem
 
-### Solução em duas frentes
+A renomeação precisa acontecer tanto no código (constantes) quanto no banco de dados (pipeline e stages existentes). Os cards existentes não serão alterados — apenas o nome do pipeline e os nomes das etapas mudam.
 
-**1. Dados — Atualizar cards com categoria nula no banco**
+### Alterações
 
-Executar UPDATE via SQL para definir `categoria = 'MRR Recorrente'` em todos os cards do pipeline de clientes ativos que possuem `categoria IS NULL`:
+**1. `src/utils/setupCRMOpsPipelines.ts`**
+- Renomear constante: `CLOSER_PIPELINE_NAME = 'Upsell | CrossSell'`
+- Adicionar constante legacy: `const CLOSER_PIPELINE_LEGACY_NAME = 'Closer | Principal'` para migração
+- Atualizar `CLOSER_STAGES` para as novas etapas:
+  - Oportunidades (position 0), Orçamento (1), Apresentação (2), Negociação (3), Em assinatura (4)
+- Adicionar função de migração no `setupCRMOpsPipelines()`:
+  - Buscar pipeline com nome `'Closer | Principal'`
+  - Se encontrar, renomear para `'Upsell | CrossSell'` via UPDATE
+  - Renomear/recriar as etapas existentes: mapear as 7 etapas antigas para as 5 novas, mantendo os cards nas etapas mais próximas (cards de R1/R1 Delay → Oportunidades, R2/R2 Delay → Orçamento, R3 → Apresentação, Follow Up → Negociação, Em assinatura → Em assinatura)
+- Atualizar `CRM_OPS_PIPELINE_NAMES` para incluir o novo nome
 
-```sql
-UPDATE csm_cards
-SET categoria = 'MRR Recorrente'
-WHERE categoria IS NULL
-  AND pipeline_id = '749ccdc2-5127-41a1-997b-3dcb47979555';
+**2. `src/utils/importCloserWonFeb.ts`**
+- Atualizar referência de `'Closer | Principal'` para `'Upsell | CrossSell'`
+- Manter referência a `'Em assinatura'` (etapa continua existindo)
+
+**3. `src/components/GestaoProjetosOperacao.tsx`**
+- Renomear label `"Receita CRM"` para `"Vendas CRM"` em:
+  - Header da tabela (SortableHeader label, linha 581)
+  - CSV export headers (linha 471)
+  - Qualquer outro ponto que exiba esse texto (totalizadores no header)
+
+### Migração de etapas (lógica no setupCRMOpsPipelines)
+
+Os cards existentes precisam ser movidos para as novas etapas. A estratégia:
+1. Buscar todas as etapas atuais do pipeline
+2. Criar as novas etapas
+3. Mover cards das etapas antigas para as novas (mapeamento por posição/nome)
+4. Desativar ou excluir etapas antigas sem cards
+
+Mapeamento:
+```text
+Antiga          → Nova
+R1              → Oportunidades
+R1 Delay        → Oportunidades
+R2              → Orçamento
+R2 Delay        → Orçamento
+R3              → Apresentação
+Follow Up       → Negociação
+Em assinatura   → Em assinatura
 ```
 
-**2. Código — Proteção contra futuros nulls**
-
-Ajustar os filtros nos dois dashboards para tratar `null` como "MRR Recorrente":
-
-- **`src/components/FinancialMetrics.tsx`** (~linha 85): Adicionar `!c.categoria ||` ao filtro de `recorrentes`
-- **`src/components/SquadsDashboard.tsx`** (linhas ~149, ~153): Adicionar `!r.categoria ||` aos filtros de `mrrRecorrente`, `mrrBase` e `mrrFinal`
-- **`src/components/GestaoProjetosOperacao.tsx`** (linhas ~504-505): Adicionar `!p.categoria ||` aos filtros de `mrrRecorrente` e `mrrRecorrenteCount`
-
-Isso garante que mesmo que novos cards sejam criados sem categoria, eles serão contabilizados corretamente em todos os dashboards.
+### O que NÃO muda
+- Nenhuma lógica de soma de valores ou cálculo de receita
+- Nenhuma integração existente além da atualização de nomes
+- Cards existentes mantêm todos os dados (valor, datas, etc.)
 

@@ -82,7 +82,7 @@ const isNewInMonth = (card: CardData, month: number, year: number): boolean => {
 
 const calcMonthMetrics = (cards: CardData[], upsellRecords: UpsellRecord[], month: number, year: number) => {
   const allCards = cards;
-  const recorrentes = allCards.filter(c => c.categoria === 'MRR recorrente' || c.categoria === 'MRR Recorrente');
+  const recorrentes = allCards.filter(c => !c.categoria || c.categoria === 'MRR recorrente' || c.categoria === 'MRR Recorrente');
   const vendidos = allCards.filter(c => c.categoria === 'MRR Vendido');
 
   // Recorrente metrics
