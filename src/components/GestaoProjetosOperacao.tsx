@@ -242,6 +242,7 @@ const FILTERABLE_COLUMNS: Record<string, (p: ProjetoRow) => string | undefined> 
     const map: Record<string, string> = { venda_unica: 'Venda Única', variavel_midia: 'Var. Mídia', variavel_meta: 'Var. Meta', venda_recorrente: 'Recorrente' }
     return p.tipo_receita ? (map[p.tipo_receita] || p.tipo_receita) : undefined
   },
+  categoria_mrr: p => p.categoria || undefined,
   squad: p => p.squad || undefined,
   plano: p => p.plano || undefined,
   etapa_formal: p => { const v = calcEtapaFormal(p.data_inicio); return v !== '-' ? v : undefined },
