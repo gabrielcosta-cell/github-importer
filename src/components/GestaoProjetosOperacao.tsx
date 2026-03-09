@@ -247,7 +247,7 @@ const FILTERABLE_COLUMNS: Record<string, (p: ProjetoRow) => string | undefined> 
   categoria_mrr: p => p.categoria || undefined,
   squad: p => p.squad || undefined,
   plano: p => p.plano || undefined,
-  etapa_formal: p => { const v = calcEtapaFormal(p.data_inicio); return v !== '-' ? v : undefined },
+  fase_contrato: p => p.stage_name && p.stage_name !== '-' ? p.stage_name : undefined,
   fase_projeto: p => p.fase_projeto || undefined,
   servico: p => p.servico_contratado || undefined,
   niche: p => p.niche || undefined,
