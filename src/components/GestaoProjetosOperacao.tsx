@@ -96,6 +96,7 @@ const formatDate = (dateStr?: string | null): string => {
 export const SQUAD_COLORS: Record<string, string> = {
   Apollo: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
   Athena: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+  Atlas: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300',
   Ares: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
   Artemis: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
 }
@@ -698,13 +699,13 @@ export const GestaoProjetosOperacao = () => {
                               className="inline-flex items-center gap-1 hover:opacity-80 transition-opacity group cursor-pointer"
                               title="Editar Squad"
                             >
-                              <Badge className={`text-xs ${(p as any)._hasSquadSnapshot ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' : (SQUAD_COLORS[p.squad] || 'bg-muted text-muted-foreground')}`}>
+                              <Badge className={`text-xs ${SQUAD_COLORS[p.squad] || 'bg-muted text-muted-foreground'}`}>
                                 {p.squad}
                               </Badge>
                               <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity text-muted-foreground" />
                             </button>
                           ) : (
-                            <Badge className={`text-xs ${(p as any)._hasSquadSnapshot ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' : (SQUAD_COLORS[p.squad] || 'bg-muted text-muted-foreground')}`}>
+                            <Badge className={`text-xs ${SQUAD_COLORS[p.squad] || 'bg-muted text-muted-foreground'}`}>
                               {p.squad}
                             </Badge>
                           )
