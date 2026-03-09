@@ -528,6 +528,42 @@ export const FinancialMetrics = () => {
             onValueClick={() => setDetailModal({ title: 'MRR Perdido', clients: current.churnedCards })}
           />
         </ResponsiveGrid>
+
+          {/* Churn Evolution Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold">Evolução do Churn</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[350px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={churnChartData} margin={{ top: 10, right: 30, left: 20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorRevChurn" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(25, 95%, 53%)" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(25, 95%, 53%)" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorChurnLiquido" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(45, 93%, 47%)" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(45, 93%, 47%)" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="name" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                    <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(v) => `${v}%`} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }}
+                      formatter={(value: number, name: string) => [`${value.toFixed(2)}%`, name === 'revenueChurn' ? 'Revenue Churn' : 'Churn Líquido']}
+                    />
+                    <Legend formatter={(value) => value === 'revenueChurn' ? 'Revenue Churn %' : 'Churn Líquido + Upsell %'} />
+                    <Area type="monotone" dataKey="revenueChurn" stroke="hsl(25, 95%, 53%)" fill="url(#colorRevChurn)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="churnLiquido" stroke="hsl(45, 93%, 47%)" fill="url(#colorChurnLiquido)" strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </>
       )}
 
       {/* Ticket Médio Tab */}
