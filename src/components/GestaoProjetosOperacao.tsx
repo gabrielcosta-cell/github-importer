@@ -377,7 +377,7 @@ export const GestaoProjetosOperacao = ({ liveData, loading, selectedPeriod, onPe
   }, [periodData])
 
   const downloadCSV = () => {
-    const headers = ['ID', 'Nome', 'Origem', 'Tipo Receita', 'Squad', 'Plano', 'Etapa Formal', 'Fase do Projeto', 'Fee (MRR)', 'Vendas CRM', 'Var. Mídia', 'Var. Vendas', 'Total', 'Serviço', 'Data Assinatura', 'Tempo de DOT', 'Tempo Contrato', 'Valor Contrato', 'Nicho', 'Comissão', 'Criativos Estáticos', 'Criativos Vídeo', 'LPs', 'Limite Investimento', 'Churn', 'Motivo']
+    const headers = ['ID', 'Nome', 'Origem', 'Tipo Receita', 'Squad', 'Plano', 'Fase do contrato', 'Fase do Projeto', 'Fee (MRR)', 'Vendas CRM', 'Var. Mídia', 'Var. Vendas', 'Total', 'Serviço', 'Data Assinatura', 'Tempo de DOT', 'Tempo Contrato', 'Valor Contrato', 'Nicho', 'Comissão', 'Criativos Estáticos', 'Criativos Vídeo', 'LPs', 'Limite Investimento', 'Churn', 'Motivo']
     const csv = [
       headers.join(','),
       ...displayData.map(p => {
