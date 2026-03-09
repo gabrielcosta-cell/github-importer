@@ -293,16 +293,6 @@ export const FinancialMetrics = () => {
 
       <ResponsiveGrid cols={{ default: 1, md: 2, xl: 3 }} gap={{ default: 6 }}>
         <KPICard
-          title="MRR Total"
-          value={formatCurrency(current.mrrTotal)}
-          subtitle={`${current.totalActiveCards.length} clientes ativos (Recorrente + Vendido)`}
-          icon={DollarSign}
-          variant="default"
-          iconColor="text-red-500"
-          trend={calcTrend(current.mrrTotal, prev.mrrTotal)}
-        />
-
-        <KPICard
           title="MRR Recorrente"
           value={formatCurrency(current.mrrRecorrente)}
           subtitle={`${current.activeRecorrentes.length} clientes recorrentes ativos`}
@@ -310,6 +300,16 @@ export const FinancialMetrics = () => {
           variant="default"
           iconColor="text-blue-500"
           trend={calcTrend(current.mrrRecorrente, prev.mrrRecorrente)}
+        />
+
+        <KPICard
+          title="MRR Total"
+          value={formatCurrency(current.mrrTotal)}
+          subtitle={`${current.totalActiveCards.length} clientes ativos (Recorrente + Vendido)`}
+          icon={DollarSign}
+          variant="default"
+          iconColor="text-red-500"
+          trend={calcTrend(current.mrrTotal, prev.mrrTotal)}
         />
 
         <KPICard
