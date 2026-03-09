@@ -83,7 +83,14 @@ export const KPICard: React.FC<KPICardProps> = ({
         </div>
       </CardHeader>
       <CardContent>
-        <div className={cn('text-2xl font-bold', valueClassName)}>
+        <div
+          className={cn(
+            'text-2xl font-bold',
+            valueClassName,
+            onValueClick && 'cursor-pointer hover:opacity-70 transition-opacity underline decoration-dotted'
+          )}
+          onClick={onValueClick}
+        >
           {value}
         </div>
         {renderTrend()}
