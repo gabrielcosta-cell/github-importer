@@ -484,6 +484,7 @@ export const FinancialMetrics = () => {
           icon={ShoppingCart}
           variant="default"
           iconColor="text-orange-500"
+          onValueClick={() => setDetailModal({ title: 'Crosssell Total', upsellRecords: upsellFiltered.filteredCrosssells })}
           filterComponent={
             <ToggleGroup type="single" value={selectedCrosssellPayment} onValueChange={(v) => v && setSelectedCrosssellPayment(v)} className="flex flex-wrap gap-2">
               {paymentTypes.map(pt => (
