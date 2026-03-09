@@ -37,6 +37,10 @@ interface UpsellRecord {
   payment_type: string;
   upsell_month: number;
   upsell_year: number;
+  card_title?: string;
+  squad?: string;
+  plano?: string;
+  notes?: string;
 }
 
 // Temporal filtering helpers
@@ -144,7 +148,7 @@ export const FinancialMetrics = () => {
   const [selectedUpsellPayment, setSelectedUpsellPayment] = useState<string>("todos");
   const [selectedCrosssellPayment, setSelectedCrosssellPayment] = useState<string>("todos");
   const [loading, setLoading] = useState(true);
-  const [detailModal, setDetailModal] = useState<{ title: string; clients: CardData[] } | null>(null);
+  const [detailModal, setDetailModal] = useState<{ title: string; clients?: CardData[]; upsellRecords?: UpsellRecord[] } | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -156,7 +160,7 @@ export const FinancialMetrics = () => {
           .eq('pipeline_id', PIPELINE_CLIENTES_ATIVOS),
         supabase
           .from('csm_card_upsell_history')
-          .select('upsell_type, upsell_value, payment_type, upsell_month, upsell_year')
+          .select('upsell_type, upsell_value, payment_type, upsell_month, upsell_year, notes, card_id, csm_cards(title, squad, plano)')
       ]);
 
       setCards((cardsRes.data || []).map((card: any) => ({
@@ -179,6 +183,10 @@ export const FinancialMetrics = () => {
         payment_type: r.payment_type || 'unico',
         upsell_month: r.upsell_month,
         upsell_year: r.upsell_year,
+        card_title: r.csm_cards?.title || 'Sem nome',
+        squad: r.csm_cards?.squad || '-',
+        plano: r.csm_cards?.plano || '-',
+        notes: r.notes || '',
       })));
 
       setLoading(false);
@@ -449,6 +457,7 @@ export const FinancialMetrics = () => {
           variant="default"
           iconColor="text-emerald-500"
           trend={calcTrend(current.upsellRecorrente, prev.upsellRecorrente)}
+          onValueClick={() => setDetailModal({ title: 'Upsell Recorrente', upsellRecords: current.upsells.filter(r => r.payment_type === 'recorrente') })}
         />
 
         <KPICard
@@ -458,6 +467,7 @@ export const FinancialMetrics = () => {
           icon={ArrowUpRight}
           variant="default"
           iconColor="text-purple-500"
+          onValueClick={() => setDetailModal({ title: 'Upsell Total', upsellRecords: upsellFiltered.filteredUpsells })}
           filterComponent={
             <ToggleGroup type="single" value={selectedUpsellPayment} onValueChange={(v) => v && setSelectedUpsellPayment(v)} className="flex flex-wrap gap-2">
               {paymentTypes.map(pt => (
@@ -474,6 +484,7 @@ export const FinancialMetrics = () => {
           icon={ShoppingCart}
           variant="default"
           iconColor="text-orange-500"
+          onValueClick={() => setDetailModal({ title: 'Crosssell Total', upsellRecords: upsellFiltered.filteredCrosssells })}
           filterComponent={
             <ToggleGroup type="single" value={selectedCrosssellPayment} onValueChange={(v) => v && setSelectedCrosssellPayment(v)} className="flex flex-wrap gap-2">
               {paymentTypes.map(pt => (
@@ -565,34 +576,65 @@ export const FinancialMetrics = () => {
             <DialogTitle>{detailModal?.title}</DialogTitle>
           </DialogHeader>
           <ScrollArea className="h-[60vh]">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Squad</TableHead>
-                  <TableHead>Plano</TableHead>
-                  <TableHead className="text-right">MRR</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(detailModal?.clients || [])
-                  .sort((a, b) => b.monthly_revenue - a.monthly_revenue)
-                  .map((client) => (
-                    <TableRow key={client.id}>
-                      <TableCell className="font-medium">{client.title}</TableCell>
-                      <TableCell>{client.squad || '-'}</TableCell>
-                      <TableCell>{client.plano || '-'}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(client.monthly_revenue)}</TableCell>
-                    </TableRow>
-                  ))}
-                <TableRow className="border-t-2 font-bold">
-                  <TableCell colSpan={3}>Total ({detailModal?.clients?.length || 0} clientes)</TableCell>
-                  <TableCell className="text-right">
-                    {formatCurrency((detailModal?.clients || []).reduce((sum, c) => sum + c.monthly_revenue, 0))}
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
+            {detailModal?.upsellRecords ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Tipo Pagamento</TableHead>
+                    <TableHead>Notas</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {detailModal.upsellRecords
+                    .sort((a, b) => b.upsell_value - a.upsell_value)
+                    .map((record, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell className="font-medium">{record.card_title || '-'}</TableCell>
+                        <TableCell className="capitalize">{record.payment_type}</TableCell>
+                        <TableCell className="max-w-[200px] truncate text-muted-foreground text-xs">{record.notes || '-'}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(record.upsell_value)}</TableCell>
+                      </TableRow>
+                    ))}
+                  <TableRow className="border-t-2 font-bold">
+                    <TableCell colSpan={3}>Total ({detailModal.upsellRecords.length} registros)</TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(detailModal.upsellRecords.reduce((sum, r) => sum + r.upsell_value, 0))}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Squad</TableHead>
+                    <TableHead>Plano</TableHead>
+                    <TableHead className="text-right">MRR</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(detailModal?.clients || [])
+                    .sort((a, b) => b.monthly_revenue - a.monthly_revenue)
+                    .map((client) => (
+                      <TableRow key={client.id}>
+                        <TableCell className="font-medium">{client.title}</TableCell>
+                        <TableCell>{client.squad || '-'}</TableCell>
+                        <TableCell>{client.plano || '-'}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(client.monthly_revenue)}</TableCell>
+                      </TableRow>
+                    ))}
+                  <TableRow className="border-t-2 font-bold">
+                    <TableCell colSpan={3}>Total ({detailModal?.clients?.length || 0} clientes)</TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency((detailModal?.clients || []).reduce((sum, c) => sum + c.monthly_revenue, 0))}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            )}
           </ScrollArea>
         </DialogContent>
       </Dialog>
