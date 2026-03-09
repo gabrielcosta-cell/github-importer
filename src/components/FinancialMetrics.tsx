@@ -231,7 +231,7 @@ export const FinancialMetrics = () => {
   // MRR Evolution chart data (Jan 2025 → current month)
   const chartData = useMemo(() => {
     const startYear = 2025;
-    const startMonth = 0; // January
+    const startMonth = 0;
     const data: { name: string; mrrAtivo: number; mrrPerdido: number; mrrNovos: number; clientes: number }[] = [];
 
     let m = startMonth, y = startYear;
@@ -239,16 +239,18 @@ export const FinancialMetrics = () => {
 
     while (y < endY || (y === endY && m <= endM)) {
       const recorrentes = cards.filter(c => c.categoria === 'MRR recorrente' || c.categoria === 'MRR Recorrente');
-      const active = recorrentes.filter(c => isActiveInMonth(c, m, y));
-      const churned = recorrentes.filter(c => isChurnedInMonth(c, m, y));
+      const vendidos = cards.filter(c => c.categoria === 'MRR Vendido');
+      const activeRec = recorrentes.filter(c => isActiveInMonth(c, m, y));
+      const activeVend = vendidos.filter(c => isActiveInMonth(c, m, y));
+      const churned = cards.filter(c => isChurnedInMonth(c, m, y));
       const novos = recorrentes.filter(c => isNewInMonth(c, m, y));
 
       data.push({
         name: `${MONTH_LABELS[m]}/${y.toString().slice(2)}`,
-        mrrAtivo: active.reduce((s, c) => s + c.monthly_revenue, 0),
+        mrrAtivo: activeRec.reduce((s, c) => s + c.monthly_revenue, 0) + activeVend.reduce((s, c) => s + c.monthly_revenue, 0),
         mrrPerdido: churned.reduce((s, c) => s + c.monthly_revenue, 0),
         mrrNovos: novos.reduce((s, c) => s + c.monthly_revenue, 0),
-        clientes: active.length,
+        clientes: activeRec.length + activeVend.length,
       });
 
       m++;
