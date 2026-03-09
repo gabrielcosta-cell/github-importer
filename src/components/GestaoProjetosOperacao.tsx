@@ -499,7 +499,11 @@ export const GestaoProjetosOperacao = () => {
     return filtered
   }, [liveData, searchTerm, selectedPeriod, sortColumn, sortDirection, columnFilters])
 
-  const totalMRR = useMemo(() => displayData.filter(p => p.source !== 'crm-ops').reduce((sum, p) => sum + (p.monthly_revenue || 0), 0), [displayData])
+  const mrrRecorrente = useMemo(() => displayData.filter(p => p.source !== 'crm-ops' && (p.categoria === 'MRR recorrente' || p.categoria === 'MRR Recorrente')).reduce((sum, p) => sum + (p.monthly_revenue || 0), 0), [displayData])
+  const mrrRecorrenteCount = useMemo(() => displayData.filter(p => p.source !== 'crm-ops' && (p.categoria === 'MRR recorrente' || p.categoria === 'MRR Recorrente')).length, [displayData])
+  const mrrVendido = useMemo(() => displayData.filter(p => p.source !== 'crm-ops' && p.categoria === 'MRR Vendido').reduce((sum, p) => sum + (p.monthly_revenue || 0), 0), [displayData])
+  const mrrVendidoCount = useMemo(() => displayData.filter(p => p.source !== 'crm-ops' && p.categoria === 'MRR Vendido').length, [displayData])
+  const totalMRR = useMemo(() => mrrRecorrente + mrrVendido, [mrrRecorrente, mrrVendido])
   const totalCRM = useMemo(() => displayData.reduce((sum, p) => sum + (p.crm_revenue || 0) + (p.source === 'crm-ops' ? (p.monthly_revenue || 0) : 0), 0), [displayData])
   const totalVarMidia = useMemo(() => displayData.reduce((sum, p) => sum + (p.variavel_midia_revenue || 0), 0), [displayData])
   const totalVarVendas = useMemo(() => displayData.reduce((sum, p) => sum + (p.variavel_vendas_revenue || 0), 0), [displayData])
@@ -594,11 +598,15 @@ export const GestaoProjetosOperacao = () => {
               />
             </div>
             <div className="flex items-center gap-3 flex-wrap">
-              <span className="text-sm font-medium">MRR: {formatCurrency(totalMRR)} <span className="text-muted-foreground font-normal">({displayData.filter(p => p.source !== 'crm-ops').length} clientes)</span></span>
+              <span className="text-sm font-medium">MRR Base: {formatCurrency(mrrRecorrente)} <span className="text-muted-foreground font-normal">({mrrRecorrenteCount} clientes)</span></span>
+              <span className="text-muted-foreground">|</span>
+              <span className="text-sm font-medium">MRR Vendido: {formatCurrency(mrrVendido)} <span className="text-muted-foreground font-normal">({mrrVendidoCount} clientes)</span></span>
+              <span className="text-muted-foreground">|</span>
+              <span className="text-sm font-medium">Total MRR: {formatCurrency(totalMRR)}</span>
               <span className="text-muted-foreground">|</span>
               <span className="text-sm font-medium">CRM: {formatCurrency(totalCRM + totalVarMidia + totalVarVendas)} <span className="text-muted-foreground font-normal">({displayData.filter(p => p.source === 'crm-ops').length} vendas)</span></span>
               <span className="text-muted-foreground">|</span>
-              <span className="text-sm font-medium">Total: {formatCurrency(totalGeral)}</span>
+              <span className="text-sm font-medium">Faturamento: {formatCurrency(totalGeral)}</span>
               <span className="text-muted-foreground">|</span>
               <span className={`text-sm font-medium ${churnCount > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>Churn: {churnCount} {churnCount === 1 ? 'cliente' : 'clientes'}</span>
               <span className="text-muted-foreground">|</span>
