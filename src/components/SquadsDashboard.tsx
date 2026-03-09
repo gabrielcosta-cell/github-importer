@@ -192,6 +192,7 @@ export const SquadsDashboard = () => {
         squad,
         baseNovosChurn,
         mrrRecorrente,
+        mrrBase,
         mrrVendido,
         mrrVendidoOperacao,
         comissoes,
