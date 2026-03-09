@@ -1,56 +1,45 @@
 
 
-## Renomear funil Closer e ajustar etapas + renomear coluna Receita CRM
+## Adicionar filtro por mês nas Métricas Financeiras
 
-### Abordagem
+### Análise da planilha vs. dados atuais
 
-A renomeação precisa acontecer tanto no código (constantes) quanto no banco de dados (pipeline e stages existentes). Os cards existentes não serão alterados — apenas o nome do pipeline e os nomes das etapas mudam.
+A planilha contém métricas financeiras mensais consolidadas:
+- **MRR da base**: R$ 196.408 (soma MRR clientes ativos recorrentes)
+- **MRR Vendido**: R$ 7.500 (novos clientes)
+- **MRR Perdido**: R$ 21.956 (churn)
+- **MRR Final**: R$ 181.952 (base - perdido)
+- **Ticket Médio Perdido**: R$ 7.319
+- **Churn Bruto**: 11,18% | **Churn Líquido + Upsell**: 11,12%
+- **Clientes da Base**: 48 | **No mês**: 52 | **Novos**: 2
+
+O componente `FinancialMetrics.tsx` atual busca dados "ao vivo" sem filtro de mês. Precisa usar a mesma lógica temporal das abas Clientes e Squads.
 
 ### Alterações
 
-**1. `src/utils/setupCRMOpsPipelines.ts`**
-- Renomear constante: `CLOSER_PIPELINE_NAME = 'Upsell | CrossSell'`
-- Adicionar constante legacy: `const CLOSER_PIPELINE_LEGACY_NAME = 'Closer | Principal'` para migração
-- Atualizar `CLOSER_STAGES` para as novas etapas:
-  - Oportunidades (position 0), Orçamento (1), Apresentação (2), Negociação (3), Em assinatura (4)
-- Adicionar função de migração no `setupCRMOpsPipelines()`:
-  - Buscar pipeline com nome `'Closer | Principal'`
-  - Se encontrar, renomear para `'Upsell | CrossSell'` via UPDATE
-  - Renomear/recriar as etapas existentes: mapear as 7 etapas antigas para as 5 novas, mantendo os cards nas etapas mais próximas (cards de R1/R1 Delay → Oportunidades, R2/R2 Delay → Orçamento, R3 → Apresentação, Follow Up → Negociação, Em assinatura → Em assinatura)
-- Atualizar `CRM_OPS_PIPELINE_NAMES` para incluir o novo nome
+**Arquivo: `src/components/FinancialMetrics.tsx`** — reescrever para:
 
-**2. `src/utils/importCloserWonFeb.ts`**
-- Atualizar referência de `'Closer | Principal'` para `'Upsell | CrossSell'`
-- Manter referência a `'Em assinatura'` (etapa continua existindo)
+1. **Adicionar MonthYearPicker** no topo (igual Squads), com estado `selectedPeriod` inicializado no mês atual
 
-**3. `src/components/GestaoProjetosOperacao.tsx`**
-- Renomear label `"Receita CRM"` para `"Vendas CRM"` em:
-  - Header da tabela (SortableHeader label, linha 581)
-  - CSV export headers (linha 471)
-  - Qualquer outro ponto que exiba esse texto (totalizadores no header)
+2. **Buscar dados expandidos** — além de `monthly_revenue` e `plano`, buscar também `data_inicio`, `data_contrato`, `created_at`, `data_perda`, `client_status`, `categoria`, `squad` dos `csm_cards` no pipeline de clientes ativos
 
-### Migração de etapas (lógica no setupCRMOpsPipelines)
+3. **Buscar upsells com filtro de mês** — usar `upsell_month` e `upsell_year` da tabela `csm_card_upsell_history` para filtrar por período selecionado
 
-Os cards existentes precisam ser movidos para as novas etapas. A estratégia:
-1. Buscar todas as etapas atuais do pipeline
-2. Criar as novas etapas
-3. Mover cards das etapas antigas para as novas (mapeamento por posição/nome)
-4. Desativar ou excluir etapas antigas sem cards
+4. **Aplicar lógica temporal** — usar as mesmas funções `wasRelevantInMonth`, `isChurnedInMonth`, `isActiveInMonth` que já existem no SquadsDashboard para filtrar cards no mês selecionado
 
-Mapeamento:
-```text
-Antiga          → Nova
-R1              → Oportunidades
-R1 Delay        → Oportunidades
-R2              → Orçamento
-R2 Delay        → Orçamento
-R3              → Apresentação
-Follow Up       → Negociação
-Em assinatura   → Em assinatura
-```
+5. **Calcular métricas por mês**:
+   - **MRR Total**: soma MRR dos clientes ativos no mês (categoria MRR Recorrente)
+   - **MRR por Plano**: filtrado por plano + mês
+   - **Ticket Médio MRR**: MRR total / nº clientes ativos
+   - **Ticket Médio por Plano**: idem filtrado por plano
+   - **MRR Perdido**: soma MRR dos clientes que churned no mês
+   - **Clientes da Base**: total relevantes no mês
+   - **Receita Adicional / Upsell / Crosssell**: filtrado por `upsell_month`/`upsell_year`
 
-### O que NÃO muda
-- Nenhuma lógica de soma de valores ou cálculo de receita
-- Nenhuma integração existente além da atualização de nomes
-- Cards existentes mantêm todos os dados (valor, datas, etc.)
+6. **Adicionar KPIs novos da planilha**:
+   - **MRR Perdido** (churn do mês)
+   - **Clientes da Base** / **Clientes no Mês** / **Novos Clientes**
+   - **Revenue Churn (%)** — MRR perdido / MRR base
+
+7. **Layout**: MonthYearPicker (singleSelect) no header, antes do grid de KPIs
 
