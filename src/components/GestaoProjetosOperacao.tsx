@@ -16,6 +16,7 @@ import { CRM_OPS_PIPELINE_NAMES } from '@/utils/setupCRMOpsPipelines'
 import { useAuth } from '@/contexts/AuthContext'
 import { FeeEditDialog } from '@/components/projetos/FeeEditDialog'
 import { SquadEditDialog } from '@/components/projetos/SquadEditDialog'
+import { wasRelevantInMonth } from '@/hooks/useProjetosData'
 
 const PIPELINE_CLIENTES_ATIVOS = '749ccdc2-5127-41a1-997b-3dcb47979555'
 
@@ -252,19 +253,20 @@ const FILTERABLE_COLUMNS: Record<string, (p: ProjetoRow) => string | undefined> 
   comissao: p => p.existe_comissao ? 'Sim' : 'Não',
 }
 
-export const GestaoProjetosOperacao = () => {
-  const now = new Date()
-  const [selectedPeriod, setSelectedPeriod] = useState<{ month: number; year: number }>({ month: now.getMonth(), year: now.getFullYear() })
-  const [rawCsmRows, setRawCsmRows] = useState<ProjetoRow[]>([])
-  const [rawCrmRows, setRawCrmRows] = useState<ProjetoRow[]>([])
-  const [loading, setLoading] = useState(true)
+interface GestaoProjetosOperacaoProps {
+  liveData: ProjetoRow[]
+  loading: boolean
+  selectedPeriod: { month: number; year: number }
+  onPeriodChange: (period: { month: number; year: number }) => void
+  fetchSnapshots: () => Promise<void>
+}
+
+export const GestaoProjetosOperacao = ({ liveData, loading, selectedPeriod, onPeriodChange, fetchSnapshots }: GestaoProjetosOperacaoProps) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [squads, setSquads] = useState<Array<{ id: string; name: string }>>([])
   const [sortColumn, setSortColumn] = useState<string | null>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const [columnFilters, setColumnFilters] = useState<Record<string, string[]>>({})
-  const [snapshotsMap, setSnapshotsMap] = useState<Map<string, number>>(new Map())
-  const [squadSnapshotsMap, setSquadSnapshotsMap] = useState<Map<string, string>>(new Map())
   const [feeEditData, setFeeEditData] = useState<{ cardId: string; companyName: string; currentFee: number; dataInicio?: string | null; dataPerda?: string | null } | null>(null)
   const [squadEditData, setSquadEditData] = useState<{ cardId: string; companyName: string; currentSquad: string; dataInicio?: string | null; dataPerda?: string | null } | null>(null)
   const { toast } = useToast()
@@ -276,169 +278,6 @@ export const GestaoProjetosOperacao = () => {
       setSquads(data || [])
     })
   }, [])
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true)
-      const { data: csmData } = await supabase
-        .from('csm_cards')
-        .select('id, display_id, company_name, title, squad, plano, fase_projeto, monthly_revenue, servico_contratado, data_contrato, data_inicio, tempo_contrato, valor_contrato, niche, existe_comissao, observacao_comissao, criativos_estaticos, criativos_video, lps, limite_investimento, data_perda, motivo_perda, client_status, created_at, categoria, receita_gerada_cliente')
-        .eq('pipeline_id', PIPELINE_CLIENTES_ATIVOS)
-        .order('display_id', { ascending: true, nullsFirst: false })
-
-      const csmRows: ProjetoRow[] = (csmData || []).map(row => ({ ...row, source: 'csm' as const }))
-
-      const { data: crmPipelines } = await supabase
-        .from('csm_pipelines')
-        .select('id, name')
-        .in('name', CRM_OPS_PIPELINE_NAMES)
-        .eq('is_active', true)
-
-      let crmOpsRows: ProjetoRow[] = []
-      const pipelineNameMap = new Map<string, string>()
-      if (crmPipelines && crmPipelines.length > 0) {
-        const pipelineIds = crmPipelines.map(p => p.id)
-        for (const p of crmPipelines) pipelineNameMap.set(p.id, p.name)
-        const { data: crmData } = await supabase
-          .from('csm_cards')
-          .select('id, display_id, company_name, title, squad, plano, fase_projeto, monthly_revenue, servico_contratado, data_contrato, data_inicio, tempo_contrato, valor_contrato, niche, existe_comissao, observacao_comissao, criativos_estaticos, criativos_video, lps, limite_investimento, data_perda, motivo_perda, client_status, created_at, tipo_receita, data_ganho, migrado_csm, pipeline_id')
-          .in('pipeline_id', pipelineIds)
-          .gt('monthly_revenue', 0)
-          .order('created_at', { ascending: false })
-
-        crmOpsRows = (crmData || []).map(row => {
-          const pName = pipelineNameMap.get((row as any).pipeline_id) || ''
-          const shortName = pName === 'Variável | Verba de Mídia' ? 'Var. Mídia' :
-                           pName === 'Variável | Vendas do cliente' ? 'Var. Vendas' :
-                           pName === 'Upsell | CrossSell' ? 'Upsell' : 'Venda Ops'
-          return {
-            ...row,
-            source: 'crm-ops' as const,
-            tipo_receita: (row as any).tipo_receita,
-            data_ganho: (row as any).data_ganho,
-            migrado_csm: (row as any).migrado_csm,
-            pipeline_id: (row as any).pipeline_id,
-            pipeline_name: shortName,
-          }
-        })
-      }
-
-      setRawCsmRows(csmRows)
-      setRawCrmRows(crmOpsRows)
-      setLoading(false)
-    }
-    fetchData()
-  }, [])
-
-  // Fetch snapshots for selected period
-  const fetchSnapshots = useCallback(async () => {
-    const { data } = await supabase
-      .from('csm_project_snapshots')
-      .select('card_id, monthly_revenue, squad')
-      .eq('snapshot_month', selectedPeriod.month + 1)
-      .eq('snapshot_year', selectedPeriod.year)
-
-    const map = new Map<string, number>()
-    const sqMap = new Map<string, string>()
-    if (data) {
-      for (const s of data) {
-        if (s.monthly_revenue != null) map.set(s.card_id, s.monthly_revenue)
-        if (s.squad) sqMap.set(s.card_id, s.squad)
-      }
-    }
-    setSnapshotsMap(map)
-    setSquadSnapshotsMap(sqMap)
-  }, [selectedPeriod])
-
-  useEffect(() => {
-    fetchSnapshots()
-  }, [fetchSnapshots])
-
-  // Merge dinâmico: só acumula crm_revenue quando o mês do card CRM coincide com selectedPeriod
-  const liveData = useMemo(() => {
-    const { month, year } = selectedPeriod
-
-    const isInMonth = (crm: ProjetoRow) => {
-      const dateStr = (crm.data_ganho || crm.created_at || '').substring(0, 10)
-      if (!dateStr) return false
-      const d = new Date(dateStr + 'T12:00:00')
-      return d.getMonth() === month && d.getFullYear() === year
-    }
-
-    // Build CSM rows with CRM revenue merged only for the selected month
-    const mergedCsm = rawCsmRows.map(csm => {
-      const snapshotRevenue = snapshotsMap.get(csm.id)
-      const snapshotSquad = squadSnapshotsMap.get(csm.id)
-      const effectiveRevenue = snapshotRevenue !== undefined ? snapshotRevenue : csm.monthly_revenue
-      const effectiveSquad = snapshotSquad || csm.squad
-      const hasSnapshot = snapshotRevenue !== undefined
-      const hasSquadSnapshot = !!snapshotSquad
-
-      const matchingCrm = rawCrmRows.filter(crm =>
-        crm.display_id && crm.display_id === csm.display_id && isInMonth(crm)
-      )
-
-      let crmRev = 0, varMidiaRev = 0, varVendasRev = 0
-      let crmTipo: string | undefined
-      let crmCardId: string | undefined
-
-      for (const crm of matchingCrm) {
-        const rev = crm.monthly_revenue || 0
-        if (crm.pipeline_name === 'Var. Mídia') {
-          varMidiaRev += rev
-        } else if (crm.pipeline_name === 'Var. Vendas') {
-          varVendasRev += rev
-        } else {
-          crmRev += rev
-          crmTipo = crm.tipo_receita || crmTipo
-          crmCardId = crm.id
-        }
-      }
-
-      return {
-        ...csm,
-        squad: effectiveSquad,
-        monthly_revenue: effectiveRevenue,
-        _hasSnapshot: hasSnapshot,
-        _hasSquadSnapshot: hasSquadSnapshot,
-        crm_revenue: crmRev,
-        crm_tipo_receita: crmTipo,
-        crm_card_id: crmCardId,
-        variavel_midia_revenue: varMidiaRev,
-        variavel_vendas_revenue: varVendasRev,
-      }
-    })
-
-    // CRM cards without a matching CSM card (unmatched) — kept as independent rows
-    const matchedDisplayIds = new Set(rawCsmRows.map(r => r.display_id).filter(Boolean))
-    const unmatchedCrm = rawCrmRows.filter(crm => !crm.display_id || !matchedDisplayIds.has(crm.display_id))
-
-    return [...mergedCsm, ...unmatchedCrm]
-  }, [rawCsmRows, rawCrmRows, selectedPeriod, snapshotsMap, squadSnapshotsMap])
-
-  const wasRelevantInMonth = (p: ProjetoRow, month: number, year: number): boolean => {
-    if (p.source === 'crm-ops') {
-      if (p.migrado_csm) return false
-      const createdDateOnly = (p.created_at || '').substring(0, 10)
-      const createdAt = new Date(createdDateOnly + 'T12:00:00')
-      return createdAt.getMonth() === month && createdAt.getFullYear() === year
-    }
-    const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59)
-    const startDateStr = p.data_inicio || p.data_contrato || p.created_at
-    if (startDateStr) {
-      const dateOnly = startDateStr.substring(0, 10)
-      const startDate = new Date(dateOnly + 'T12:00:00')
-      if (startDate > endOfMonth) return false
-    }
-    if (p.client_status !== 'cancelado') return true
-    if (!p.data_perda) return false
-    const perdaDate = parseISO(p.data_perda)
-    const perdaMonth = perdaDate.getMonth()
-    const perdaYear = perdaDate.getFullYear()
-    if (perdaYear > year) return true
-    if (perdaYear === year && perdaMonth >= month) return true
-    return false
-  }
 
   const handleSort = useCallback((key: string) => {
     if (sortColumn === key) {
@@ -594,7 +433,7 @@ export const GestaoProjetosOperacao = () => {
               <MonthYearPicker
                 selectedPeriods={[selectedPeriod]}
                 onPeriodsChange={(periods) => {
-                  if (periods.length > 0) setSelectedPeriod(periods[0])
+                  if (periods.length > 0) onPeriodChange(periods[0])
                 }}
                 singleSelect
               />

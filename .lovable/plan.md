@@ -1,45 +1,56 @@
 
 
-## Sincronizar aba Squads com dados da aba Clientes
+## Renomear funil Closer e ajustar etapas + renomear coluna Receita CRM
 
-### Problema
+### Abordagem
 
-A aba **Squads** faz sua própria query ao Supabase (`csm_cards`) e aplica lógica de filtragem diferente da aba **Clientes**. A aba Clientes usa snapshots de fee e squad (`csm_project_snapshots`) para sobrescrever valores por mês, e faz merge com CRM ops por `display_id`. A aba Squads ignora tudo isso, resultando em contagens e valores divergentes.
+A renomeação precisa acontecer tanto no código (constantes) quanto no banco de dados (pipeline e stages existentes). Os cards existentes não serão alterados — apenas o nome do pipeline e os nomes das etapas mudam.
 
-### Solução
+### Alterações
 
-Extrair a lógica de fetch e processamento de dados para um hook compartilhado, e fazer o SquadsDashboard consumir os mesmos dados já processados da aba Clientes.
+**1. `src/utils/setupCRMOpsPipelines.ts`**
+- Renomear constante: `CLOSER_PIPELINE_NAME = 'Upsell | CrossSell'`
+- Adicionar constante legacy: `const CLOSER_PIPELINE_LEGACY_NAME = 'Closer | Principal'` para migração
+- Atualizar `CLOSER_STAGES` para as novas etapas:
+  - Oportunidades (position 0), Orçamento (1), Apresentação (2), Negociação (3), Em assinatura (4)
+- Adicionar função de migração no `setupCRMOpsPipelines()`:
+  - Buscar pipeline com nome `'Closer | Principal'`
+  - Se encontrar, renomear para `'Upsell | CrossSell'` via UPDATE
+  - Renomear/recriar as etapas existentes: mapear as 7 etapas antigas para as 5 novas, mantendo os cards nas etapas mais próximas (cards de R1/R1 Delay → Oportunidades, R2/R2 Delay → Orçamento, R3 → Apresentação, Follow Up → Negociação, Em assinatura → Em assinatura)
+- Atualizar `CRM_OPS_PIPELINE_NAMES` para incluir o novo nome
 
-### Implementação
+**2. `src/utils/importCloserWonFeb.ts`**
+- Atualizar referência de `'Closer | Principal'` para `'Upsell | CrossSell'`
+- Manter referência a `'Em assinatura'` (etapa continua existindo)
 
-**1. Criar hook `src/hooks/useProjetosData.ts`**
+**3. `src/components/GestaoProjetosOperacao.tsx`**
+- Renomear label `"Receita CRM"` para `"Vendas CRM"` em:
+  - Header da tabela (SortableHeader label, linha 581)
+  - CSV export headers (linha 471)
+  - Qualquer outro ponto que exiba esse texto (totalizadores no header)
 
-Extrair de `GestaoProjetosOperacao.tsx`:
-- Fetch de `csm_cards` (CSM + CRM Ops)
-- Fetch de `csm_project_snapshots` (fee + squad overrides)
-- Lógica de merge (`liveData`)
-- Funções `wasRelevantInMonth`, `isChurnedInMonth`, `isActiveInMonth`
+### Migração de etapas (lógica no setupCRMOpsPipelines)
 
-O hook recebe `selectedPeriod` e retorna `{ liveData, rawCsmRows, rawCrmRows, loading, refetch }`.
+Os cards existentes precisam ser movidos para as novas etapas. A estratégia:
+1. Buscar todas as etapas atuais do pipeline
+2. Criar as novas etapas
+3. Mover cards das etapas antigas para as novas (mapeamento por posição/nome)
+4. Desativar ou excluir etapas antigas sem cards
 
-**2. Atualizar `ProjetosView.tsx`**
+Mapeamento:
+```text
+Antiga          → Nova
+R1              → Oportunidades
+R1 Delay        → Oportunidades
+R2              → Orçamento
+R2 Delay        → Orçamento
+R3              → Apresentação
+Follow Up       → Negociação
+Em assinatura   → Em assinatura
+```
 
-- Usar o hook no nível do ProjetosView
-- Passar `liveData`, `selectedPeriod`, e as funções de filtragem como props para ambas as abas
-
-**3. Atualizar `GestaoProjetosOperacao.tsx`**
-
-- Receber dados via props em vez de buscar internamente
-- Manter toda a lógica de UI (sort, search, filters, export)
-
-**4. Atualizar `SquadsDashboard.tsx`**
-
-- Receber `liveData` e `selectedPeriod` via props
-- Remover fetch próprio e usar os dados já processados
-- Agrupar por squad usando os mesmos dados filtrados da aba Clientes
-- A contagem `baseNovosChurn` usará `wasRelevantInMonth` com a mesma lógica
-
-### Resultado
-
-Ao selecionar Fevereiro na aba Squads, o Apollo mostrará exatamente os mesmos clientes e valores que aparecem filtrados por Apollo na aba Clientes.
+### O que NÃO muda
+- Nenhuma lógica de soma de valores ou cálculo de receita
+- Nenhuma integração existente além da atualização de nomes
+- Cards existentes mantêm todos os dados (valor, datas, etc.)
 

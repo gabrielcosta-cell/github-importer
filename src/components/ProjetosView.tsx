@@ -3,6 +3,7 @@ import { Users, DollarSign, Shield } from "lucide-react";
 import { GestaoProjetosOperacao } from "./GestaoProjetosOperacao";
 import { FinancialMetrics } from "./FinancialMetrics";
 import { SquadsDashboard } from "./SquadsDashboard";
+import { useProjetosData, wasRelevantInMonth, isChurnedInMonth, isActiveInMonth } from "@/hooks/useProjetosData";
 
 interface ProjetosViewProps {
   initialTab?: 'clientes' | 'squads' | 'metricas';
@@ -10,6 +11,10 @@ interface ProjetosViewProps {
 
 export const ProjetosView = ({ initialTab = 'clientes' }: ProjetosViewProps) => {
   const [activeTab, setActiveTab] = useState<'clientes' | 'squads' | 'metricas'>(initialTab);
+  const now = new Date();
+  const [selectedPeriod, setSelectedPeriod] = useState<{ month: number; year: number }>({ month: now.getMonth(), year: now.getFullYear() });
+
+  const { liveData, loading, fetchSnapshots } = useProjetosData(selectedPeriod);
 
   const tabs = [
     { key: 'clientes' as const, label: 'Clientes', icon: Users },
@@ -38,8 +43,23 @@ export const ProjetosView = ({ initialTab = 'clientes' }: ProjetosViewProps) => 
         </div>
       </div>
 
-      {activeTab === 'clientes' && <GestaoProjetosOperacao />}
-      {activeTab === 'squads' && <SquadsDashboard />}
+      {activeTab === 'clientes' && (
+        <GestaoProjetosOperacao
+          liveData={liveData}
+          loading={loading}
+          selectedPeriod={selectedPeriod}
+          onPeriodChange={setSelectedPeriod}
+          fetchSnapshots={fetchSnapshots}
+        />
+      )}
+      {activeTab === 'squads' && (
+        <SquadsDashboard
+          liveData={liveData}
+          loading={loading}
+          selectedPeriod={selectedPeriod}
+          onPeriodChange={setSelectedPeriod}
+        />
+      )}
       {activeTab === 'metricas' && <FinancialMetrics />}
     </div>
   );

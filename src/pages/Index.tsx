@@ -273,7 +273,7 @@ const Index = () => {
       case 'crm-ops':
         return <CRMOpsKanban />
       case 'gestao-projetos':
-        return <GestaoProjetosOperacao />
+        return <ProjetosView initialTab="clientes" />
       case 'gestao-contratos':
         return <GestaoContratos />
       case 'cs':
