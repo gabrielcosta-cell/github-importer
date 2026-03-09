@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { syncSquadSnapshotsToCards } from '@/utils/syncSquadSnapshots';
 
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useSearchParams } from 'react-router-dom';
