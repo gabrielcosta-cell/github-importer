@@ -217,13 +217,14 @@ export const SquadsDashboard = () => {
   const totals = useMemo(() => {
     const t: SquadMetrics = {
       squad: 'Total',
-      baseNovosChurn: 0, mrrRecorrente: 0, mrrVendido: 0, mrrVendidoOperacao: 0, comissoes: 0,
+      baseNovosChurn: 0, mrrRecorrente: 0, mrrBase: 0, mrrVendido: 0, mrrVendidoOperacao: 0, comissoes: 0,
       ltMedio: 0, revenueChurn: 0, revenueChurnPercent: 0, tmChurn: 0, logoChurnPercent: 0,
       vmInvestida: 0, vendasGeradas: 0, roi: 0, mpa: 0, mrrFinal: 0, receitaLiquida: 0,
     }
     for (const m of squadMetrics) {
       t.baseNovosChurn += m.baseNovosChurn
       t.mrrRecorrente += m.mrrRecorrente
+      t.mrrBase += m.mrrBase
       t.mrrVendido += m.mrrVendido
       t.mrrVendidoOperacao += m.mrrVendidoOperacao
       t.comissoes += m.comissoes
@@ -237,7 +238,7 @@ export const SquadsDashboard = () => {
     const count = squadMetrics.length || 1
     t.ltMedio = squadMetrics.reduce((s, m) => s + m.ltMedio, 0) / count
     t.mpa = squadMetrics.reduce((s, m) => s + m.mpa, 0) / count
-    t.revenueChurnPercent = t.mrrRecorrente > 0 ? (t.revenueChurn / t.mrrRecorrente) * 100 : 0
+    t.revenueChurnPercent = t.mrrBase > 0 ? (t.revenueChurn / t.mrrBase) * 100 : 0
     t.tmChurn = squadMetrics.reduce((s, m) => s + m.tmChurn, 0) / count
     t.logoChurnPercent = squadMetrics.reduce((s, m) => s + m.logoChurnPercent, 0) / count
     t.roi = t.vmInvestida > 0 ? t.vendasGeradas / t.vmInvestida : 0
