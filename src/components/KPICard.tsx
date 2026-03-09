@@ -20,6 +20,7 @@ interface KPICardProps {
   showVisibilityToggle?: boolean;
   filterComponent?: React.ReactNode;
   trend?: TrendData;
+  onValueClick?: () => void;
 }
 
 export const KPICard: React.FC<KPICardProps> = ({
@@ -31,7 +32,8 @@ export const KPICard: React.FC<KPICardProps> = ({
   iconColor = 'text-primary',
   valueClassName,
   filterComponent,
-  trend
+  trend,
+  onValueClick
 }) => {
   const getVariantClasses = () => {
     switch (variant) {
@@ -81,7 +83,14 @@ export const KPICard: React.FC<KPICardProps> = ({
         </div>
       </CardHeader>
       <CardContent>
-        <div className={cn('text-2xl font-bold', valueClassName)}>
+        <div
+          className={cn(
+            'text-2xl font-bold',
+            valueClassName,
+            onValueClick && 'cursor-pointer hover:opacity-70 transition-opacity underline decoration-dotted'
+          )}
+          onClick={onValueClick}
+        >
           {value}
         </div>
         {renderTrend()}

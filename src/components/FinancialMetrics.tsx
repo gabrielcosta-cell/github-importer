@@ -2,13 +2,16 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { KPICard } from "@/components/KPICard";
 import { ResponsiveGrid } from "@/components/ResponsiveGrid";
-import { DollarSign, TrendingUp, ArrowUpRight, ShoppingCart, TrendingDown, Users, UserMinus, UserPlus, Percent } from "lucide-react";
+import { DollarSign, TrendingUp, ArrowUpRight, ShoppingCart, TrendingDown, Users, UserMinus, UserPlus, Percent, Database } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { MonthYearPicker } from "@/components/MonthYearPicker";
 import { parseISO } from "date-fns";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const PIPELINE_CLIENTES_ATIVOS = '749ccdc2-5127-41a1-997b-3dcb47979555';
 
@@ -16,6 +19,7 @@ const MONTH_LABELS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'S
 
 interface CardData {
   id: string;
+  title: string;
   monthly_revenue: number;
   plano: string;
   data_inicio?: string | null;
@@ -140,6 +144,7 @@ export const FinancialMetrics = () => {
   const [selectedUpsellPayment, setSelectedUpsellPayment] = useState<string>("todos");
   const [selectedCrosssellPayment, setSelectedCrosssellPayment] = useState<string>("todos");
   const [loading, setLoading] = useState(true);
+  const [detailModal, setDetailModal] = useState<{ title: string; clients: CardData[] } | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -147,7 +152,7 @@ export const FinancialMetrics = () => {
       const [cardsRes, upsellRes] = await Promise.all([
         supabase
           .from('csm_cards')
-          .select('id, monthly_revenue, plano, data_inicio, data_contrato, created_at, data_perda, client_status, categoria, squad')
+          .select('id, title, monthly_revenue, plano, data_inicio, data_contrato, created_at, data_perda, client_status, categoria, squad')
           .eq('pipeline_id', PIPELINE_CLIENTES_ATIVOS),
         supabase
           .from('csm_card_upsell_history')
@@ -156,6 +161,7 @@ export const FinancialMetrics = () => {
 
       setCards((cardsRes.data || []).map((card: any) => ({
         id: card.id,
+        title: card.title || 'Sem nome',
         monthly_revenue: Number(card.monthly_revenue) || 0,
         plano: card.plano || 'Starter',
         data_inicio: card.data_inicio,
@@ -293,6 +299,17 @@ export const FinancialMetrics = () => {
 
       <ResponsiveGrid cols={{ default: 1, md: 2, xl: 3 }} gap={{ default: 6 }}>
         <KPICard
+          title="MRR da Base"
+          value={formatCurrency(current.mrrBase)}
+          subtitle={`${current.relevantRecorrentes.length} clientes relevantes no mês`}
+          icon={Database}
+          variant="default"
+          iconColor="text-indigo-500"
+          trend={calcTrend(current.mrrBase, prev.mrrBase)}
+          onValueClick={() => setDetailModal({ title: 'MRR da Base', clients: current.relevantRecorrentes })}
+        />
+
+        <KPICard
           title="MRR Recorrente"
           value={formatCurrency(current.mrrRecorrente)}
           subtitle={`${current.activeRecorrentes.length} clientes recorrentes ativos`}
@@ -300,6 +317,7 @@ export const FinancialMetrics = () => {
           variant="default"
           iconColor="text-blue-500"
           trend={calcTrend(current.mrrRecorrente, prev.mrrRecorrente)}
+          onValueClick={() => setDetailModal({ title: 'MRR Recorrente', clients: current.activeRecorrentes })}
         />
 
         <KPICard
@@ -310,6 +328,7 @@ export const FinancialMetrics = () => {
           variant="default"
           iconColor="text-red-500"
           trend={calcTrend(current.mrrTotal, prev.mrrTotal)}
+          onValueClick={() => setDetailModal({ title: 'MRR Total', clients: current.totalActiveCards })}
         />
 
         <KPICard
@@ -320,6 +339,7 @@ export const FinancialMetrics = () => {
           variant="success"
           iconColor="text-green-500"
           trend={calcTrend(current.mrrVendido, prev.mrrVendido)}
+          onValueClick={() => setDetailModal({ title: 'MRR Vendido', clients: current.activeVendidos })}
         />
 
         <KPICard
@@ -330,6 +350,7 @@ export const FinancialMetrics = () => {
           variant="danger"
           iconColor="text-red-500"
           trend={calcTrend(current.mrrPerdido, prev.mrrPerdido, true)}
+          onValueClick={() => setDetailModal({ title: 'MRR Perdido', clients: current.churnedCards })}
         />
 
         <KPICard
@@ -360,6 +381,7 @@ export const FinancialMetrics = () => {
           variant="default"
           iconColor="text-green-500"
           trend={calcTrend(current.ticketMedio, prev.ticketMedio)}
+          onValueClick={() => setDetailModal({ title: 'Ticket Médio MRR', clients: current.totalActiveCards })}
         />
 
         <KPICard
@@ -370,6 +392,7 @@ export const FinancialMetrics = () => {
           variant="danger"
           iconColor="text-red-400"
           trend={calcTrend(current.ticketMedioPerdido, prev.ticketMedioPerdido, true)}
+          onValueClick={() => setDetailModal({ title: 'Ticket Médio Perdido', clients: current.churnedCards })}
         />
 
         <KPICard
@@ -380,6 +403,7 @@ export const FinancialMetrics = () => {
           variant="default"
           iconColor="text-blue-500"
           trend={calcTrend(planMetrics.mrrPorPlano, planMetrics.mrrPorPlanoPrev)}
+          onValueClick={() => setDetailModal({ title: `MRR por Plano - ${selectedPlanMRR}`, clients: planMetrics.activeByPlanMRR })}
           filterComponent={
             <ToggleGroup type="single" value={selectedPlanMRR} onValueChange={(v) => v && setSelectedPlanMRR(v)} className="flex flex-wrap gap-2">
               {plans.map(plan => (
@@ -397,6 +421,7 @@ export const FinancialMetrics = () => {
           variant="default"
           iconColor="text-blue-600"
           trend={calcTrend(planMetrics.ticketMedioPorPlano, planMetrics.ticketMedioPorPlanoPrev)}
+          onValueClick={() => setDetailModal({ title: `Ticket Médio por Plano - ${selectedPlanTicket}`, clients: planMetrics.activeByPlanTicket })}
           filterComponent={
             <ToggleGroup type="single" value={selectedPlanTicket} onValueChange={(v) => v && setSelectedPlanTicket(v)} className="flex flex-wrap gap-2">
               {plans.map(plan => (
@@ -532,6 +557,45 @@ export const FinancialMetrics = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Client Detail Modal */}
+      <Dialog open={!!detailModal} onOpenChange={(open) => !open && setDetailModal(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>{detailModal?.title}</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh]">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Squad</TableHead>
+                  <TableHead>Plano</TableHead>
+                  <TableHead className="text-right">MRR</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(detailModal?.clients || [])
+                  .sort((a, b) => b.monthly_revenue - a.monthly_revenue)
+                  .map((client) => (
+                    <TableRow key={client.id}>
+                      <TableCell className="font-medium">{client.title}</TableCell>
+                      <TableCell>{client.squad || '-'}</TableCell>
+                      <TableCell>{client.plano || '-'}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(client.monthly_revenue)}</TableCell>
+                    </TableRow>
+                  ))}
+                <TableRow className="border-t-2 font-bold">
+                  <TableCell colSpan={3}>Total ({detailModal?.clients?.length || 0} clientes)</TableCell>
+                  <TableCell className="text-right">
+                    {formatCurrency((detailModal?.clients || []).reduce((sum, c) => sum + c.monthly_revenue, 0))}
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
