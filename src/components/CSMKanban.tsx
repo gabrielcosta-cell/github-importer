@@ -1158,14 +1158,22 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
         )}
       </div>
 
-      {/* Mobile bottom search bar */}
-      <MobileGlobalSearch
-        currentPipelineId={selectedPipeline}
-        pipelines={pipelines}
-        currentCards={cards}
-        currentStages={stages}
-        onSelectCard={handleGlobalCardSelect}
-      />
+      {/* Mobile inline search */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-border/40 bg-background/80 backdrop-blur-xl"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 8px)' }}
+      >
+        <div className="px-4 py-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar cliente..."
+              value={searchTerm}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-9 h-10 rounded-full"
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Stage Manager Dialog */}
       {showStageManager && selectedPipeline && (
