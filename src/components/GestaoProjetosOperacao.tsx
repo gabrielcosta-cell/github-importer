@@ -395,8 +395,10 @@ export const GestaoProjetosOperacao = () => {
 
       return {
         ...csm,
+        squad: effectiveSquad,
         monthly_revenue: effectiveRevenue,
         _hasSnapshot: hasSnapshot,
+        _hasSquadSnapshot: hasSquadSnapshot,
         crm_revenue: crmRev,
         crm_tipo_receita: crmTipo,
         crm_card_id: crmCardId,
