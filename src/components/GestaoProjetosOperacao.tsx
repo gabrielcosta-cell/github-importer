@@ -53,6 +53,7 @@ export interface ProjetoRow {
   receita_gerada_cliente?: number
   pipeline_id?: string
   pipeline_name?: string
+  stage_name?: string
   // Campos de merge CRM
   crm_revenue?: number
   crm_tipo_receita?: string
@@ -61,20 +62,6 @@ export interface ProjetoRow {
   variavel_vendas_revenue?: number
 }
 
-const calcEtapaFormal = (dataInicio?: string | null): string => {
-  if (!dataInicio) return '-'
-  try {
-    const start = parseISO(dataInicio)
-    const diff = differenceInMonths(new Date(), start)
-    if (diff <= 0) return 'Onboarding'
-    if (diff === 1) return 'Implementação'
-    if (diff === 2) return 'Refinamento'
-    if (diff === 3) return 'Escala'
-    if (diff === 4) return 'Expansão'
-    if (diff === 5) return 'Renovação'
-    return 'Retenção'
-  } catch { return '-' }
-}
 
 const calcTempoDOT = (dataInicio?: string | null, dataPerda?: string | null): string => {
   if (!dataInicio) return '-'
@@ -209,7 +196,7 @@ const COLUMN_ACCESSORS: Record<string, (p: ProjetoRow) => string | number | unde
   },
   squad: p => p.squad || '-',
   plano: p => p.plano || '-',
-  etapa_formal: p => calcEtapaFormal(p.data_inicio),
+  fase_contrato: p => p.stage_name || '-',
   fase_projeto: p => p.fase_projeto || '-',
   monthly_revenue: p => p.monthly_revenue || 0,
   crm_revenue: p => p.crm_revenue || 0,
@@ -246,7 +233,7 @@ const FILTERABLE_COLUMNS: Record<string, (p: ProjetoRow) => string | undefined> 
   categoria_mrr: p => p.categoria || undefined,
   squad: p => p.squad || undefined,
   plano: p => p.plano || undefined,
-  etapa_formal: p => { const v = calcEtapaFormal(p.data_inicio); return v !== '-' ? v : undefined },
+  fase_contrato: p => p.stage_name && p.stage_name !== '-' ? p.stage_name : undefined,
   fase_projeto: p => p.fase_projeto || undefined,
   servico: p => p.servico_contratado || undefined,
   niche: p => p.niche || undefined,
@@ -376,7 +363,7 @@ export const GestaoProjetosOperacao = ({ liveData, loading, selectedPeriod, onPe
   }, [periodData])
 
   const downloadCSV = () => {
-    const headers = ['ID', 'Nome', 'Origem', 'Tipo Receita', 'Squad', 'Plano', 'Etapa Formal', 'Fase do Projeto', 'Fee (MRR)', 'Vendas CRM', 'Var. Mídia', 'Var. Vendas', 'Total', 'Serviço', 'Data Assinatura', 'Tempo de DOT', 'Tempo Contrato', 'Valor Contrato', 'Nicho', 'Comissão', 'Criativos Estáticos', 'Criativos Vídeo', 'LPs', 'Limite Investimento', 'Churn', 'Motivo']
+    const headers = ['ID', 'Nome', 'Origem', 'Tipo Receita', 'Squad', 'Plano', 'Fase do contrato', 'Fase do Projeto', 'Fee (MRR)', 'Vendas CRM', 'Var. Mídia', 'Var. Vendas', 'Total', 'Serviço', 'Data Assinatura', 'Tempo de DOT', 'Tempo Contrato', 'Valor Contrato', 'Nicho', 'Comissão', 'Criativos Estáticos', 'Criativos Vídeo', 'LPs', 'Limite Investimento', 'Churn', 'Motivo']
     const csv = [
       headers.join(','),
       ...displayData.map(p => {
@@ -388,7 +375,7 @@ export const GestaoProjetosOperacao = ({ liveData, loading, selectedPeriod, onPe
           p.tipo_receita || '-',
           p.squad || '-',
           p.plano || '-',
-          calcEtapaFormal(p.data_inicio),
+          p.stage_name || '-',
           p.fase_projeto || '-',
           p.monthly_revenue || 0,
           p.crm_revenue || 0,
@@ -495,7 +482,7 @@ export const GestaoProjetosOperacao = ({ liveData, loading, selectedPeriod, onPe
                     <SortableHeader label="Tipo Receita" columnKey="tipo_receita" {...sharedHeaderProps} filterValues={filterOptions.tipo_receita} activeFilters={columnFilters.tipo_receita} className="min-w-[120px]" />
                     <SortableHeader label="Categoria MRR" columnKey="categoria_mrr" {...sharedHeaderProps} filterValues={filterOptions.categoria_mrr} activeFilters={columnFilters.categoria_mrr} className="min-w-[130px]" />
                     <SortableHeader label="Plano" columnKey="plano" {...sharedHeaderProps} filterValues={filterOptions.plano} activeFilters={columnFilters.plano} className="min-w-[90px]" />
-                    <SortableHeader label="Etapa Formal" columnKey="etapa_formal" {...sharedHeaderProps} filterValues={filterOptions.etapa_formal} activeFilters={columnFilters.etapa_formal} className="min-w-[110px]" />
+                    <SortableHeader label="Fase do contrato" columnKey="fase_contrato" {...sharedHeaderProps} filterValues={filterOptions.fase_contrato} activeFilters={columnFilters.fase_contrato} className="min-w-[110px]" />
                     <SortableHeader label="Fase do Projeto" columnKey="fase_projeto" {...sharedHeaderProps} filterValues={filterOptions.fase_projeto} activeFilters={columnFilters.fase_projeto} className="min-w-[120px]" />
                     <SortableHeader label="Fee (MRR)" columnKey="monthly_revenue" {...sharedHeaderProps} className="min-w-[110px] text-right" />
                     <SortableHeader label="Vendas CRM" columnKey="crm_revenue" {...sharedHeaderProps} className="min-w-[110px] text-right" />
@@ -591,7 +578,7 @@ export const GestaoProjetosOperacao = ({ liveData, loading, selectedPeriod, onPe
                           </Badge>
                         ) : '-'}
                       </TableCell>
-                      <TableCell className="text-sm">{calcEtapaFormal(p.data_inicio)}</TableCell>
+                      <TableCell className="text-sm">{p.stage_name || '-'}</TableCell>
                       <TableCell className="text-sm">{p.fase_projeto || '-'}</TableCell>
                       <TableCell className="text-sm text-right font-medium">
                         {p.source === 'crm-ops' ? (

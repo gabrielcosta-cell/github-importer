@@ -16,13 +16,30 @@ export const useProjetosData = (selectedPeriod: { month: number; year: number })
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
+
+      // Fetch stages for active clients pipeline
+      const { data: stagesData } = await supabase
+        .from('csm_stages')
+        .select('id, name')
+        .eq('pipeline_id', PIPELINE_CLIENTES_ATIVOS)
+        .eq('is_active', true)
+
+      const stagesMap = new Map<string, string>()
+      if (stagesData) {
+        for (const s of stagesData) stagesMap.set(s.id, s.name)
+      }
+
       const { data: csmData } = await supabase
         .from('csm_cards')
-        .select('id, display_id, company_name, title, squad, plano, fase_projeto, monthly_revenue, servico_contratado, data_contrato, data_inicio, tempo_contrato, valor_contrato, niche, existe_comissao, observacao_comissao, criativos_estaticos, criativos_video, lps, limite_investimento, data_perda, motivo_perda, client_status, created_at, categoria, receita_gerada_cliente')
+        .select('id, display_id, company_name, title, squad, plano, fase_projeto, monthly_revenue, servico_contratado, data_contrato, data_inicio, tempo_contrato, valor_contrato, niche, existe_comissao, observacao_comissao, criativos_estaticos, criativos_video, lps, limite_investimento, data_perda, motivo_perda, client_status, created_at, categoria, receita_gerada_cliente, stage_id')
         .eq('pipeline_id', PIPELINE_CLIENTES_ATIVOS)
         .order('display_id', { ascending: true, nullsFirst: false })
 
-      const csmRows: ProjetoRow[] = (csmData || []).map(row => ({ ...row, source: 'csm' as const }))
+      const csmRows: ProjetoRow[] = (csmData || []).map(row => ({
+        ...row,
+        source: 'csm' as const,
+        stage_name: row.stage_id ? stagesMap.get(row.stage_id) || '-' : '-',
+      }))
 
       const { data: crmPipelines } = await supabase
         .from('csm_pipelines')
