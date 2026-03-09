@@ -1,56 +1,29 @@
 
 
-## Renomear funil Closer e ajustar etapas + renomear coluna Receita CRM
+## Permitir edição de "Fase do contrato" por admins na tabela de Projetos
 
-### Abordagem
+### O que será feito
+Admins e Admin Global poderão clicar na coluna "Fase do contrato" para alterar a etapa do card no Kanban (1º Mês, 2º Mês, ..., Retenção), com dialog de confirmação e log de auditoria — mesmo padrão visual de Fee e Squad.
 
-A renomeação precisa acontecer tanto no código (constantes) quanto no banco de dados (pipeline e stages existentes). Os cards existentes não serão alterados — apenas o nome do pipeline e os nomes das etapas mudam.
+**Diferença**: como `stage_id` é um campo único no card (não usa snapshots por mês), o dialog não terá opções de propagação. A alteração move o card para a nova etapa no Kanban.
 
-### Alterações
+### Implementação
 
-**1. `src/utils/setupCRMOpsPipelines.ts`**
-- Renomear constante: `CLOSER_PIPELINE_NAME = 'Upsell | CrossSell'`
-- Adicionar constante legacy: `const CLOSER_PIPELINE_LEGACY_NAME = 'Closer | Principal'` para migração
-- Atualizar `CLOSER_STAGES` para as novas etapas:
-  - Oportunidades (position 0), Orçamento (1), Apresentação (2), Negociação (3), Em assinatura (4)
-- Adicionar função de migração no `setupCRMOpsPipelines()`:
-  - Buscar pipeline com nome `'Closer | Principal'`
-  - Se encontrar, renomear para `'Upsell | CrossSell'` via UPDATE
-  - Renomear/recriar as etapas existentes: mapear as 7 etapas antigas para as 5 novas, mantendo os cards nas etapas mais próximas (cards de R1/R1 Delay → Oportunidades, R2/R2 Delay → Orçamento, R3 → Apresentação, Follow Up → Negociação, Em assinatura → Em assinatura)
-- Atualizar `CRM_OPS_PIPELINE_NAMES` para incluir o novo nome
+**1. Criar `src/components/projetos/StageEditDialog.tsx`**
+- Dialog com select das stages do pipeline ativo (já disponíveis no hook)
+- Ao salvar: `UPDATE csm_cards SET stage_id = X WHERE id = Y`
+- Criar log em `csm_activities` (tipo `stage_change`)
+- Sem propagação (campo direto, não snapshot)
 
-**2. `src/utils/importCloserWonFeb.ts`**
-- Atualizar referência de `'Closer | Principal'` para `'Upsell | CrossSell'`
-- Manter referência a `'Em assinatura'` (etapa continua existindo)
+**2. Atualizar `src/hooks/useProjetosData.ts`**
+- Expor `stagesMap` (ou lista de stages) no retorno do hook para que o dialog tenha as opções
 
-**3. `src/components/GestaoProjetosOperacao.tsx`**
-- Renomear label `"Receita CRM"` para `"Vendas CRM"` em:
-  - Header da tabela (SortableHeader label, linha 581)
-  - CSV export headers (linha 471)
-  - Qualquer outro ponto que exiba esse texto (totalizadores no header)
+**3. Atualizar `src/components/GestaoProjetosOperacao.tsx`**
+- Adicionar state `stageEditData` (mesmo padrão de `squadEditData`)
+- Na célula "Fase do contrato" (linha 581): para admin/globalAdmin + source CSM, renderizar botão clicável com ícone Pencil (mesmo padrão do Squad)
+- Renderizar `StageEditDialog` no final do componente
+- Ao salvar, refetch dos dados (chamar refetch do hook)
 
-### Migração de etapas (lógica no setupCRMOpsPipelines)
-
-Os cards existentes precisam ser movidos para as novas etapas. A estratégia:
-1. Buscar todas as etapas atuais do pipeline
-2. Criar as novas etapas
-3. Mover cards das etapas antigas para as novas (mapeamento por posição/nome)
-4. Desativar ou excluir etapas antigas sem cards
-
-Mapeamento:
-```text
-Antiga          → Nova
-R1              → Oportunidades
-R1 Delay        → Oportunidades
-R2              → Orçamento
-R2 Delay        → Orçamento
-R3              → Apresentação
-Follow Up       → Negociação
-Em assinatura   → Em assinatura
-```
-
-### O que NÃO muda
-- Nenhuma lógica de soma de valores ou cálculo de receita
-- Nenhuma integração existente além da atualização de nomes
-- Cards existentes mantêm todos os dados (valor, datas, etc.)
+**4. Atualizar `src/components/ProjetosView.tsx`**
+- Passar função `refetchData` do hook para `GestaoProjetosOperacao` para que o componente possa recarregar os dados após alteração de stage
 
