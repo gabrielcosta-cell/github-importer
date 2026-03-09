@@ -292,22 +292,32 @@ export const FinancialMetrics = () => {
       <ResponsiveGrid cols={{ default: 1, md: 2, xl: 3 }} gap={{ default: 6 }}>
         <KPICard
           title="MRR Total"
-          value={formatCurrency(current.mrrActive)}
-          subtitle={`${current.activeCards.length} clientes ativos no mês`}
+          value={formatCurrency(current.mrrTotal)}
+          subtitle={`${current.totalActiveCards.length} clientes ativos (Recorrente + Vendido)`}
           icon={DollarSign}
           variant="default"
           iconColor="text-red-500"
-          trend={calcTrend(current.mrrActive, prev.mrrActive)}
+          trend={calcTrend(current.mrrTotal, prev.mrrTotal)}
         />
 
         <KPICard
-          title="MRR da Base"
-          value={formatCurrency(current.mrrBase)}
-          subtitle={`${current.relevantCards.length} clientes na base`}
+          title="MRR Recorrente"
+          value={formatCurrency(current.mrrRecorrente)}
+          subtitle={`${current.activeRecorrentes.length} clientes recorrentes ativos`}
           icon={Users}
           variant="default"
           iconColor="text-blue-500"
-          trend={calcTrend(current.mrrBase, prev.mrrBase)}
+          trend={calcTrend(current.mrrRecorrente, prev.mrrRecorrente)}
+        />
+
+        <KPICard
+          title="MRR Vendido"
+          value={formatCurrency(current.mrrVendido)}
+          subtitle={`${current.activeVendidos.length} clientes vendidos ativos`}
+          icon={UserPlus}
+          variant="success"
+          iconColor="text-green-500"
+          trend={calcTrend(current.mrrVendido, prev.mrrVendido)}
         />
 
         <KPICard
@@ -318,16 +328,6 @@ export const FinancialMetrics = () => {
           variant="danger"
           iconColor="text-red-500"
           trend={calcTrend(current.mrrPerdido, prev.mrrPerdido, true)}
-        />
-
-        <KPICard
-          title="MRR Vendido"
-          value={formatCurrency(current.mrrNovos)}
-          subtitle={`${current.newCards.length} novos clientes`}
-          icon={UserPlus}
-          variant="success"
-          iconColor="text-green-500"
-          trend={calcTrend(current.mrrNovos, prev.mrrNovos)}
         />
 
         <KPICard
