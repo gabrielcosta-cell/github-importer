@@ -32,7 +32,8 @@ export const KPICard: React.FC<KPICardProps> = ({
   iconColor = 'text-primary',
   valueClassName,
   filterComponent,
-  trend
+  trend,
+  onValueClick
 }) => {
   const getVariantClasses = () => {
     switch (variant) {
