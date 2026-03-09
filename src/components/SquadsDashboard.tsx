@@ -149,6 +149,10 @@ export const SquadsDashboard = () => {
         .filter(r => r.categoria === 'MRR Recorrente')
         .reduce((sum, r) => sum + (r.monthly_revenue || 0), 0)
 
+      const mrrBase = relevantCsm
+        .filter(r => r.categoria === 'MRR Recorrente')
+        .reduce((sum, r) => sum + (r.monthly_revenue || 0), 0)
+
       const mrrVendido = activeCsm
         .filter(r => r.categoria === 'MRR Vendido')
         .reduce((sum, r) => sum + (r.monthly_revenue || 0), 0)
@@ -166,7 +170,7 @@ export const SquadsDashboard = () => {
       const ltMedio = ltValues.length > 0 ? ltValues.reduce((a, b) => a + b, 0) / ltValues.length : 0
 
       const revenueChurn = churnedCsm.reduce((sum, r) => sum + (r.monthly_revenue || 0), 0)
-      const revenueChurnPercent = mrrRecorrente > 0 ? (revenueChurn / mrrRecorrente) * 100 : 0
+      const revenueChurnPercent = mrrBase > 0 ? (revenueChurn / mrrBase) * 100 : 0
       const tmChurn = churnedCsm.length > 0 ? revenueChurn / churnedCsm.length : 0
       const logoChurnPercent = relevantCsm.length > 0 ? (churnedCsm.length / relevantCsm.length) * 100 : 0
 
