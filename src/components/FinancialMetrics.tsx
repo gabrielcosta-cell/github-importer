@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { KPICard } from "@/components/KPICard";
 import { ResponsiveGrid } from "@/components/ResponsiveGrid";
-import { DollarSign, TrendingUp, ArrowUpRight, ShoppingCart, TrendingDown, Users, UserMinus, UserPlus, Percent, Database } from "lucide-react";
+import { DollarSign, TrendingUp, ArrowUpRight, ShoppingCart, TrendingDown, Users, UserMinus, UserPlus, Percent, Database, BarChart3, Target } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -175,6 +175,7 @@ export const FinancialMetrics = () => {
   const [selectedCrosssellPayment, setSelectedCrosssellPayment] = useState<string>("todos");
   const [loading, setLoading] = useState(true);
   const [detailModal, setDetailModal] = useState<{ title: string; clients?: CardData[]; upsellRecords?: UpsellRecord[] } | null>(null);
+  const [activeTab, setActiveTab] = useState<'mrr' | 'churn' | 'ticket' | 'vendas'>('mrr');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -331,269 +332,279 @@ export const FinancialMetrics = () => {
         />
       </div>
 
-      <ResponsiveGrid cols={{ default: 1, md: 2, xl: 3 }} gap={{ default: 6 }}>
-        <KPICard
-          title="MRR da Base"
-          value={formatCurrency(current.mrrBase)}
-          subtitle={`${current.relevantRecorrentes.length} clientes relevantes no mês`}
-          icon={Database}
-          variant="default"
-          iconColor="text-indigo-500"
-          trend={calcTrend(current.mrrBase, prev.mrrBase)}
-          onValueClick={() => setDetailModal({ title: 'MRR da Base', clients: current.relevantRecorrentes })}
-        />
+      {/* Sub-tabs */}
+      <div className="flex items-center px-2">
+        <div className="inline-flex rounded-xl bg-card border border-border p-1 shadow-sm">
+          {([
+            { key: 'mrr' as const, label: 'MRR', icon: DollarSign },
+            { key: 'churn' as const, label: 'Churn', icon: Percent },
+            { key: 'ticket' as const, label: 'Ticket Médio', icon: Target },
+            { key: 'vendas' as const, label: 'Vendas', icon: ShoppingCart },
+          ]).map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              onClick={() => setActiveTab(key)}
+              className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                activeTab === key
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
 
-        <KPICard
-          title="MRR Recorrente"
-          value={formatCurrency(current.mrrRecorrente)}
-          subtitle={`${current.activeRecorrentes.length} clientes recorrentes ativos`}
-          icon={Users}
-          variant="default"
-          iconColor="text-blue-500"
-          trend={calcTrend(current.mrrRecorrente, prev.mrrRecorrente)}
-          onValueClick={() => setDetailModal({ title: 'MRR Recorrente', clients: current.activeRecorrentes })}
-        />
+      {/* MRR Tab */}
+      {activeTab === 'mrr' && (
+        <>
+          <ResponsiveGrid cols={{ default: 1, md: 2, xl: 3 }} gap={{ default: 6 }}>
+            <KPICard
+              title="MRR da Base"
+              value={formatCurrency(current.mrrBase)}
+              subtitle={`${current.relevantRecorrentes.length} clientes relevantes no mês`}
+              icon={Database}
+              variant="default"
+              iconColor="text-indigo-500"
+              trend={calcTrend(current.mrrBase, prev.mrrBase)}
+              onValueClick={() => setDetailModal({ title: 'MRR da Base', clients: current.relevantRecorrentes })}
+            />
+            <KPICard
+              title="MRR Recorrente"
+              value={formatCurrency(current.mrrRecorrente)}
+              subtitle={`${current.activeRecorrentes.length} clientes recorrentes ativos`}
+              icon={Users}
+              variant="default"
+              iconColor="text-blue-500"
+              trend={calcTrend(current.mrrRecorrente, prev.mrrRecorrente)}
+              onValueClick={() => setDetailModal({ title: 'MRR Recorrente', clients: current.activeRecorrentes })}
+            />
+            <KPICard
+              title="MRR Total"
+              value={formatCurrency(current.mrrTotal)}
+              subtitle={`${current.totalActiveCards.length} clientes ativos (Recorrente + Vendido)`}
+              icon={DollarSign}
+              variant="default"
+              iconColor="text-red-500"
+              trend={calcTrend(current.mrrTotal, prev.mrrTotal)}
+              onValueClick={() => setDetailModal({ title: 'MRR Total', clients: current.totalActiveCards })}
+            />
+            <KPICard
+              title="MRR Vendido"
+              value={formatCurrency(current.mrrVendido)}
+              subtitle={`${current.activeVendidos.length} clientes vendidos ativos`}
+              icon={UserPlus}
+              variant="success"
+              iconColor="text-green-500"
+              trend={calcTrend(current.mrrVendido, prev.mrrVendido)}
+              onValueClick={() => setDetailModal({ title: 'MRR Vendido', clients: current.activeVendidos })}
+            />
+            <KPICard
+              title="MRR Perdido"
+              value={formatCurrency(current.mrrPerdido)}
+              subtitle={`${current.churnedCards.length} cancelamentos no mês`}
+              icon={TrendingDown}
+              variant="danger"
+              iconColor="text-red-500"
+              trend={calcTrend(current.mrrPerdido, prev.mrrPerdido, true)}
+              onValueClick={() => setDetailModal({ title: 'MRR Perdido', clients: current.churnedCards })}
+            />
+            <KPICard
+              title="MRR por Plano"
+              value={formatCurrency(planMetrics.mrrPorPlano)}
+              subtitle={`Plano ${selectedPlanMRR} (${planMetrics.activeByPlanMRR.length} clientes)`}
+              icon={DollarSign}
+              variant="default"
+              iconColor="text-blue-500"
+              trend={calcTrend(planMetrics.mrrPorPlano, planMetrics.mrrPorPlanoPrev)}
+              onValueClick={() => setDetailModal({ title: `MRR por Plano - ${selectedPlanMRR}`, clients: planMetrics.activeByPlanMRR })}
+              filterComponent={
+                <ToggleGroup type="single" value={selectedPlanMRR} onValueChange={(v) => v && setSelectedPlanMRR(v)} className="flex flex-wrap gap-2">
+                  {plans.map(plan => (
+                    <ToggleGroupItem key={plan} value={plan} className="text-xs px-3 py-1 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{plan}</ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+              }
+            />
+          </ResponsiveGrid>
 
-        <KPICard
-          title="MRR Total"
-          value={formatCurrency(current.mrrTotal)}
-          subtitle={`${current.totalActiveCards.length} clientes ativos (Recorrente + Vendido)`}
-          icon={DollarSign}
-          variant="default"
-          iconColor="text-red-500"
-          trend={calcTrend(current.mrrTotal, prev.mrrTotal)}
-          onValueClick={() => setDetailModal({ title: 'MRR Total', clients: current.totalActiveCards })}
-        />
+          {/* MRR Evolution Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold">Evolução do MRR</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[350px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorMrrAtivo" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorMrrPerdido" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(0, 84%, 60%)" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(0, 84%, 60%)" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorMrrNovos" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(142, 71%, 45%)" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(142, 71%, 45%)" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="name" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                    <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(v) => `R$ ${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }}
+                      formatter={(value: number, name: string) => [formatCurrency(value), name === 'mrrAtivo' ? 'MRR Ativo' : name === 'mrrPerdido' ? 'MRR Perdido' : 'MRR Novos']}
+                    />
+                    <Legend formatter={(value) => value === 'mrrAtivo' ? 'MRR Ativo' : value === 'mrrPerdido' ? 'MRR Perdido' : 'MRR Novos'} />
+                    <Area type="monotone" dataKey="mrrAtivo" stroke="hsl(var(--primary))" fill="url(#colorMrrAtivo)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="mrrPerdido" stroke="hsl(0, 84%, 60%)" fill="url(#colorMrrPerdido)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="mrrNovos" stroke="hsl(142, 71%, 45%)" fill="url(#colorMrrNovos)" strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
 
-        <KPICard
-          title="MRR Vendido"
-          value={formatCurrency(current.mrrVendido)}
-          subtitle={`${current.activeVendidos.length} clientes vendidos ativos`}
-          icon={UserPlus}
-          variant="success"
-          iconColor="text-green-500"
-          trend={calcTrend(current.mrrVendido, prev.mrrVendido)}
-          onValueClick={() => setDetailModal({ title: 'MRR Vendido', clients: current.activeVendidos })}
-        />
+      {/* Churn Tab */}
+      {activeTab === 'churn' && (
+        <ResponsiveGrid cols={{ default: 1, md: 2, xl: 3 }} gap={{ default: 6 }}>
+          <KPICard
+            title="Revenue Churn"
+            value={`${current.revenueChurnPercent.toFixed(2)}%`}
+            subtitle="MRR perdido / MRR base"
+            icon={Percent}
+            variant={current.revenueChurnPercent > 5 ? "danger" : "default"}
+            iconColor="text-orange-500"
+            trend={calcTrend(current.revenueChurnPercent, prev.revenueChurnPercent, true)}
+          />
+          <KPICard
+            title="Churn Líquido + Upsell"
+            value={`${current.churnLiquidoPercent.toFixed(2)}%`}
+            subtitle="(MRR perdido - upsell recorrente) / MRR base"
+            icon={Percent}
+            variant={current.churnLiquidoPercent > 5 ? "warning" : "default"}
+            iconColor="text-amber-500"
+            trend={calcTrend(current.churnLiquidoPercent, prev.churnLiquidoPercent, true)}
+          />
+          <KPICard
+            title="MRR Perdido"
+            value={formatCurrency(current.mrrPerdido)}
+            subtitle={`${current.churnedCards.length} cancelamentos no mês`}
+            icon={TrendingDown}
+            variant="danger"
+            iconColor="text-red-500"
+            trend={calcTrend(current.mrrPerdido, prev.mrrPerdido, true)}
+            onValueClick={() => setDetailModal({ title: 'MRR Perdido', clients: current.churnedCards })}
+          />
+        </ResponsiveGrid>
+      )}
 
-        <KPICard
-          title="MRR Perdido"
-          value={formatCurrency(current.mrrPerdido)}
-          subtitle={`${current.churnedCards.length} cancelamentos no mês`}
-          icon={TrendingDown}
-          variant="danger"
-          iconColor="text-red-500"
-          trend={calcTrend(current.mrrPerdido, prev.mrrPerdido, true)}
-          onValueClick={() => setDetailModal({ title: 'MRR Perdido', clients: current.churnedCards })}
-        />
+      {/* Ticket Médio Tab */}
+      {activeTab === 'ticket' && (
+        <ResponsiveGrid cols={{ default: 1, md: 2, xl: 3 }} gap={{ default: 6 }}>
+          <KPICard
+            title="Ticket Médio MRR"
+            value={formatCurrency(current.ticketMedio)}
+            subtitle={`Média por cliente ativo (${current.totalActiveCards.length})`}
+            icon={TrendingUp}
+            variant="default"
+            iconColor="text-green-500"
+            trend={calcTrend(current.ticketMedio, prev.ticketMedio)}
+            onValueClick={() => setDetailModal({ title: 'Ticket Médio MRR', clients: current.totalActiveCards })}
+          />
+          <KPICard
+            title="Ticket Médio Perdido"
+            value={formatCurrency(current.ticketMedioPerdido)}
+            subtitle={`Média por churn (${current.churnedCards.length})`}
+            icon={UserMinus}
+            variant="danger"
+            iconColor="text-red-400"
+            trend={calcTrend(current.ticketMedioPerdido, prev.ticketMedioPerdido, true)}
+            onValueClick={() => setDetailModal({ title: 'Ticket Médio Perdido', clients: current.churnedCards })}
+          />
+          <KPICard
+            title="Ticket Médio por Plano"
+            value={formatCurrency(planMetrics.ticketMedioPorPlano)}
+            subtitle={`Plano ${selectedPlanTicket} (${planMetrics.activeByPlanTicket.length} clientes)`}
+            icon={TrendingUp}
+            variant="default"
+            iconColor="text-blue-600"
+            trend={calcTrend(planMetrics.ticketMedioPorPlano, planMetrics.ticketMedioPorPlanoPrev)}
+            onValueClick={() => setDetailModal({ title: `Ticket Médio por Plano - ${selectedPlanTicket}`, clients: planMetrics.activeByPlanTicket })}
+            filterComponent={
+              <ToggleGroup type="single" value={selectedPlanTicket} onValueChange={(v) => v && setSelectedPlanTicket(v)} className="flex flex-wrap gap-2">
+                {plans.map(plan => (
+                  <ToggleGroupItem key={plan} value={plan} className="text-xs px-3 py-1 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{plan}</ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            }
+          />
+        </ResponsiveGrid>
+      )}
 
-        <KPICard
-          title="Revenue Churn"
-          value={`${current.revenueChurnPercent.toFixed(2)}%`}
-          subtitle="MRR perdido / MRR base"
-          icon={Percent}
-          variant={current.revenueChurnPercent > 5 ? "danger" : "default"}
-          iconColor="text-orange-500"
-          trend={calcTrend(current.revenueChurnPercent, prev.revenueChurnPercent, true)}
-        />
-
-        <KPICard
-          title="Churn Líquido + Upsell"
-          value={`${current.churnLiquidoPercent.toFixed(2)}%`}
-          subtitle="(MRR perdido - upsell recorrente) / MRR base"
-          icon={Percent}
-          variant={current.churnLiquidoPercent > 5 ? "warning" : "default"}
-          iconColor="text-amber-500"
-          trend={calcTrend(current.churnLiquidoPercent, prev.churnLiquidoPercent, true)}
-        />
-
-        <KPICard
-          title="Ticket Médio MRR"
-          value={formatCurrency(current.ticketMedio)}
-          subtitle={`Média por cliente ativo (${current.totalActiveCards.length})`}
-          icon={TrendingUp}
-          variant="default"
-          iconColor="text-green-500"
-          trend={calcTrend(current.ticketMedio, prev.ticketMedio)}
-          onValueClick={() => setDetailModal({ title: 'Ticket Médio MRR', clients: current.totalActiveCards })}
-        />
-
-        <KPICard
-          title="Ticket Médio Perdido"
-          value={formatCurrency(current.ticketMedioPerdido)}
-          subtitle={`Média por churn (${current.churnedCards.length})`}
-          icon={UserMinus}
-          variant="danger"
-          iconColor="text-red-400"
-          trend={calcTrend(current.ticketMedioPerdido, prev.ticketMedioPerdido, true)}
-          onValueClick={() => setDetailModal({ title: 'Ticket Médio Perdido', clients: current.churnedCards })}
-        />
-
-        <KPICard
-          title="MRR por Plano"
-          value={formatCurrency(planMetrics.mrrPorPlano)}
-          subtitle={`Plano ${selectedPlanMRR} (${planMetrics.activeByPlanMRR.length} clientes)`}
-          icon={DollarSign}
-          variant="default"
-          iconColor="text-blue-500"
-          trend={calcTrend(planMetrics.mrrPorPlano, planMetrics.mrrPorPlanoPrev)}
-          onValueClick={() => setDetailModal({ title: `MRR por Plano - ${selectedPlanMRR}`, clients: planMetrics.activeByPlanMRR })}
-          filterComponent={
-            <ToggleGroup type="single" value={selectedPlanMRR} onValueChange={(v) => v && setSelectedPlanMRR(v)} className="flex flex-wrap gap-2">
-              {plans.map(plan => (
-                <ToggleGroupItem key={plan} value={plan} className="text-xs px-3 py-1 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{plan}</ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          }
-        />
-
-        <KPICard
-          title="Ticket Médio por Plano"
-          value={formatCurrency(planMetrics.ticketMedioPorPlano)}
-          subtitle={`Plano ${selectedPlanTicket} (${planMetrics.activeByPlanTicket.length} clientes)`}
-          icon={TrendingUp}
-          variant="default"
-          iconColor="text-blue-600"
-          trend={calcTrend(planMetrics.ticketMedioPorPlano, planMetrics.ticketMedioPorPlanoPrev)}
-          onValueClick={() => setDetailModal({ title: `Ticket Médio por Plano - ${selectedPlanTicket}`, clients: planMetrics.activeByPlanTicket })}
-          filterComponent={
-            <ToggleGroup type="single" value={selectedPlanTicket} onValueChange={(v) => v && setSelectedPlanTicket(v)} className="flex flex-wrap gap-2">
-              {plans.map(plan => (
-                <ToggleGroupItem key={plan} value={plan} className="text-xs px-3 py-1 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{plan}</ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          }
-        />
-
-        <KPICard
-          title="Receita Adicional Total"
-          value={formatCurrency(current.receitaAdicionalTotal)}
-          subtitle={`${current.upsells.length} upsells + ${current.crosssells.length} crosssells no mês`}
-          icon={TrendingUp}
-          variant="success"
-          iconColor="text-green-500"
-          trend={calcTrend(current.receitaAdicionalTotal, prev.receitaAdicionalTotal)}
-        />
-
-        <KPICard
-          title="Upsell Recorrente"
-          value={formatCurrency(current.upsellRecorrente)}
-          subtitle={`Impacto no MRR (${current.upsells.filter(r => r.payment_type === 'recorrente').length} registros)`}
-          icon={ArrowUpRight}
-          variant="default"
-          iconColor="text-emerald-500"
-          trend={calcTrend(current.upsellRecorrente, prev.upsellRecorrente)}
-          onValueClick={() => setDetailModal({ title: 'Upsell Recorrente', upsellRecords: current.upsells.filter(r => r.payment_type === 'recorrente') })}
-        />
-
-        <KPICard
-          title="Upsell Total"
-          value={formatCurrency(upsellFiltered.upsellTotal)}
-          subtitle={`${upsellFiltered.filteredUpsells.length} registros`}
-          icon={ArrowUpRight}
-          variant="default"
-          iconColor="text-purple-500"
-          onValueClick={() => setDetailModal({ title: 'Upsell Total', upsellRecords: upsellFiltered.filteredUpsells })}
-          filterComponent={
-            <ToggleGroup type="single" value={selectedUpsellPayment} onValueChange={(v) => v && setSelectedUpsellPayment(v)} className="flex flex-wrap gap-2">
-              {paymentTypes.map(pt => (
-                <ToggleGroupItem key={pt.value} value={pt.value} className="text-xs px-3 py-1 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{pt.label}</ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          }
-        />
-
-        <KPICard
-          title="Crosssell Total"
-          value={formatCurrency(upsellFiltered.crosssellTotal)}
-          subtitle={`${upsellFiltered.filteredCrosssells.length} registros`}
-          icon={ShoppingCart}
-          variant="default"
-          iconColor="text-orange-500"
-          onValueClick={() => setDetailModal({ title: 'Crosssell Total', upsellRecords: upsellFiltered.filteredCrosssells })}
-          filterComponent={
-            <ToggleGroup type="single" value={selectedCrosssellPayment} onValueChange={(v) => v && setSelectedCrosssellPayment(v)} className="flex flex-wrap gap-2">
-              {paymentTypes.map(pt => (
-                <ToggleGroupItem key={pt.value} value={pt.value} className="text-xs px-3 py-1 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{pt.label}</ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          }
-        />
-      </ResponsiveGrid>
-
-      {/* MRR Evolution Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold">Evolução do MRR</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[350px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorMrrAtivo" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorMrrPerdido" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(0, 84%, 60%)" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="hsl(0, 84%, 60%)" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorMrrNovos" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(142, 71%, 45%)" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="hsl(142, 71%, 45%)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="name" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                <YAxis
-                  className="text-xs"
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                  tickFormatter={(v) => `R$ ${(v / 1000).toFixed(0)}k`}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                    color: 'hsl(var(--foreground))',
-                  }}
-                  formatter={(value: number, name: string) => [
-                    formatCurrency(value),
-                    name === 'mrrAtivo' ? 'MRR Ativo' : name === 'mrrPerdido' ? 'MRR Perdido' : 'MRR Novos'
-                  ]}
-                />
-                <Legend
-                  formatter={(value) =>
-                    value === 'mrrAtivo' ? 'MRR Ativo' : value === 'mrrPerdido' ? 'MRR Perdido' : 'MRR Novos'
-                  }
-                />
-                <Area
-                  type="monotone"
-                  dataKey="mrrAtivo"
-                  stroke="hsl(var(--primary))"
-                  fill="url(#colorMrrAtivo)"
-                  strokeWidth={2}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="mrrPerdido"
-                  stroke="hsl(0, 84%, 60%)"
-                  fill="url(#colorMrrPerdido)"
-                  strokeWidth={2}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="mrrNovos"
-                  stroke="hsl(142, 71%, 45%)"
-                  fill="url(#colorMrrNovos)"
-                  strokeWidth={2}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Vendas Tab */}
+      {activeTab === 'vendas' && (
+        <ResponsiveGrid cols={{ default: 1, md: 2, xl: 2 }} gap={{ default: 6 }}>
+          <KPICard
+            title="Receita Adicional Total"
+            value={formatCurrency(current.receitaAdicionalTotal)}
+            subtitle={`${current.upsells.length} upsells + ${current.crosssells.length} crosssells no mês`}
+            icon={TrendingUp}
+            variant="success"
+            iconColor="text-green-500"
+            trend={calcTrend(current.receitaAdicionalTotal, prev.receitaAdicionalTotal)}
+          />
+          <KPICard
+            title="Upsell Recorrente"
+            value={formatCurrency(current.upsellRecorrente)}
+            subtitle={`Impacto no MRR (${current.upsells.filter(r => r.payment_type === 'recorrente').length} registros)`}
+            icon={ArrowUpRight}
+            variant="default"
+            iconColor="text-emerald-500"
+            trend={calcTrend(current.upsellRecorrente, prev.upsellRecorrente)}
+            onValueClick={() => setDetailModal({ title: 'Upsell Recorrente', upsellRecords: current.upsells.filter(r => r.payment_type === 'recorrente') })}
+          />
+          <KPICard
+            title="Upsell Total"
+            value={formatCurrency(upsellFiltered.upsellTotal)}
+            subtitle={`${upsellFiltered.filteredUpsells.length} registros`}
+            icon={ArrowUpRight}
+            variant="default"
+            iconColor="text-purple-500"
+            onValueClick={() => setDetailModal({ title: 'Upsell Total', upsellRecords: upsellFiltered.filteredUpsells })}
+            filterComponent={
+              <ToggleGroup type="single" value={selectedUpsellPayment} onValueChange={(v) => v && setSelectedUpsellPayment(v)} className="flex flex-wrap gap-2">
+                {paymentTypes.map(pt => (
+                  <ToggleGroupItem key={pt.value} value={pt.value} className="text-xs px-3 py-1 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{pt.label}</ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            }
+          />
+          <KPICard
+            title="Crosssell Total"
+            value={formatCurrency(upsellFiltered.crosssellTotal)}
+            subtitle={`${upsellFiltered.filteredCrosssells.length} registros`}
+            icon={ShoppingCart}
+            variant="default"
+            iconColor="text-orange-500"
+            onValueClick={() => setDetailModal({ title: 'Crosssell Total', upsellRecords: upsellFiltered.filteredCrosssells })}
+            filterComponent={
+              <ToggleGroup type="single" value={selectedCrosssellPayment} onValueChange={(v) => v && setSelectedCrosssellPayment(v)} className="flex flex-wrap gap-2">
+                {paymentTypes.map(pt => (
+                  <ToggleGroupItem key={pt.value} value={pt.value} className="text-xs px-3 py-1 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{pt.label}</ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            }
+          />
+        </ResponsiveGrid>
+      )}
 
       {/* Client Detail Modal */}
       <Dialog open={!!detailModal} onOpenChange={(open) => !open && setDetailModal(null)}>
@@ -613,21 +624,17 @@ export const FinancialMetrics = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {detailModal.upsellRecords
-                    .sort((a, b) => b.upsell_value - a.upsell_value)
-                    .map((record, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell className="font-medium">{record.card_title || '-'}</TableCell>
-                        <TableCell className="capitalize">{record.payment_type}</TableCell>
-                        <TableCell className="max-w-[200px] truncate text-muted-foreground text-xs">{record.notes || '-'}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(record.upsell_value)}</TableCell>
-                      </TableRow>
-                    ))}
+                  {detailModal.upsellRecords.sort((a, b) => b.upsell_value - a.upsell_value).map((record, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell className="font-medium">{record.card_title || '-'}</TableCell>
+                      <TableCell className="capitalize">{record.payment_type}</TableCell>
+                      <TableCell className="max-w-[200px] truncate text-muted-foreground text-xs">{record.notes || '-'}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(record.upsell_value)}</TableCell>
+                    </TableRow>
+                  ))}
                   <TableRow className="border-t-2 font-bold">
                     <TableCell colSpan={3}>Total ({detailModal.upsellRecords.length} registros)</TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(detailModal.upsellRecords.reduce((sum, r) => sum + r.upsell_value, 0))}
-                    </TableCell>
+                    <TableCell className="text-right">{formatCurrency(detailModal.upsellRecords.reduce((sum, r) => sum + r.upsell_value, 0))}</TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
@@ -642,21 +649,17 @@ export const FinancialMetrics = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(detailModal?.clients || [])
-                    .sort((a, b) => b.monthly_revenue - a.monthly_revenue)
-                    .map((client) => (
-                      <TableRow key={client.id}>
-                        <TableCell className="font-medium">{client.title}</TableCell>
-                        <TableCell>{client.squad || '-'}</TableCell>
-                        <TableCell>{client.plano || '-'}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(client.monthly_revenue)}</TableCell>
-                      </TableRow>
-                    ))}
+                  {(detailModal?.clients || []).sort((a, b) => b.monthly_revenue - a.monthly_revenue).map((client) => (
+                    <TableRow key={client.id}>
+                      <TableCell className="font-medium">{client.title}</TableCell>
+                      <TableCell>{client.squad || '-'}</TableCell>
+                      <TableCell>{client.plano || '-'}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(client.monthly_revenue)}</TableCell>
+                    </TableRow>
+                  ))}
                   <TableRow className="border-t-2 font-bold">
                     <TableCell colSpan={3}>Total ({detailModal?.clients?.length || 0} clientes)</TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency((detailModal?.clients || []).reduce((sum, c) => sum + c.monthly_revenue, 0))}
-                    </TableCell>
+                    <TableCell className="text-right">{formatCurrency((detailModal?.clients || []).reduce((sum, c) => sum + c.monthly_revenue, 0))}</TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
