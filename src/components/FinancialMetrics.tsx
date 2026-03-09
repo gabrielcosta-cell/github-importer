@@ -467,6 +467,7 @@ export const FinancialMetrics = () => {
           icon={ArrowUpRight}
           variant="default"
           iconColor="text-purple-500"
+          onValueClick={() => setDetailModal({ title: 'Upsell Total', upsellRecords: upsellFiltered.filteredUpsells })}
           filterComponent={
             <ToggleGroup type="single" value={selectedUpsellPayment} onValueChange={(v) => v && setSelectedUpsellPayment(v)} className="flex flex-wrap gap-2">
               {paymentTypes.map(pt => (
