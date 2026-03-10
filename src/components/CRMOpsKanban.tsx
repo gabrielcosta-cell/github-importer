@@ -375,17 +375,23 @@ export const CRMOpsKanban: React.FC = () => {
             </DropdownMenu>
           )}
 
-          {/* 6. Seletor de pipeline */}
-          <Select value={selectedPipeline} onValueChange={setSelectedPipeline}>
-            <SelectTrigger className="h-9 w-auto min-w-[160px]">
-              <SelectValue placeholder="Pipeline" />
-            </SelectTrigger>
-            <SelectContent>
-              {pipelines.map(p => (
-                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* 6. Seletor de pipeline - vertical list */}
+          <div className="flex flex-col gap-1">
+            {pipelines.map(p => (
+              <button
+                key={p.id}
+                onClick={() => setSelectedPipeline(p.id)}
+                className={cn(
+                  "text-xs px-3 py-1 rounded-md whitespace-nowrap transition-colors text-left",
+                  selectedPipeline === p.id
+                    ? "bg-primary text-primary-foreground font-semibold"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                )}
+              >
+                {p.name}
+              </button>
+            ))}
+          </div>
 
           {/* 7. Data */}
           <MonthYearPicker
