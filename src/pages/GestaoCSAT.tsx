@@ -63,7 +63,7 @@ const CSAT_STAGES: CSATStage[] = [
   { id: 'satisfeito', name: 'Satisfeitos', color: '#10b981', minScore: 4, maxScore: 5 },
 ];
 
-export default function GestaoCSAT() {
+export default function GestaoCSAT({ pipelineSelector }: { pipelineSelector?: React.ReactNode }) {
   const { toast } = useToast();
   const { profile } = useAuth();
   const navigate = useNavigate();
@@ -1005,6 +1005,8 @@ export default function GestaoCSAT() {
                 </PopoverContent>
               </Popover>
               
+              {pipelineSelector}
+
               <MonthYearPicker
                 selectedPeriods={selectedPeriod}
                 onPeriodsChange={setSelectedPeriod}
@@ -1182,6 +1184,9 @@ export default function GestaoCSAT() {
                 </div>
               </PopoverContent>
             </Popover>
+
+            {/* Pipeline Selector */}
+            {pipelineSelector}
 
             {/* Período */}
             <MonthYearPicker

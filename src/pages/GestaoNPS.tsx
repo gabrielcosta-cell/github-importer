@@ -64,7 +64,7 @@ const formatDateUTC = (dateString: string, formatStr: string = "dd/MM/yyyy 'às'
   return format(utcDate, formatStr, { locale: ptBR });
 };
 
-export default function GestaoNPS() {
+export default function GestaoNPS({ pipelineSelector }: { pipelineSelector?: React.ReactNode }) {
   const { toast } = useToast();
   const { profile } = useAuth();
   const navigate = useNavigate();
@@ -839,6 +839,8 @@ export default function GestaoNPS() {
                 </PopoverContent>
               </Popover>
               
+              {pipelineSelector}
+
               <MonthYearPicker
                 selectedPeriods={selectedPeriod}
                 onPeriodsChange={setSelectedPeriod}
@@ -1030,6 +1032,9 @@ export default function GestaoNPS() {
                 </div>
               </PopoverContent>
             </Popover>
+
+            {/* Pipeline Selector */}
+            {pipelineSelector}
 
             {/* Período */}
             <MonthYearPicker
