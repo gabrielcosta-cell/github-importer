@@ -264,7 +264,7 @@ export const CRMOpsKanban: React.FC = () => {
         <div className="flex flex-nowrap gap-2 items-center justify-end flex-shrink-0">
           {/* 1. Contagem + MRR (click to reveal) */}
           <div className="flex items-center gap-1">
-            <span className="text-sm font-semibold text-foreground whitespace-nowrap">
+            <span className="text-base font-semibold text-foreground whitespace-nowrap">
               {filteredCards.length} {filteredCards.length === 1 ? 'lead' : 'leads'}
             </span>
             <TooltipProvider>
