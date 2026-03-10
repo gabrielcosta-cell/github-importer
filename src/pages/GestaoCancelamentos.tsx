@@ -1157,29 +1157,8 @@ export default function GestaoCancelamentos() {
             />
           </div>
           
-          {/* Linha 2: View toggle + contador + ações */}
+          {/* Linha 2: contador + ações */}
           <div className="flex items-center justify-between gap-2">
-            {/* View toggle compacto */}
-            <div className="flex gap-1 border rounded-lg p-0.5">
-              <Button
-                variant={viewMode === 'kanban' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('kanban')}
-                className="h-8 px-2 transition-all duration-200"
-                style={viewMode === 'kanban' ? { backgroundColor: '#ec4a55', color: 'white' } : {}}
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('list')}
-                className="h-8 px-2 transition-all duration-200"
-                style={viewMode === 'list' ? { backgroundColor: '#ec4a55', color: 'white' } : {}}
-              >
-                <List className="h-4 w-4" />
-              </Button>
-            </div>
             
             {/* Contador */}
             <div className="flex items-center gap-1 px-2 py-1 bg-muted/50 rounded-md">
