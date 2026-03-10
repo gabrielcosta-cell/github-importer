@@ -163,6 +163,10 @@ export const CRMOpsKanban: React.FC = () => {
     });
   }, [cards, searchTerm, selectedPeriods, sortBy]);
 
+  const totalMRR = useMemo(() => {
+    return filteredCards.reduce((acc, card) => acc + (Number(card.monthly_revenue) || 0), 0);
+  }, [filteredCards]);
+
   const refreshCards = useCallback(() => {
     if (selectedPipeline) fetchCards(selectedPipeline);
   }, [selectedPipeline]);
