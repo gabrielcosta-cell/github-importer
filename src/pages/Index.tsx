@@ -29,11 +29,12 @@ import { ChurnMetrics } from "@/components/ChurnMetrics";
 import { InterfacePreferences } from "@/components/InterfacePreferences";
 import "@/utils/updateCategorias";
 
-const Insights = lazy(() => import("@/pages/Insights"));
+const Pipelines = lazy(() => import("@/pages/Pipelines"));
+const Dashboards = lazy(() => import("@/pages/Dashboards"));
 
-type ActiveViewType = 'users' | 'profile' | 'gestao-projetos' | 'gestao-contratos' | 'csm' | 'crm-ops' | 'cs' | 'cs-churn' | 'cs-metricas' | 'cs-nps' | 'cs-csat' | 'copy' | 'aprovacao' | 'analise-bench' | 'projetos-operacao' | 'projetos-clientes' | 'projetos-metricas' | 'performance' | 'preferencias-interface' | 'gestao-nps' | 'gestao-csat' | 'cs-cancelamento' | 'gestao-cancelamentos' | 'insights';
+type ActiveViewType = 'users' | 'profile' | 'gestao-projetos' | 'gestao-contratos' | 'csm' | 'crm-ops' | 'cs' | 'cs-churn' | 'cs-metricas' | 'cs-nps' | 'cs-csat' | 'copy' | 'aprovacao' | 'analise-bench' | 'projetos-operacao' | 'projetos-clientes' | 'projetos-metricas' | 'performance' | 'preferencias-interface' | 'gestao-nps' | 'gestao-csat' | 'cs-cancelamento' | 'gestao-cancelamentos' | 'pipelines' | 'dashboards';
 
-const VALID_VIEWS: ActiveViewType[] = ['users', 'profile', 'gestao-projetos', 'gestao-contratos', 'csm', 'crm-ops', 'cs', 'cs-churn', 'cs-metricas', 'cs-nps', 'cs-csat', 'copy', 'aprovacao', 'analise-bench', 'projetos-operacao', 'projetos-clientes', 'projetos-metricas', 'performance', 'preferencias-interface', 'gestao-nps', 'gestao-csat', 'cs-cancelamento', 'gestao-cancelamentos', 'insights'];
+const VALID_VIEWS: ActiveViewType[] = ['users', 'profile', 'gestao-projetos', 'gestao-contratos', 'csm', 'crm-ops', 'cs', 'cs-churn', 'cs-metricas', 'cs-nps', 'cs-csat', 'copy', 'aprovacao', 'analise-bench', 'projetos-operacao', 'projetos-clientes', 'projetos-metricas', 'performance', 'preferencias-interface', 'gestao-nps', 'gestao-csat', 'cs-cancelamento', 'gestao-cancelamentos', 'pipelines', 'dashboards'];
 
 const Index = () => {
   const { profile, signOut } = useAuth();
