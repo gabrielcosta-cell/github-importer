@@ -356,6 +356,7 @@ export const CRMOpsKanban: React.FC = () => {
               selectedPeriods={selectedPeriods}
               onPeriodsChange={setSelectedPeriods}
               singleSelect
+              inlineStyle
             />
           </div>
         </div>

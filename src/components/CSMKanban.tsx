@@ -1072,6 +1072,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
               singleSelect
               minYear={2025}
               minMonth={0}
+              inlineStyle
             />
           </div>
         </div>
