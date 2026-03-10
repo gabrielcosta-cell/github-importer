@@ -3,6 +3,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { ToolbarButton } from '@/components/ui/toolbar-button';
 import { Plus, Search, Settings, Pencil, BarChart3, Plug, PenLine, GripVertical, Tag, Zap, Trophy, ThumbsDown, ArrowUpDown, ListChecks, Shield, FileDown, Filter } from 'lucide-react';
+import { formatCurrency } from '@/utils/formatCurrency';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -162,6 +163,10 @@ export const CRMOpsKanban: React.FC = () => {
     });
   }, [cards, searchTerm, selectedPeriods, sortBy]);
 
+  const totalMRR = useMemo(() => {
+    return filteredCards.reduce((acc, card) => acc + (Number(card.monthly_revenue) || 0), 0);
+  }, [filteredCards]);
+
   const refreshCards = useCallback(() => {
     if (selectedPipeline) fetchCards(selectedPipeline);
   }, [selectedPipeline]);
@@ -256,12 +261,12 @@ export const CRMOpsKanban: React.FC = () => {
 
         {/* Right side: Controls */}
         <div className="flex flex-nowrap gap-2 items-center justify-end flex-shrink-0">
-          {/* Lead count */}
-          <span className="text-base font-semibold text-foreground">
-            {filteredCards.length} {filteredCards.length === 1 ? 'lead' : 'leads'}
+          {/* 1. Contagem + MRR */}
+          <span className="text-sm font-semibold text-foreground whitespace-nowrap">
+            {filteredCards.length} {filteredCards.length === 1 ? 'lead' : 'leads'} • {formatCurrency(totalMRR)}
           </span>
 
-          {/* Ordenar */}
+          {/* 2. Ordenar */}
           <Popover>
             <PopoverTrigger asChild>
               <ToolbarButton>
@@ -280,14 +285,13 @@ export const CRMOpsKanban: React.FC = () => {
             </PopoverContent>
           </Popover>
 
-          {/* Filtro por mês/ano */}
-          <MonthYearPicker
-            selectedPeriods={selectedPeriods}
-            onPeriodsChange={setSelectedPeriods}
-            singleSelect
-          />
+          {/* 3. Filtros */}
+          <ToolbarButton onClick={() => toast.info('Filtros em breve')}>
+            <Filter className="h-4 w-4" />
+            <span>Filtros</span>
+          </ToolbarButton>
 
-          {/* Adicionar lead */}
+          {/* 4. Adicionar lead */}
           {isAdmin && (
             <ToolbarButton onClick={handleAddCard}>
               <Plus className="h-4 w-4" />
@@ -295,11 +299,11 @@ export const CRMOpsKanban: React.FC = () => {
             </ToolbarButton>
           )}
 
-          {/* Configurações */}
+          {/* 5. Configurações */}
           {isAdmin && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-              <ToolbarButton toolbarSize="icon">
+                <ToolbarButton toolbarSize="icon">
                   <Settings className="h-4 w-4" />
                 </ToolbarButton>
               </DropdownMenuTrigger>
@@ -344,7 +348,7 @@ export const CRMOpsKanban: React.FC = () => {
             </DropdownMenu>
           )}
 
-          {/* Pipeline Selector */}
+          {/* 6. Seletor de pipeline */}
           <Select value={selectedPipeline} onValueChange={setSelectedPipeline}>
             <SelectTrigger className="h-9 w-auto min-w-[160px]">
               <SelectValue placeholder="Pipeline" />
@@ -355,6 +359,13 @@ export const CRMOpsKanban: React.FC = () => {
               ))}
             </SelectContent>
           </Select>
+
+          {/* 7. Data */}
+          <MonthYearPicker
+            selectedPeriods={selectedPeriods}
+            onPeriodsChange={setSelectedPeriods}
+            singleSelect
+          />
         </div>
       </div>
 
