@@ -1,56 +1,59 @@
 
 
-## Renomear funil Closer e ajustar etapas + renomear coluna Receita CRM
+## Centralizar CSAT e NPS em uma página "Insights"
 
-### Abordagem
+### Visão geral
 
-A renomeação precisa acontecer tanto no código (constantes) quanto no banco de dados (pipeline e stages existentes). Os cards existentes não serão alterados — apenas o nome do pipeline e os nomes das etapas mudam.
+Criar uma nova página Insights acessível via sidebar que unifica os pipelines de CSAT e NPS com tabs para alternar. Cada pipeline terá duas sub-views: **Dashboard** (componentes existentes) e **Pipeline** (kanban existente). Botão de adicionar card abre formulário em dialog central.
 
-### Alterações
+### Arquivos a criar
 
-**1. `src/utils/setupCRMOpsPipelines.ts`**
-- Renomear constante: `CLOSER_PIPELINE_NAME = 'Upsell | CrossSell'`
-- Adicionar constante legacy: `const CLOSER_PIPELINE_LEGACY_NAME = 'Closer | Principal'` para migração
-- Atualizar `CLOSER_STAGES` para as novas etapas:
-  - Oportunidades (position 0), Orçamento (1), Apresentação (2), Negociação (3), Em assinatura (4)
-- Adicionar função de migração no `setupCRMOpsPipelines()`:
-  - Buscar pipeline com nome `'Closer | Principal'`
-  - Se encontrar, renomear para `'Upsell | CrossSell'` via UPDATE
-  - Renomear/recriar as etapas existentes: mapear as 7 etapas antigas para as 5 novas, mantendo os cards nas etapas mais próximas (cards de R1/R1 Delay → Oportunidades, R2/R2 Delay → Orçamento, R3 → Apresentação, Follow Up → Negociação, Em assinatura → Em assinatura)
-- Atualizar `CRM_OPS_PIPELINE_NAMES` para incluir o novo nome
+**1. `src/pages/Insights.tsx`**
+- Tabs principais: **CSAT** | **NPS**
+- Dentro de cada tab, sub-tabs: **Dashboard** | **Pipeline**
+- Sub-tab Dashboard renderiza `CSATMetricsDashboard` ou `CustomerSuccessDashboard` diretamente
+- Sub-tab Pipeline renderiza o conteúdo kanban extraído de `GestaoCSAT` / `GestaoNPS` (importa os componentes existentes inline)
+- Header padronizado da toolbar: Busca | Contagem | Ordenar | Filtros | **+ Adicionar** | Data
+- Botão "+ Adicionar" abre Dialog central com formulário:
+  - **CSAT**: campos empresa, responsável, telefone, tipo_reuniao, nota_atendimento, nota_conteudo, nota_performance, recomendação, observações → insere em `csat_responses`
+  - **NPS**: campos empresa, responsável, email, cnpj, recomendação (1-10), sentimento, observações → insere em `nps_responses`
 
-**2. `src/utils/importCloserWonFeb.ts`**
-- Atualizar referência de `'Closer | Principal'` para `'Upsell | CrossSell'`
-- Manter referência a `'Em assinatura'` (etapa continua existindo)
+### Arquivos a modificar
 
-**3. `src/components/GestaoProjetosOperacao.tsx`**
-- Renomear label `"Receita CRM"` para `"Vendas CRM"` em:
-  - Header da tabela (SortableHeader label, linha 581)
-  - CSV export headers (linha 471)
-  - Qualquer outro ponto que exiba esse texto (totalizadores no header)
+**2. `src/components/app-sidebar.tsx`**
+- Adicionar item "Insights" (ícone `BarChart2` ou `Activity`) na seção CS, acima dos submenus individuais de CSAT/NPS
+- View: `'insights'`
+- Remover "Pipeline" dos submenus CSAT e NPS (dashboard e formulário permanecem)
 
-### Migração de etapas (lógica no setupCRMOpsPipelines)
+**3. `src/pages/Index.tsx`**
+- Adicionar `'insights'` a `ActiveViewType` e `VALID_VIEWS`
+- Mapear `'insights'` → módulo `'cs'` nos dois `moduleMap`
+- No `renderContent` switch: `case 'insights': return <Insights />`
+- Importar `Insights` com lazy loading
 
-Os cards existentes precisam ser movidos para as novas etapas. A estratégia:
-1. Buscar todas as etapas atuais do pipeline
-2. Criar as novas etapas
-3. Mover cards das etapas antigas para as novas (mapeamento por posição/nome)
-4. Desativar ou excluir etapas antigas sem cards
+**4. `src/App.tsx`**
+- Nenhuma mudança necessária (Insights vive dentro do dashboard via view param, não precisa de rota própria)
 
-Mapeamento:
+### Estrutura visual
+
 ```text
-Antiga          → Nova
-R1              → Oportunidades
-R1 Delay        → Oportunidades
-R2              → Orçamento
-R2 Delay        → Orçamento
-R3              → Apresentação
-Follow Up       → Negociação
-Em assinatura   → Em assinatura
+┌─────────────────────────────────────────────┐
+│  [CSAT]  [NPS]           ← tabs principais  │
+├─────────────────────────────────────────────┤
+│  [Dashboard] [Pipeline]  ← sub-tabs         │
+├─────────────────────────────────────────────┤
+│  [🔍] [42 resp] [↕] [🔽] [+ Add] [📅]     │
+│  ← toolbar (só na sub-tab Pipeline)         │
+├─────────────────────────────────────────────┤
+│  Kanban ou Dashboard content                │
+└─────────────────────────────────────────────┘
 ```
 
-### O que NÃO muda
-- Nenhuma lógica de soma de valores ou cálculo de receita
-- Nenhuma integração existente além da atualização de nomes
-- Cards existentes mantêm todos os dados (valor, datas, etc.)
+### Detalhes do formulário de adição (Dialog)
+
+Reutiliza os mesmos campos que já existem nos formulários FormCSAT e FormNPS, mas em formato dialog compacto no centro da tela. Após salvar, recarrega os dados do pipeline.
+
+### Estimativa
+
+~600-800 linhas para `Insights.tsx` (reaproveita toda a lógica de dados/filtros/cards de GestaoCSAT e GestaoNPS). Alterações menores no sidebar (~20 linhas) e Index (~10 linhas).
 
