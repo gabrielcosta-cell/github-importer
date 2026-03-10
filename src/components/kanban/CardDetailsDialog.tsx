@@ -1661,7 +1661,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
 
       const userId = (await supabase.auth.getUser()).data.user?.id;
 
-      // Criar uma CÓPIA do card no pipeline Upsell | CrossSell
+      // Criar uma CÓPIA do card no pipeline Vendas | Upsell
       const { data: newCard, error: insertError } = await supabase
         .from('csm_cards')
         .insert({
