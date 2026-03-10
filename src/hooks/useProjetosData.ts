@@ -213,8 +213,6 @@ export const useProjetosData = (selectedPeriod: { month: number; year: number })
     await fetchSnapshots()
   }, [fetchSnapshots])
 
-  // Stages list populated by fetchData
-  const [stagesList, setStagesList] = useState<Array<{ id: string; name: string }>>(cached?.stagesList || [])
 
   return { liveData, rawCsmRows, rawCrmRows, loading, fetchSnapshots, refetchData, stagesList }
 }
