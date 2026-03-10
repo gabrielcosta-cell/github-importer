@@ -1,56 +1,27 @@
 
 
-## Renomear funil Closer e ajustar etapas + renomear coluna Receita CRM
+## Eliminar loading ao intercalar entre CSM e CRM
 
-### Abordagem
+### Problema
+Ao trocar entre CSM e CRM no dashboard, os componentes são desmontados e remontados, causando loading toda vez. O CSM tem session cache que ameniza, mas o CRM Ops não tem nenhum cache.
 
-A renomeação precisa acontecer tanto no código (constantes) quanto no banco de dados (pipeline e stages existentes). Os cards existentes não serão alterados — apenas o nome do pipeline e os nomes das etapas mudam.
+### Solução
 
-### Alterações
+**1. Manter CSM e CRM montados simultaneamente (`src/pages/Index.tsx`)**
+- Em vez de renderizar apenas o componente ativo via `switch`, manter CSM e CRM Ops sempre montados mas ocultos com `display: none` quando não estão ativos.
+- Os demais módulos continuam com renderização condicional normal.
+- Isso elimina o remount e mantém o estado em memória ao trocar entre as duas views.
 
-**1. `src/utils/setupCRMOpsPipelines.ts`**
-- Renomear constante: `CLOSER_PIPELINE_NAME = 'Upsell | CrossSell'`
-- Adicionar constante legacy: `const CLOSER_PIPELINE_LEGACY_NAME = 'Closer | Principal'` para migração
-- Atualizar `CLOSER_STAGES` para as novas etapas:
-  - Oportunidades (position 0), Orçamento (1), Apresentação (2), Negociação (3), Em assinatura (4)
-- Adicionar função de migração no `setupCRMOpsPipelines()`:
-  - Buscar pipeline com nome `'Closer | Principal'`
-  - Se encontrar, renomear para `'Upsell | CrossSell'` via UPDATE
-  - Renomear/recriar as etapas existentes: mapear as 7 etapas antigas para as 5 novas, mantendo os cards nas etapas mais próximas (cards de R1/R1 Delay → Oportunidades, R2/R2 Delay → Orçamento, R3 → Apresentação, Follow Up → Negociação, Em assinatura → Em assinatura)
-- Atualizar `CRM_OPS_PIPELINE_NAMES` para incluir o novo nome
+**2. Adicionar session cache ao CRM Ops (`src/utils/crmOpsKanbanSessionCache.ts`)**
+- Criar cache similar ao `csmKanbanSessionCache.ts` para persistir pipelines, stages e cards do CRM Ops.
+- Validade de 1h, mesmo padrão do CSM.
 
-**2. `src/utils/importCloserWonFeb.ts`**
-- Atualizar referência de `'Closer | Principal'` para `'Upsell | CrossSell'`
-- Manter referência a `'Em assinatura'` (etapa continua existindo)
+**3. Usar cache no CRM Ops (`src/components/CRMOpsKanban.tsx`)**
+- Inicializar estado com dados do cache (pipelines, stages, cards, selectedPipeline).
+- Se cache existe, não exibir loading -- sincronizar em background.
+- Persistir dados no cache após cada atualização.
 
-**3. `src/components/GestaoProjetosOperacao.tsx`**
-- Renomear label `"Receita CRM"` para `"Vendas CRM"` em:
-  - Header da tabela (SortableHeader label, linha 581)
-  - CSV export headers (linha 471)
-  - Qualquer outro ponto que exiba esse texto (totalizadores no header)
-
-### Migração de etapas (lógica no setupCRMOpsPipelines)
-
-Os cards existentes precisam ser movidos para as novas etapas. A estratégia:
-1. Buscar todas as etapas atuais do pipeline
-2. Criar as novas etapas
-3. Mover cards das etapas antigas para as novas (mapeamento por posição/nome)
-4. Desativar ou excluir etapas antigas sem cards
-
-Mapeamento:
-```text
-Antiga          → Nova
-R1              → Oportunidades
-R1 Delay        → Oportunidades
-R2              → Orçamento
-R2 Delay        → Orçamento
-R3              → Apresentação
-Follow Up       → Negociação
-Em assinatura   → Em assinatura
-```
-
-### O que NÃO muda
-- Nenhuma lógica de soma de valores ou cálculo de receita
-- Nenhuma integração existente além da atualização de nomes
-- Cards existentes mantêm todos os dados (valor, datas, etc.)
+### O que muda para o usuário
+- Trocar entre CSM e CRM é instantâneo, sem tela de loading.
+- Primeira abertura do CRM Ops ainda pode ter loading breve (sem cache), mas retornos subsequentes são instantâneos.
 
