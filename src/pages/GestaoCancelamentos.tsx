@@ -1287,6 +1287,8 @@ export default function GestaoCancelamentos({ pipelineSelector }: { pipelineSele
                 </PopoverContent>
               </Popover>
               
+              {pipelineSelector}
+
               <MonthYearPicker
                 selectedPeriods={selectedPeriod}
                 onPeriodsChange={setSelectedPeriod}
