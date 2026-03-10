@@ -18,43 +18,52 @@ export const useProjetosData = (selectedPeriod: { month: number; year: number })
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true)
+      if (!cached) setLoading(true)
 
-      // Fetch stages for active clients pipeline
-      const { data: stagesData } = await supabase
-        .from('csm_stages')
-        .select('id, name')
-        .eq('pipeline_id', PIPELINE_CLIENTES_ATIVOS)
-        .eq('is_active', true)
+      // Parallel fetch: stages, csm cards, crm pipelines
+      const [stagesRes, csmRes, crmPipelinesRes] = await Promise.all([
+        supabase
+          .from('csm_stages')
+          .select('id, name, position')
+          .eq('pipeline_id', PIPELINE_CLIENTES_ATIVOS)
+          .eq('is_active', true)
+          .order('position'),
+        supabase
+          .from('csm_cards')
+          .select('id, display_id, company_name, title, squad, plano, fase_projeto, monthly_revenue, servico_contratado, data_contrato, data_inicio, tempo_contrato, valor_contrato, niche, existe_comissao, observacao_comissao, criativos_estaticos, criativos_video, lps, limite_investimento, data_perda, motivo_perda, client_status, created_at, categoria, receita_gerada_cliente, stage_id')
+          .eq('pipeline_id', PIPELINE_CLIENTES_ATIVOS)
+          .order('display_id', { ascending: true, nullsFirst: false }),
+        supabase
+          .from('csm_pipelines')
+          .select('id, name')
+          .in('name', CRM_OPS_PIPELINE_NAMES)
+          .eq('is_active', true),
+      ])
 
+      const stagesData = stagesRes.data
       const stagesMap = new Map<string, string>()
+      const stList: Array<{ id: string; name: string }> = []
       if (stagesData) {
-        for (const s of stagesData) stagesMap.set(s.id, s.name)
+        for (const s of stagesData) {
+          stagesMap.set(s.id, s.name)
+          stList.push({ id: s.id, name: s.name })
+        }
       }
+      setStagesList(stList)
 
-      const { data: csmData } = await supabase
-        .from('csm_cards')
-        .select('id, display_id, company_name, title, squad, plano, fase_projeto, monthly_revenue, servico_contratado, data_contrato, data_inicio, tempo_contrato, valor_contrato, niche, existe_comissao, observacao_comissao, criativos_estaticos, criativos_video, lps, limite_investimento, data_perda, motivo_perda, client_status, created_at, categoria, receita_gerada_cliente, stage_id')
-        .eq('pipeline_id', PIPELINE_CLIENTES_ATIVOS)
-        .order('display_id', { ascending: true, nullsFirst: false })
-
-      const csmRows: ProjetoRow[] = (csmData || []).map(row => ({
+      const csmRows: ProjetoRow[] = (csmRes.data || []).map(row => ({
         ...row,
         source: 'csm' as const,
         stage_name: row.stage_id ? stagesMap.get(row.stage_id) || '-' : '-',
       }))
 
-      const { data: crmPipelines } = await supabase
-        .from('csm_pipelines')
-        .select('id, name')
-        .in('name', CRM_OPS_PIPELINE_NAMES)
-        .eq('is_active', true)
-
       let crmOpsRows: ProjetoRow[] = []
-      const pipelineNameMap = new Map<string, string>()
+      const crmPipelines = crmPipelinesRes.data
       if (crmPipelines && crmPipelines.length > 0) {
         const pipelineIds = crmPipelines.map(p => p.id)
+        const pipelineNameMap = new Map<string, string>()
         for (const p of crmPipelines) pipelineNameMap.set(p.id, p.name)
+
         const { data: crmData } = await supabase
           .from('csm_cards')
           .select('id, display_id, company_name, title, squad, plano, fase_projeto, monthly_revenue, servico_contratado, data_contrato, data_inicio, tempo_contrato, valor_contrato, niche, existe_comissao, observacao_comissao, criativos_estaticos, criativos_video, lps, limite_investimento, data_perda, motivo_perda, client_status, created_at, tipo_receita, data_ganho, migrado_csm, pipeline_id')
@@ -83,7 +92,7 @@ export const useProjetosData = (selectedPeriod: { month: number; year: number })
       setRawCsmRows(csmRows)
       setRawCrmRows(crmOpsRows)
       setLoading(false)
-      writeProjetosCache({ rawCsmRows: csmRows, rawCrmRows: crmOpsRows, stagesList: [] })
+      writeProjetosCache({ rawCsmRows: csmRows, rawCrmRows: crmOpsRows, stagesList: stList })
     }
     fetchData()
   }, [])
