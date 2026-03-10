@@ -839,6 +839,8 @@ export default function GestaoNPS({ pipelineSelector }: { pipelineSelector?: Rea
                 </PopoverContent>
               </Popover>
               
+              {pipelineSelector}
+
               <MonthYearPicker
                 selectedPeriods={selectedPeriod}
                 onPeriodsChange={setSelectedPeriod}

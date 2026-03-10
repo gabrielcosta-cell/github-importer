@@ -1005,6 +1005,8 @@ export default function GestaoCSAT({ pipelineSelector }: { pipelineSelector?: Re
                 </PopoverContent>
               </Popover>
               
+              {pipelineSelector}
+
               <MonthYearPicker
                 selectedPeriods={selectedPeriod}
                 onPeriodsChange={setSelectedPeriod}
