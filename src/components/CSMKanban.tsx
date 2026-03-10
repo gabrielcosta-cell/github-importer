@@ -962,12 +962,6 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
             <span className="text-base font-semibold text-foreground">
               {filteredCardsData.count} {filteredCardsData.count === 1 ? 'cliente' : 'clientes'}
             </span>
-            {syncing && (
-              <div className="flex items-center gap-2 ml-2 text-xs text-muted-foreground">
-                <div className="h-3 w-3 animate-spin rounded-full border border-muted-foreground/40 border-t-transparent" />
-                <span>Sincronizando…</span>
-              </div>
-            )}
             <TooltipProvider>
               <Tooltip>
                 <Popover>
