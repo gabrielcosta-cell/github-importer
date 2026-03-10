@@ -469,7 +469,18 @@ export const GestaoProjetosOperacao = ({ liveData, loading, selectedPeriod, onPe
           </div>
 
           {loading ? (
-            <div className="py-20 text-center text-muted-foreground">Carregando...</div>
+            <div className="space-y-2 py-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="flex gap-3 items-center">
+                  <div className="h-4 w-12 rounded bg-muted animate-pulse" />
+                  <div className="h-4 w-40 rounded bg-muted animate-pulse" />
+                  <div className="h-4 w-20 rounded bg-muted animate-pulse" />
+                  <div className="h-4 w-24 rounded bg-muted animate-pulse" />
+                  <div className="h-4 w-16 rounded bg-muted animate-pulse" />
+                  <div className="h-4 w-28 rounded bg-muted animate-pulse" />
+                </div>
+              ))}
+            </div>
           ) : displayData.length === 0 ? (
             <div className="py-20 text-center text-muted-foreground">
               Nenhum cliente encontrado para este período.

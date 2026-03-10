@@ -203,7 +203,7 @@ export const useProjetosData = (selectedPeriod: { month: number; year: number })
   }, [fetchSnapshots])
 
   // Expose stages list for dialogs
-  const [stagesList, setStagesList] = useState<Array<{ id: string; name: string }>>([])
+  const [stagesList, setStagesList] = useState<Array<{ id: string; name: string }>>(cached?.stagesList || [])
   useEffect(() => {
     supabase
       .from('csm_stages')
@@ -212,7 +212,13 @@ export const useProjetosData = (selectedPeriod: { month: number; year: number })
       .eq('is_active', true)
       .order('position')
       .then(({ data }) => {
-        setStagesList((data || []).map(s => ({ id: s.id, name: s.name })))
+        const list = (data || []).map(s => ({ id: s.id, name: s.name }))
+        setStagesList(list)
+        // Update cache with stages
+        const currentCache = readProjetosCache(CACHE_MAX_AGE)
+        if (currentCache) {
+          writeProjetosCache({ ...currentCache, stagesList: list })
+        }
       })
   }, [])
 
