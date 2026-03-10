@@ -308,6 +308,12 @@ const Index = () => {
         return <UserProfile />
       case 'preferencias-interface':
         return <InterfacePreferences />
+      case 'insights':
+        return (
+          <Suspense fallback={<div className="flex items-center justify-center min-h-[300px]"><div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>}>
+            <Insights />
+          </Suspense>
+        );
       default:
         return null;
     }
