@@ -15,6 +15,8 @@ export const useProjetosData = (selectedPeriod: { month: number; year: number })
   const [loading, setLoading] = useState(!cached)
   const [snapshotsMap, setSnapshotsMap] = useState<Map<string, number>>(new Map())
   const [squadSnapshotsMap, setSquadSnapshotsMap] = useState<Map<string, string>>(new Map())
+  const [stagesList, setStagesList] = useState<Array<{ id: string; name: string }>>(cached?.stagesList || [])
+
 
   useEffect(() => {
     const fetchData = async () => {
