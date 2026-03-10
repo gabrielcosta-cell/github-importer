@@ -43,7 +43,7 @@ export default function GestaoCancelamentos() {
   const { toast } = useToast();
   const { profile } = useAuth();
   const navigate = useNavigate();
-  const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
+  
   const [requests, setRequests] = useState<CancellationRequest[]>([]);
   const [attachments, setAttachments] = useState<Record<string, any[]>>({});
   const [selectedRequest, setSelectedRequest] = useState<CancellationRequest | null>(null);
