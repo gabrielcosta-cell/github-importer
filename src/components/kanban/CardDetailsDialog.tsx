@@ -1706,7 +1706,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
           card_id: card.id,
           activity_type: 'comment',
           title: 'Oportunidade criada',
-          description: `Uma oportunidade de Upsell/CrossSell foi criada no funil "Upsell | CrossSell"`,
+          description: `Uma oportunidade de Upsell/CrossSell foi criada no funil "Vendas | Upsell"`,
           status: 'completed',
           created_by: userId,
         });

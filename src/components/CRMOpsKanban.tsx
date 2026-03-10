@@ -68,7 +68,7 @@ export const CRMOpsKanban: React.FC = () => {
       setPipelines(crmPipelines);
 
       if (crmPipelines.length > 0 && !selectedPipeline) {
-        const upsellPipeline = crmPipelines.find(p => p.name === 'Upsell | CrossSell');
+        const upsellPipeline = crmPipelines.find(p => p.name === 'Vendas | Upsell');
         setSelectedPipeline(upsellPipeline?.id || crmPipelines[0].id);
       }
     } catch (error) {

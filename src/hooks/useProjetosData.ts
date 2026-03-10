@@ -63,7 +63,8 @@ export const useProjetosData = (selectedPeriod: { month: number; year: number })
           const pName = pipelineNameMap.get((row as any).pipeline_id) || ''
           const shortName = pName === 'Variável | Verba de Mídia' ? 'Var. Mídia' :
                            pName === 'Variável | Vendas do cliente' ? 'Var. Vendas' :
-                           pName === 'Upsell | CrossSell' ? 'Upsell' : 'Venda Ops'
+                           pName === 'Vendas | Upsell' || pName === 'Upsell | CrossSell' ? 'Upsell' :
+                           pName === 'Vendas | CrossSell' ? 'CrossSell' : 'Venda Ops'
           return {
             ...row,
             source: 'crm-ops' as const,

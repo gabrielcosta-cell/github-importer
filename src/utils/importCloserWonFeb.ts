@@ -47,7 +47,7 @@ export async function importCloserWonFeb(): Promise<{ success: number; skipped: 
   }
 
   if (!pipeline) {
-    result.errors.push('Pipeline "Upsell | CrossSell" não encontrado');
+    result.errors.push('Pipeline "Vendas | Upsell" não encontrado');
     return result;
   }
 
