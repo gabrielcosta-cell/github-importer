@@ -269,38 +269,7 @@ export function AppSidebar({ activeView, onViewChange }: AppSidebarProps) {
   }
 
   // Itens da seção CS
-  const csItems = [
-    {
-      title: "Csat",
-      icon: Star,
-      moduleName: 'cs',
-      available: !permissionsLoading && checkModulePermission('cs', 'view'),
-      hasSubmenu: true,
-      isOpen: openCSAT,
-      setIsOpen: setOpenCSAT,
-      submenu: csatSubmenu
-    },
-    {
-      title: "Nps",
-      icon: Heart,
-      moduleName: 'cs',
-      available: !permissionsLoading && checkModulePermission('cs', 'view'),
-      hasSubmenu: true,
-      isOpen: openNPS,
-      setIsOpen: setOpenNPS,
-      submenu: npsSubmenu
-    },
-    {
-      title: "Churn",
-      icon: TrendingDown,
-      moduleName: 'cs',
-      available: !permissionsLoading && checkModulePermission('cs', 'view'),
-      hasSubmenu: true,
-      isOpen: openChurn,
-      setIsOpen: setOpenChurn,
-      submenu: churnSubmenu
-    },
-  ]
+  const csItems: any[] = []
 
   // Item Formulários (botão único, sem submenu - navega direto para Gerar Forms)
   const formulariosItem = {
