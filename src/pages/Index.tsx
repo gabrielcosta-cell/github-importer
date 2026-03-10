@@ -341,14 +341,21 @@ const Index = () => {
               <div className={activeView === 'crm-ops' ? 'flex h-full min-h-0 flex-col overflow-hidden' : 'hidden'}>
                 <CRMOpsKanban />
               </div>
-              {activeView === 'insights' && (
+              {activeView === 'pipelines' && (
                 <div className="flex h-full min-h-0 flex-col overflow-hidden">
                   <Suspense fallback={<div className="flex items-center justify-center min-h-[300px]"><div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>}>
-                    <Insights />
+                    <Pipelines />
                   </Suspense>
                 </div>
               )}
-              {activeView !== 'csm' && activeView !== 'crm-ops' && activeView !== 'insights' && (
+              {activeView === 'dashboards' && (
+                <div className="flex h-full min-h-0 flex-col overflow-hidden">
+                  <Suspense fallback={<div className="flex items-center justify-center min-h-[300px]"><div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>}>
+                    <Dashboards />
+                  </Suspense>
+                </div>
+              )}
+              {activeView !== 'csm' && activeView !== 'crm-ops' && activeView !== 'pipelines' && activeView !== 'dashboards' && (
                 <main className={(activeView === 'projetos-clientes' || activeView === 'projetos-operacao' || activeView === 'projetos-metricas') ? 'px-4 md:px-6 py-6 md:py-8 space-y-6 md:space-y-8 w-full' : 'container py-6 md:py-8 space-y-6 md:space-y-8'}>
                   {renderContent()}
                 </main>
