@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import { KanbanBoard } from './kanban/KanbanBoard';
 import { DesktopGlobalSearch } from './kanban/MobileGlobalSearch';
 import { CardDetailsDialog } from './kanban/CardDetailsDialog';
-import { CRMOpsDateFilter } from './crm-ops/CRMOpsDateFilter';
+import { MonthYearPicker } from './MonthYearPicker';
 import { CRMOpsCardForm } from './crm-ops/CRMOpsCardForm';
 import { StageManager } from './kanban/StageManager';
 import { CSMPipeline, CSMStage, CSMCard } from '@/types/kanban';
