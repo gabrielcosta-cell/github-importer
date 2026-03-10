@@ -328,13 +328,13 @@ const Index = () => {
         onNavigate={handleViewChange}
       />
       <SidebarProvider defaultOpen={true}>
-        <div className={(activeView === 'csm' || activeView === 'crm-ops') ? 'fixed inset-0 bg-gradient-to-br from-background via-background to-muted/30 flex w-full' : 'min-h-screen bg-gradient-to-br from-background via-background to-muted/30 flex w-full'}>
+        <div className={(activeView === 'csm' || activeView === 'crm-ops' || activeView === 'insights') ? 'fixed inset-0 bg-gradient-to-br from-background via-background to-muted/30 flex w-full' : 'min-h-screen bg-gradient-to-br from-background via-background to-muted/30 flex w-full'}>
           <AppSidebar 
             activeView={activeView as any}
             onViewChange={handleViewChange}
           />
           <div className="flex-1 flex h-svh min-h-0 flex-col min-w-0">
-            {activeView !== 'csm' && activeView !== 'crm-ops' && <MobileSidebarTrigger />}
+            {activeView !== 'csm' && activeView !== 'crm-ops' && activeView !== 'insights' && <MobileSidebarTrigger />}
             <SidebarInset className="flex-1 min-h-0">
               {/* Always-mounted CSM and CRM for instant switching */}
               <div className={activeView === 'csm' ? 'flex h-full min-h-0 flex-col overflow-hidden' : 'hidden'}>
@@ -343,7 +343,14 @@ const Index = () => {
               <div className={activeView === 'crm-ops' ? 'flex h-full min-h-0 flex-col overflow-hidden' : 'hidden'}>
                 <CRMOpsKanban />
               </div>
-              {activeView !== 'csm' && activeView !== 'crm-ops' && (
+              {activeView === 'insights' && (
+                <div className="flex h-full min-h-0 flex-col overflow-hidden">
+                  <Suspense fallback={<div className="flex items-center justify-center min-h-[300px]"><div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>}>
+                    <Insights />
+                  </Suspense>
+                </div>
+              )}
+              {activeView !== 'csm' && activeView !== 'crm-ops' && activeView !== 'insights' && (
                 <main className={(activeView === 'projetos-clientes' || activeView === 'projetos-operacao' || activeView === 'projetos-metricas') ? 'px-4 md:px-6 py-6 md:py-8 space-y-6 md:space-y-8 w-full' : 'container py-6 md:py-8 space-y-6 md:space-y-8'}>
                   {renderContent()}
                 </main>
