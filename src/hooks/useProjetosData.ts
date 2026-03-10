@@ -211,25 +211,8 @@ export const useProjetosData = (selectedPeriod: { month: number; year: number })
     await fetchSnapshots()
   }, [fetchSnapshots])
 
-  // Expose stages list for dialogs
+  // Stages list populated by fetchData
   const [stagesList, setStagesList] = useState<Array<{ id: string; name: string }>>(cached?.stagesList || [])
-  useEffect(() => {
-    supabase
-      .from('csm_stages')
-      .select('id, name, position')
-      .eq('pipeline_id', PIPELINE_CLIENTES_ATIVOS)
-      .eq('is_active', true)
-      .order('position')
-      .then(({ data }) => {
-        const list = (data || []).map(s => ({ id: s.id, name: s.name }))
-        setStagesList(list)
-        // Update cache with stages
-        const currentCache = readProjetosCache(CACHE_MAX_AGE)
-        if (currentCache) {
-          writeProjetosCache({ ...currentCache, stagesList: list })
-        }
-      })
-  }, [])
 
   return { liveData, rawCsmRows, rawCrmRows, loading, fetchSnapshots, refetchData, stagesList }
 }
