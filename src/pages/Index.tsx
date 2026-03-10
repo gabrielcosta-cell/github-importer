@@ -172,6 +172,7 @@ const Index = () => {
       'projetos-metricas': 'projetos',
       'performance': 'performance',
       'preferencias-interface': 'profile',
+      'insights': 'cs',
     } as const;
     
     const moduleName = moduleMap[newView as keyof typeof moduleMap];
