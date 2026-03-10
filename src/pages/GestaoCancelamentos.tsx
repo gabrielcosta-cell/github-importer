@@ -39,7 +39,7 @@ const CANCELLATION_STAGES: CancellationStage[] = [
   { id: 'call_realizada', name: 'Call de Retenção Realizada', color: '#06b6d4' },
 ];
 
-export default function GestaoCancelamentos() {
+export default function GestaoCancelamentos({ pipelineSelector }: { pipelineSelector?: React.ReactNode }) {
   const { toast } = useToast();
   const { profile } = useAuth();
   const navigate = useNavigate();

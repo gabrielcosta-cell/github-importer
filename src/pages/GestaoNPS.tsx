@@ -64,7 +64,7 @@ const formatDateUTC = (dateString: string, formatStr: string = "dd/MM/yyyy 'às'
   return format(utcDate, formatStr, { locale: ptBR });
 };
 
-export default function GestaoNPS() {
+export default function GestaoNPS({ pipelineSelector }: { pipelineSelector?: React.ReactNode }) {
   const { toast } = useToast();
   const { profile } = useAuth();
   const navigate = useNavigate();
