@@ -229,9 +229,10 @@ export const useProjetosData = (selectedPeriod: { month: number; year: number })
 export const wasRelevantInMonth = (p: ProjetoRow, month: number, year: number): boolean => {
   if (p.source === 'crm-ops') {
     if (p.migrado_csm) return false
-    const createdDateOnly = (p.created_at || '').substring(0, 10)
-    const createdAt = new Date(createdDateOnly + 'T12:00:00')
-    return createdAt.getMonth() === month && createdAt.getFullYear() === year
+    const refDateStr = (p.data_ganho || p.created_at || '').substring(0, 10)
+    if (!refDateStr) return false
+    const refDate = new Date(refDateStr + 'T12:00:00')
+    return refDate.getMonth() === month && refDate.getFullYear() === year
   }
   const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59)
   const startDateStr = p.data_inicio || p.data_contrato || p.created_at
