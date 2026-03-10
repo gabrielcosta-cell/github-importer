@@ -269,9 +269,8 @@ const Index = () => {
 
     switch (activeView) {
       case 'csm':
-        return <CSMKanban openCardId={openCardId} openCardKey={openCardKey} />
       case 'crm-ops':
-        return <CRMOpsKanban />
+        return null; // Handled by always-mounted instances below
       case 'gestao-projetos':
         return <ProjetosView initialTab="clientes" />
       case 'gestao-contratos':
@@ -306,7 +305,7 @@ const Index = () => {
       case 'preferencias-interface':
         return <InterfacePreferences />
       default:
-        return <CSMKanban openCardId={openCardId} openCardKey={openCardKey} />
+        return null;
     }
   }
 
