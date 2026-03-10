@@ -1650,7 +1650,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
           .single();
 
         if (!firstStage) {
-          toast.error('Nenhuma etapa encontrada no pipeline Upsell | CrossSell');
+          toast.error('Nenhuma etapa encontrada no pipeline Vendas | Upsell');
           return;
         }
 
