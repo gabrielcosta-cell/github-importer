@@ -86,19 +86,35 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <ToolbarButton className="relative">
-          <Filter className="h-4 w-4" />
-          Filtros
-          <ChevronDown className="h-4 w-4" />
-          {activeFiltersCount > 0 && (
-            <Badge 
-              variant="secondary" 
-              className="ml-1 h-5 min-w-5 rounded-full px-1.5 text-xs animate-in zoom-in-50 duration-200"
-            >
-              {activeFiltersCount}
-            </Badge>
-          )}
-        </ToolbarButton>
+        {inlineStyle ? (
+          <Button variant="ghost" size="sm" className="gap-2 rounded-none h-9 px-3 relative">
+            <Filter className="h-4 w-4" />
+            Filtros
+            <ChevronDown className="h-4 w-4" />
+            {activeFiltersCount > 0 && (
+              <Badge 
+                variant="secondary" 
+                className="ml-1 h-5 min-w-5 rounded-full px-1.5 text-xs animate-in zoom-in-50 duration-200"
+              >
+                {activeFiltersCount}
+              </Badge>
+            )}
+          </Button>
+        ) : (
+          <ToolbarButton className="relative">
+            <Filter className="h-4 w-4" />
+            Filtros
+            <ChevronDown className="h-4 w-4" />
+            {activeFiltersCount > 0 && (
+              <Badge 
+                variant="secondary" 
+                className="ml-1 h-5 min-w-5 rounded-full px-1.5 text-xs animate-in zoom-in-50 duration-200"
+              >
+                {activeFiltersCount}
+              </Badge>
+            )}
+          </ToolbarButton>
+        )}
       </PopoverTrigger>
       <PopoverContent className={`${showMotivoFilter ? 'w-[480px]' : 'w-[400px]'} p-0`} align="end">
         <div className="p-4">
