@@ -28,6 +28,8 @@ import { FinancialMetrics } from "@/components/FinancialMetrics";
 import { ChurnMetrics } from "@/components/ChurnMetrics";
 import { InterfacePreferences } from "@/components/InterfacePreferences";
 import "@/utils/updateCategorias";
+import { lazy, Suspense } from "react";
+const Insights = lazy(() => import("@/pages/Insights"));
 
 type ActiveViewType = 'users' | 'profile' | 'gestao-projetos' | 'gestao-contratos' | 'csm' | 'crm-ops' | 'cs' | 'cs-churn' | 'cs-metricas' | 'cs-nps' | 'cs-csat' | 'copy' | 'aprovacao' | 'analise-bench' | 'projetos-operacao' | 'projetos-clientes' | 'projetos-metricas' | 'performance' | 'preferencias-interface' | 'gestao-nps' | 'gestao-csat' | 'cs-cancelamento' | 'gestao-cancelamentos' | 'insights';
 
