@@ -1,7 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
 
-const CLOSER_PIPELINE_NAME = 'Upsell | CrossSell';
+const CLOSER_PIPELINE_NAME = 'Vendas | Upsell';
 const CLOSER_PIPELINE_LEGACY_NAME = 'Closer | Principal';
+const UPSELL_CROSSSELL_LEGACY_NAME = 'Upsell | CrossSell';
+const CROSSSELL_PIPELINE_NAME = 'Vendas | CrossSell';
 const VARIAVEL_MIDIA_PIPELINE_NAME = 'Variável | Verba de Mídia';
 const VARIAVEL_VENDAS_PIPELINE_NAME = 'Variável | Vendas do cliente';
 
