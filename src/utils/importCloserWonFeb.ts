@@ -25,11 +25,11 @@ export async function importCloserWonFeb(): Promise<{ success: number; skipped: 
     return result;
   }
 
-  // Find "Upsell | CrossSell" pipeline (or legacy "Closer | Principal")
+  // Find "Vendas | Upsell" pipeline (or legacy names)
   let { data: pipeline, error: pipeErr } = await supabase
     .from('csm_pipelines')
     .select('id')
-    .eq('name', 'Upsell | CrossSell')
+    .eq('name', 'Vendas | Upsell')
     .eq('is_active', true)
     .limit(1)
     .single();
@@ -47,7 +47,7 @@ export async function importCloserWonFeb(): Promise<{ success: number; skipped: 
   }
 
   if (!pipeline) {
-    result.errors.push('Pipeline "Upsell | CrossSell" não encontrado');
+    result.errors.push('Pipeline "Vendas | Upsell" não encontrado');
     return result;
   }
 

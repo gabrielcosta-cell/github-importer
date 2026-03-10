@@ -1608,7 +1608,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
     }
   };
 
-  // Função para criar oportunidade no funil Upsell | CrossSell
+   // Função para criar oportunidade no funil Vendas | Upsell
   const handleCreateOpportunity = async () => {
     if (!confirm('Tem certeza que deseja criar uma oportunidade de Upsell/CrossSell para este cliente?')) {
       return;
@@ -1616,17 +1616,17 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
 
     setLoading(true);
     try {
-      // Buscar o pipeline Upsell | CrossSell
+      // Buscar o pipeline Vendas | Upsell
       const { data: upsellPipeline, error: pipelineError } = await supabase
         .from('csm_pipelines')
         .select('id')
-        .eq('name', 'Upsell | CrossSell')
+        .eq('name', 'Vendas | Upsell')
         .single();
 
       if (pipelineError) throw pipelineError;
 
       if (!upsellPipeline) {
-        toast.error('Pipeline "Upsell | CrossSell" não encontrado');
+        toast.error('Pipeline "Vendas | Upsell" não encontrado');
         return;
       }
 
@@ -1650,7 +1650,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
           .single();
 
         if (!firstStage) {
-          toast.error('Nenhuma etapa encontrada no pipeline Upsell | CrossSell');
+          toast.error('Nenhuma etapa encontrada no pipeline Vendas | Upsell');
           return;
         }
 
@@ -1661,7 +1661,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
 
       const userId = (await supabase.auth.getUser()).data.user?.id;
 
-      // Criar uma CÓPIA do card no pipeline Upsell | CrossSell
+      // Criar uma CÓPIA do card no pipeline Vendas | Upsell
       const { data: newCard, error: insertError } = await supabase
         .from('csm_cards')
         .insert({
@@ -1706,7 +1706,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
           card_id: card.id,
           activity_type: 'comment',
           title: 'Oportunidade criada',
-          description: `Uma oportunidade de Upsell/CrossSell foi criada no funil "Upsell | CrossSell"`,
+          description: `Uma oportunidade de Upsell/CrossSell foi criada no funil "Vendas | Upsell"`,
           status: 'completed',
           created_by: userId,
         });

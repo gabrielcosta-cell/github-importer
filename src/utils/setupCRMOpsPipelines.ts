@@ -1,7 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
 
-const CLOSER_PIPELINE_NAME = 'Upsell | CrossSell';
+const CLOSER_PIPELINE_NAME = 'Vendas | Upsell';
 const CLOSER_PIPELINE_LEGACY_NAME = 'Closer | Principal';
+const UPSELL_CROSSSELL_LEGACY_NAME = 'Upsell | CrossSell';
+const CROSSSELL_PIPELINE_NAME = 'Vendas | CrossSell';
 const VARIAVEL_MIDIA_PIPELINE_NAME = 'Variável | Verba de Mídia';
 const VARIAVEL_VENDAS_PIPELINE_NAME = 'Variável | Vendas do cliente';
 
@@ -97,7 +99,7 @@ async function migrateLegacyCloserPipeline(): Promise<string | null> {
   const { data: legacyPipelines } = await supabase
     .from('csm_pipelines')
     .select('id, name')
-    .in('name', [CLOSER_PIPELINE_LEGACY_NAME, CLOSER_PIPELINE_NAME])
+    .in('name', [CLOSER_PIPELINE_LEGACY_NAME, UPSELL_CROSSSELL_LEGACY_NAME, CLOSER_PIPELINE_NAME])
     .order('created_at', { ascending: true });
 
   if (!legacyPipelines || legacyPipelines.length === 0) return null;
@@ -236,25 +238,26 @@ async function ensurePipelineWithStages(
   }
 }
 
-export async function setupCRMOpsPipelines(): Promise<{ closerId: string | null; varMidiaId: string | null; varVendasId: string | null }> {
-  if (migrationRunning) return { closerId: null, varMidiaId: null, varVendasId: null };
+export async function setupCRMOpsPipelines(): Promise<{ closerId: string | null; crossSellId: string | null; varMidiaId: string | null; varVendasId: string | null }> {
+  if (migrationRunning) return { closerId: null, crossSellId: null, varMidiaId: null, varVendasId: null };
   migrationRunning = true;
 
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { closerId: null, varMidiaId: null, varVendasId: null };
+    if (!user) return { closerId: null, crossSellId: null, varMidiaId: null, varVendasId: null };
 
     // Migrate legacy Closer pipeline if it exists
     const migratedId = await migrateLegacyCloserPipeline();
 
     const closerId = migratedId || await ensurePipelineWithStages(CLOSER_PIPELINE_NAME, CLOSER_STAGES, user.id, 11);
-    const varMidiaId = await ensurePipelineWithStages(VARIAVEL_MIDIA_PIPELINE_NAME, VARIAVEL_STAGES, user.id, 12);
-    const varVendasId = await ensurePipelineWithStages(VARIAVEL_VENDAS_PIPELINE_NAME, VARIAVEL_STAGES, user.id, 13);
+    const crossSellId = await ensurePipelineWithStages(CROSSSELL_PIPELINE_NAME, CLOSER_STAGES, user.id, 12);
+    const varMidiaId = await ensurePipelineWithStages(VARIAVEL_MIDIA_PIPELINE_NAME, VARIAVEL_STAGES, user.id, 13);
+    const varVendasId = await ensurePipelineWithStages(VARIAVEL_VENDAS_PIPELINE_NAME, VARIAVEL_STAGES, user.id, 14);
 
-    return { closerId, varMidiaId, varVendasId };
+    return { closerId, crossSellId, varMidiaId, varVendasId };
   } finally {
     migrationRunning = false;
   }
 }
 
-export const CRM_OPS_PIPELINE_NAMES = [CLOSER_PIPELINE_NAME, CLOSER_PIPELINE_LEGACY_NAME, VARIAVEL_MIDIA_PIPELINE_NAME, VARIAVEL_VENDAS_PIPELINE_NAME];
+export const CRM_OPS_PIPELINE_NAMES = [CLOSER_PIPELINE_NAME, CLOSER_PIPELINE_LEGACY_NAME, UPSELL_CROSSSELL_LEGACY_NAME, CROSSSELL_PIPELINE_NAME, VARIAVEL_MIDIA_PIPELINE_NAME, VARIAVEL_VENDAS_PIPELINE_NAME];
