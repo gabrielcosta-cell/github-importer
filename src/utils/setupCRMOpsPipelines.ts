@@ -244,7 +244,7 @@ export async function setupCRMOpsPipelines(): Promise<{ closerId: string | null;
 
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { closerId: null, varMidiaId: null, varVendasId: null };
+    if (!user) return { closerId: null, crossSellId: null, varMidiaId: null, varVendasId: null };
 
     // Migrate legacy Closer pipeline if it exists
     const migratedId = await migrateLegacyCloserPipeline();
