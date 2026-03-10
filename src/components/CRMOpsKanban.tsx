@@ -38,10 +38,10 @@ export const CRMOpsKanban: React.FC = () => {
   const [showCardForm, setShowCardForm] = useState(false);
   const [showStageManager, setShowStageManager] = useState(false);
 
-  // Date filter
-  const [dateStart, setDateStart] = useState<Date | undefined>();
-  const [dateEnd, setDateEnd] = useState<Date | undefined>();
-  const [dateField, setDateField] = useState<'created_at' | 'data_ganho'>('created_at');
+  // Date filter - month/year picker
+  const [selectedPeriods, setSelectedPeriods] = useState<{ month: number; year: number }[]>([
+    { month: new Date().getMonth(), year: new Date().getFullYear() }
+  ]);
 
   // Sort
   const [sortBy, setSortBy] = useState<'title' | 'created' | 'mrr'>('created');
