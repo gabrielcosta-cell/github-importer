@@ -213,6 +213,7 @@ const Index = () => {
       'projetos-metricas': 'projetos',
       'performance': 'performance',
       'preferencias-interface': 'preferencias-interface',
+      'insights': 'cs',
     };
     
     const currentModule = moduleMap[activeView as keyof typeof moduleMap];
