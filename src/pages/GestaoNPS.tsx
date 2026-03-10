@@ -850,28 +850,6 @@ export default function GestaoNPS() {
         {/* Desktop: Layout horizontal original */}
         <div className="hidden md:flex items-center justify-between gap-4">
           {/* Botões de visualização à esquerda */}
-          <div className="flex gap-1 border rounded-lg p-1">
-            <Button
-              variant={viewMode === 'kanban' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('kanban')}
-              className="h-8 transition-all duration-200"
-              style={viewMode === 'kanban' ? { backgroundColor: '#ec4a55', color: 'white' } : {}}
-            >
-              <LayoutGrid className="h-4 w-4 mr-2 transition-transform duration-200" />
-              Kanban
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('list')}
-              className="h-8 transition-all duration-200"
-              style={viewMode === 'list' ? { backgroundColor: '#ec4a55', color: 'white' } : {}}
-            >
-              <List className="h-4 w-4 mr-2 transition-transform duration-200" />
-              Lista
-            </Button>
-          </div>
 
           {/* Campo de pesquisa centralizado */}
           <div className="flex-1 flex justify-center">
