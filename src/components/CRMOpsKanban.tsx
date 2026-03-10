@@ -22,18 +22,22 @@ import { setupCRMOpsPipelines, CRM_OPS_PIPELINE_NAMES } from '@/utils/setupCRMOp
 import { DotLogo } from '@/components/DotLogo';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/contexts/AuthContext';
+import { readCRMOpsKanbanCache, writeCRMOpsKanbanCache } from '@/utils/crmOpsKanbanSessionCache';
 
+const CACHE_MAX_AGE = 60 * 60 * 1000; // 1 hour
 
 export const CRMOpsKanban: React.FC = () => {
   const isMobile = useIsMobile();
   const { profile } = useAuth();
   const isAdmin = profile?.role === 'admin' || profile?.is_global_admin;
 
-  const [pipelines, setPipelines] = useState<CSMPipeline[]>([]);
-  const [selectedPipeline, setSelectedPipeline] = useState<string>('');
-  const [stages, setStages] = useState<CSMStage[]>([]);
-  const [cards, setCards] = useState<CSMCard[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cached = useMemo(() => readCRMOpsKanbanCache(CACHE_MAX_AGE), []);
+
+  const [pipelines, setPipelines] = useState<CSMPipeline[]>(cached?.pipelines || []);
+  const [selectedPipeline, setSelectedPipeline] = useState<string>(cached?.selectedPipeline || '');
+  const [stages, setStages] = useState<CSMStage[]>(cached?.stages || []);
+  const [cards, setCards] = useState<CSMCard[]>(cached?.cards || []);
+  const [loading, setLoading] = useState(!cached);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCard, setSelectedCard] = useState<CSMCard | null>(null);
   const [showCardDetails, setShowCardDetails] = useState(false);
@@ -114,9 +118,16 @@ export const CRMOpsKanban: React.FC = () => {
     setCards(mappedCards);
   };
 
+  // Persist to session cache whenever key data changes
+  useEffect(() => {
+    if (pipelines.length > 0 && selectedPipeline) {
+      writeCRMOpsKanbanCache({ pipelines, selectedPipeline, stages, cards });
+    }
+  }, [pipelines, selectedPipeline, stages, cards]);
+
   useEffect(() => {
     const init = async () => {
-      setLoading(true);
+      if (!cached) setLoading(true);
       await fetchPipelines();
       setLoading(false);
     };
