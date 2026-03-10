@@ -238,8 +238,8 @@ async function ensurePipelineWithStages(
   }
 }
 
-export async function setupCRMOpsPipelines(): Promise<{ closerId: string | null; varMidiaId: string | null; varVendasId: string | null }> {
-  if (migrationRunning) return { closerId: null, varMidiaId: null, varVendasId: null };
+export async function setupCRMOpsPipelines(): Promise<{ closerId: string | null; crossSellId: string | null; varMidiaId: string | null; varVendasId: string | null }> {
+  if (migrationRunning) return { closerId: null, crossSellId: null, varMidiaId: null, varVendasId: null };
   migrationRunning = true;
 
   try {
