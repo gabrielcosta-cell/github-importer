@@ -144,12 +144,11 @@ export const CRMOpsKanban: React.FC = () => {
         if (!matchesSearch) return false;
       }
 
-      if (dateStart || dateEnd) {
-        const dateValue = dateField === 'data_ganho' && (card as any).data_ganho
-          ? new Date((card as any).data_ganho)
-          : new Date(card.created_at);
-        if (dateStart && dateValue < startOfDay(dateStart)) return false;
-        if (dateEnd && dateValue > endOfDay(dateEnd)) return false;
+      if (selectedPeriods.length > 0) {
+        const d = new Date(card.created_at);
+        const cardMonth = d.getMonth();
+        const cardYear = d.getFullYear();
+        if (!selectedPeriods.some(p => p.month === cardMonth && p.year === cardYear)) return false;
       }
 
       return true;
