@@ -1608,7 +1608,7 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
     }
   };
 
-  // Função para criar oportunidade no funil Upsell | CrossSell
+   // Função para criar oportunidade no funil Vendas | Upsell
   const handleCreateOpportunity = async () => {
     if (!confirm('Tem certeza que deseja criar uma oportunidade de Upsell/CrossSell para este cliente?')) {
       return;
@@ -1616,17 +1616,17 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
 
     setLoading(true);
     try {
-      // Buscar o pipeline Upsell | CrossSell
+      // Buscar o pipeline Vendas | Upsell
       const { data: upsellPipeline, error: pipelineError } = await supabase
         .from('csm_pipelines')
         .select('id')
-        .eq('name', 'Upsell | CrossSell')
+        .eq('name', 'Vendas | Upsell')
         .single();
 
       if (pipelineError) throw pipelineError;
 
       if (!upsellPipeline) {
-        toast.error('Pipeline "Upsell | CrossSell" não encontrado');
+        toast.error('Pipeline "Vendas | Upsell" não encontrado');
         return;
       }
 
