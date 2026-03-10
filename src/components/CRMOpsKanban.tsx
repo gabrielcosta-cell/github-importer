@@ -280,21 +280,10 @@ export const CRMOpsKanban: React.FC = () => {
             </PopoverContent>
           </Popover>
 
-          {/* Filtros (Date Filter) */}
-          <Select value={dateField} onValueChange={(v) => setDateField(v as 'created_at' | 'data_ganho')}>
-            <SelectTrigger className="h-9 w-auto min-w-[130px] text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="created_at">Data de criação</SelectItem>
-              <SelectItem value="data_ganho">Data de ganho</SelectItem>
-            </SelectContent>
-          </Select>
-          <CRMOpsDateFilter
-            startDate={dateStart}
-            endDate={dateEnd}
-            onApply={handleDateApply}
-            onClear={handleDateClear}
+          {/* Filtro por mês/ano */}
+          <MonthYearPicker
+            selectedPeriods={selectedPeriods}
+            onPeriodsChange={setSelectedPeriods}
           />
 
           {/* Adicionar lead */}
