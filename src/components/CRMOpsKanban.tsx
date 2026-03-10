@@ -20,7 +20,7 @@ import { setupCRMOpsPipelines, CRM_OPS_PIPELINE_NAMES } from '@/utils/setupCRMOp
 import { DotLogo } from '@/components/DotLogo';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/contexts/AuthContext';
-import { startOfDay, endOfDay } from 'date-fns';
+
 
 export const CRMOpsKanban: React.FC = () => {
   const isMobile = useIsMobile();
