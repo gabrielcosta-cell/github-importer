@@ -284,6 +284,7 @@ export const CRMOpsKanban: React.FC = () => {
           <MonthYearPicker
             selectedPeriods={selectedPeriods}
             onPeriodsChange={setSelectedPeriods}
+            singleSelect
           />
 
           {/* Adicionar lead */}
