@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, LayoutGrid, List, ArrowUpDown, Filter, Link2, Link2Off, Trash2, Star, Frown, Meh, Smile, Users, Eye, ChevronDown, Headphones, BarChart3, Package, AlertCircle, UserCog, User, HelpCircle } from "lucide-react";
+import { Search, ArrowUpDown, Filter, Link2, Link2Off, Trash2, Star, Frown, Meh, Smile, Users, Eye, ChevronDown, Headphones, BarChart3, Package, AlertCircle, UserCog, User, HelpCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
