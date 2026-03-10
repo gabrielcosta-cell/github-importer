@@ -11,6 +11,8 @@ interface MonthYearPickerProps {
   singleSelect?: boolean;
   minYear?: number;
   minMonth?: number;
+  /** When true, renders as inline ghost button for bordered toolbar containers */
+  inlineStyle?: boolean;
 }
 
 const MONTHS = [
@@ -18,7 +20,7 @@ const MONTHS = [
   'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
 ];
 
-export const MonthYearPicker = ({ selectedPeriods, onPeriodsChange, singleSelect = false, minYear, minMonth }: MonthYearPickerProps) => {
+export const MonthYearPicker = ({ selectedPeriods, onPeriodsChange, singleSelect = false, minYear, minMonth, inlineStyle = false }: MonthYearPickerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [viewYear, setViewYear] = useState(new Date().getFullYear());
 
@@ -53,7 +55,13 @@ export const MonthYearPicker = ({ selectedPeriods, onPeriodsChange, singleSelect
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="justify-start text-left font-normal gap-2 min-w-[200px]">
+        <Button 
+          variant={inlineStyle ? "ghost" : "outline"} 
+          className={cn(
+            "justify-start text-left font-normal gap-2",
+            inlineStyle ? "rounded-none h-9 px-3 min-w-0" : "min-w-[200px]"
+          )}
+        >
           <Calendar className="h-4 w-4" />
           {selectedPeriods.length === 0 ? (
             <span className="text-muted-foreground">Selecione períodos</span>
