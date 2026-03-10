@@ -20,7 +20,7 @@ const MONTHS = [
   'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
 ];
 
-export const MonthYearPicker = ({ selectedPeriods, onPeriodsChange, singleSelect = false, minYear, minMonth }: MonthYearPickerProps) => {
+export const MonthYearPicker = ({ selectedPeriods, onPeriodsChange, singleSelect = false, minYear, minMonth, inlineStyle = false }: MonthYearPickerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [viewYear, setViewYear] = useState(new Date().getFullYear());
 
