@@ -1242,27 +1242,8 @@ export default function GestaoCSAT() {
                 );
               })}
             </div>
-            <ScrollBar orientation="horizontal" />
-            <ScrollBar orientation="vertical" />
           </ScrollArea>
-        ) : (
-          <Card>
-            <ScrollArea className="h-[calc(100vh-200px)]">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Empresa</TableHead>
-                    <TableHead>Responsável</TableHead>
-                    <TableHead>Tipo Reunião</TableHead>
-                    <TableHead>Squad</TableHead>
-                    <TableHead>Nota</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Vínculo CSM</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredResponsesData.responses.map((response) => {
+        )}
                     const avgScore = calculateAverageScore(response);
                     const linkedSquad = getSquadFromCardId(response.card_id);
                     const displaySquad = response.squad || linkedSquad || 'Indefinido';
