@@ -187,15 +187,6 @@ export const CRMOpsKanban: React.FC = () => {
     setShowCardForm(true);
   };
 
-  const handleDateApply = (start: Date | undefined, end: Date | undefined) => {
-    setDateStart(start);
-    setDateEnd(end);
-  };
-
-  const handleDateClear = () => {
-    setDateStart(undefined);
-    setDateEnd(undefined);
-  };
 
   const handleStagesUpdate = () => {
     if (selectedPipeline) {
