@@ -304,6 +304,14 @@ export const CRMOpsKanban: React.FC = () => {
             </TooltipProvider>
           </div>
 
+          {/* Adicionar lead */}
+          {isAdmin && (
+            <ToolbarButton onClick={handleAddCard}>
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Adicionar lead</span>
+            </ToolbarButton>
+          )}
+
           {/* Barra de ações */}
           <div className="flex items-center border rounded-lg overflow-hidden">
             {/* Ordenar */}
@@ -326,38 +334,30 @@ export const CRMOpsKanban: React.FC = () => {
             </Popover>
 
             {/* Filtros */}
-            <Button variant="ghost" size="sm" className="gap-2 rounded-none h-9 px-3" onClick={() => toast.info('Filtros em breve')}>
+            <Button variant="ghost" size="sm" className="gap-2 rounded-none border-r h-9 px-3" onClick={() => toast.info('Filtros em breve')}>
               <Filter className="h-4 w-4" />
               <span>Filtros</span>
             </Button>
+
+            {/* Seletor de pipeline */}
+            <Select value={selectedPipeline} onValueChange={setSelectedPipeline}>
+              <SelectTrigger className="h-9 w-auto min-w-[140px] border-0 rounded-none border-r shadow-none focus:ring-0">
+                <SelectValue placeholder="Pipeline" />
+              </SelectTrigger>
+              <SelectContent>
+                {pipelines.map(p => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Data */}
+            <MonthYearPicker
+              selectedPeriods={selectedPeriods}
+              onPeriodsChange={setSelectedPeriods}
+              singleSelect
+            />
           </div>
-
-          {/* Adicionar lead */}
-          {isAdmin && (
-            <ToolbarButton onClick={handleAddCard}>
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Adicionar lead</span>
-            </ToolbarButton>
-          )}
-
-          {/* 6. Seletor de pipeline */}
-          <Select value={selectedPipeline} onValueChange={setSelectedPipeline}>
-            <SelectTrigger className="h-9 w-auto min-w-[160px]">
-              <SelectValue placeholder="Pipeline" />
-            </SelectTrigger>
-            <SelectContent>
-              {pipelines.map(p => (
-                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* 7. Data */}
-          <MonthYearPicker
-            selectedPeriods={selectedPeriods}
-            onPeriodsChange={setSelectedPeriods}
-            singleSelect
-          />
         </div>
       </div>
 

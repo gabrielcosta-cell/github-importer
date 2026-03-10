@@ -991,6 +991,25 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
             </TooltipProvider>
           </div>
 
+          {/* Botão adicionar cliente - only for admins */}
+          {isAdmin && (
+            <ToolbarButton onClick={handleAddSimpleCard}>
+              <UserPlus className="h-4 w-4" />
+              <span className="hidden sm:inline">Adicionar cliente</span>
+            </ToolbarButton>
+          )}
+
+          {(selectedSquad !== 'todos' || selectedPlano !== 'todos' || selectedMotivo !== 'todos' || selectedNiche !== 'todos' || selectedFlag !== 'todos' || selectedTagsFilter.length > 0) && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9"
+              onClick={() => { handleClearFilters(); toast.success('Filtros limpos'); }}
+            >
+              <Plus className="h-4 w-4 rotate-45" />
+            </Button>
+          )}
+
           {/* Barra de ações */}
           <div className="flex items-center border rounded-lg overflow-hidden">
             {/* Ordenação */}
@@ -1035,45 +1054,26 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
               onClearFilters={handleClearFilters}
               inlineStyle
             />
+
+            <Select value={viewFilter} onValueChange={(v) => setViewFilter(v as 'ativo' | 'todos' | 'cancelado')}>
+              <SelectTrigger className="h-9 w-auto min-w-[140px] border-0 rounded-none border-r shadow-none focus:ring-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ativo">Clientes Ativos</SelectItem>
+                <SelectItem value="cancelado">Clientes Cancelados</SelectItem>
+                <SelectItem value="todos">Todos os Clientes</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <MonthYearPicker
+              selectedPeriods={selectedChurnMonth}
+              onPeriodsChange={setSelectedChurnMonth}
+              singleSelect
+              minYear={2025}
+              minMonth={0}
+            />
           </div>
-
-          {(selectedSquad !== 'todos' || selectedPlano !== 'todos' || selectedMotivo !== 'todos' || selectedNiche !== 'todos' || selectedFlag !== 'todos' || selectedTagsFilter.length > 0) && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9"
-              onClick={() => { handleClearFilters(); toast.success('Filtros limpos'); }}
-            >
-              <Plus className="h-4 w-4 rotate-45" />
-            </Button>
-          )}
-          
-          {/* Botão adicionar cliente - only for admins */}
-          {isAdmin && (
-            <ToolbarButton onClick={handleAddSimpleCard}>
-              <UserPlus className="h-4 w-4" />
-              <span className="hidden sm:inline">Adicionar cliente</span>
-            </ToolbarButton>
-          )}
-
-
-          <Select value={viewFilter} onValueChange={(v) => setViewFilter(v as 'ativo' | 'todos' | 'cancelado')}>
-            <SelectTrigger className="h-9 w-auto min-w-[160px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ativo">Clientes Ativos</SelectItem>
-              <SelectItem value="cancelado">Clientes Cancelados</SelectItem>
-              <SelectItem value="todos">Todos os Clientes</SelectItem>
-            </SelectContent>
-          </Select>
-          <MonthYearPicker
-            selectedPeriods={selectedChurnMonth}
-            onPeriodsChange={setSelectedChurnMonth}
-            singleSelect
-            minYear={2025}
-            minMonth={0}
-          />
         </div>
       </div>
 
