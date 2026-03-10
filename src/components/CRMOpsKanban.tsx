@@ -2,11 +2,11 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { ToolbarButton } from '@/components/ui/toolbar-button';
-import { Plus, Search, Settings, Pencil, BarChart3, Plug, PenLine, GripVertical, Tag, Zap, Trophy, ThumbsDown, ArrowUpDown, ListChecks, Shield, FileDown, Filter, DollarSign } from 'lucide-react';
+import { Plus, Search, Pencil, ArrowUpDown, Filter, DollarSign } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
@@ -304,86 +304,40 @@ export const CRMOpsKanban: React.FC = () => {
             </TooltipProvider>
           </div>
 
-          {/* 2. Ordenar */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <ToolbarButton>
-                <ArrowUpDown className="h-4 w-4" />
-                <span>Ordenar</span>
-              </ToolbarButton>
-            </PopoverTrigger>
-            <PopoverContent className="w-64 p-0" align="end">
-              <div className="p-2">
-                <div className="space-y-1">
-                  <Button variant={sortBy === 'title' ? 'default' : 'ghost'} size="sm" className="w-full justify-start h-9" onClick={() => handleSortChange('title')}>Título (A-Z)</Button>
-                  <Button variant={sortBy === 'mrr' ? 'default' : 'ghost'} size="sm" className="w-full justify-start h-9" onClick={() => handleSortChange('mrr')}>Valor do MRR</Button>
-                  <Button variant={sortBy === 'created' ? 'default' : 'ghost'} size="sm" className="w-full justify-start h-9" onClick={() => handleSortChange('created')}>Data de criação</Button>
+          {/* Barra de ações */}
+          <div className="flex items-center border rounded-lg overflow-hidden">
+            {/* Ordenar */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-2 rounded-none border-r h-9 px-3">
+                  <ArrowUpDown className="h-4 w-4" />
+                  <span>Ordenar</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-0" align="end">
+                <div className="p-2">
+                  <div className="space-y-1">
+                    <Button variant={sortBy === 'title' ? 'default' : 'ghost'} size="sm" className="w-full justify-start h-9" onClick={() => handleSortChange('title')}>Título (A-Z)</Button>
+                    <Button variant={sortBy === 'mrr' ? 'default' : 'ghost'} size="sm" className="w-full justify-start h-9" onClick={() => handleSortChange('mrr')}>Valor do MRR</Button>
+                    <Button variant={sortBy === 'created' ? 'default' : 'ghost'} size="sm" className="w-full justify-start h-9" onClick={() => handleSortChange('created')}>Data de criação</Button>
+                  </div>
                 </div>
-              </div>
-            </PopoverContent>
-          </Popover>
+              </PopoverContent>
+            </Popover>
 
-          {/* 3. Filtros */}
-          <ToolbarButton onClick={() => toast.info('Filtros em breve')}>
-            <Filter className="h-4 w-4" />
-            <span>Filtros</span>
-          </ToolbarButton>
+            {/* Filtros */}
+            <Button variant="ghost" size="sm" className="gap-2 rounded-none h-9 px-3" onClick={() => toast.info('Filtros em breve')}>
+              <Filter className="h-4 w-4" />
+              <span>Filtros</span>
+            </Button>
+          </div>
 
-          {/* 4. Adicionar lead */}
+          {/* Adicionar lead */}
           {isAdmin && (
             <ToolbarButton onClick={handleAddCard}>
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">Adicionar lead</span>
             </ToolbarButton>
-          )}
-
-          {/* 5. Configurações */}
-          {isAdmin && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <ToolbarButton toolbarSize="icon">
-                  <Settings className="h-4 w-4" />
-                </ToolbarButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem onClick={() => setShowStageManager(true)}>
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Editar Etapas
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast.info('Gerenciar etiquetas em breve')}>
-                  <Tag className="h-4 w-4 mr-2" />
-                  Gerenciar Etiquetas
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast.info('Automações em breve')}>
-                  <Zap className="h-4 w-4 mr-2" />
-                  Automações de Funis
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast.info('Configurações de ganho em breve')}>
-                  <Trophy className="h-4 w-4 mr-2" />
-                  Configurações de Ganho
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast.info('Motivos de perda em breve')}>
-                  <ThumbsDown className="h-4 w-4 mr-2" />
-                  Motivos de Perda
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast.info('Ordem dos leads em breve')}>
-                  <ArrowUpDown className="h-4 w-4 mr-2" />
-                  Ordem dos Leads
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast.info('Tarefas em breve')}>
-                  <ListChecks className="h-4 w-4 mr-2" />
-                  Tarefas
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast.info('Permissões em breve')}>
-                  <Shield className="h-4 w-4 mr-2" />
-                  Permissões de Exportação
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast.info('Importar leads em breve')}>
-                  <FileDown className="h-4 w-4 mr-2" />
-                  Importar Leads
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           )}
 
           {/* 6. Seletor de pipeline */}

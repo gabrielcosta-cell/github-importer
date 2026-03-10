@@ -5,8 +5,8 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ToolbarButton } from '@/components/ui/toolbar-button';
-import { Plus, LayoutGrid, Rocket, Moon, Shield, Flame, Sunrise, DollarSign, Info, ArrowUpDown, UserPlus, Settings, Pencil, Tag, Zap, Trophy, ThumbsDown, ListChecks, FileDown, Search } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Plus, LayoutGrid, Rocket, Moon, Shield, Flame, Sunrise, DollarSign, Info, ArrowUpDown, UserPlus, Pencil, Tag, Zap, Trophy, ThumbsDown, ListChecks, FileDown, Search } from 'lucide-react';
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -991,55 +991,61 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
             </TooltipProvider>
           </div>
 
-          {/* Ordenação */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <ToolbarButton>
-                <ArrowUpDown className="h-4 w-4" />
-                <span>Ordenar</span>
-              </ToolbarButton>
-            </PopoverTrigger>
-            <PopoverContent className="w-64 p-0" align="end">
-              <div className="p-2">
-                <div className="space-y-1">
-                  <Button variant={sortBy === 'title' ? 'default' : 'ghost'} size="sm" className="w-full justify-start h-9" onClick={() => handleSortChange('title')}>Título (A-Z)</Button>
-                  <Button variant={sortBy === 'mrr' ? 'default' : 'ghost'} size="sm" className="w-full justify-start h-9" onClick={() => handleSortChange('mrr')}>Valor do MRR</Button>
-                  <Button variant={sortBy === 'created' ? 'default' : 'ghost'} size="sm" className="w-full justify-start h-9" onClick={() => handleSortChange('created')}>Data de criação</Button>
+          {/* Barra de ações */}
+          <div className="flex items-center border rounded-lg overflow-hidden">
+            {/* Ordenação */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-2 rounded-none border-r h-9 px-3">
+                  <ArrowUpDown className="h-4 w-4" />
+                  <span>Ordenar</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-0" align="end">
+                <div className="p-2">
+                  <div className="space-y-1">
+                    <Button variant={sortBy === 'title' ? 'default' : 'ghost'} size="sm" className="w-full justify-start h-9" onClick={() => handleSortChange('title')}>Título (A-Z)</Button>
+                    <Button variant={sortBy === 'mrr' ? 'default' : 'ghost'} size="sm" className="w-full justify-start h-9" onClick={() => handleSortChange('mrr')}>Valor do MRR</Button>
+                    <Button variant={sortBy === 'created' ? 'default' : 'ghost'} size="sm" className="w-full justify-start h-9" onClick={() => handleSortChange('created')}>Data de criação</Button>
+                  </div>
                 </div>
-              </div>
-            </PopoverContent>
-          </Popover>
+              </PopoverContent>
+            </Popover>
 
-          <FilterPopover
-            selectedSquad={selectedSquad}
-            selectedPlano={selectedPlano}
-            selectedNiche={selectedNiche}
-            selectedMotivo={selectedMotivo}
-            selectedFlag={selectedFlag}
-            selectedTags={selectedTagsFilter}
-            availableNiches={[...new Set(cards.map(c => c.niche).filter(Boolean))] as string[]}
-            availableMotivos={selectedPipelineData?.name?.toLowerCase().includes('perdidos') 
-              ? [...new Set(cards.map(c => c.motivo_perda).filter(Boolean))] as string[]
-              : []
-            }
-            availableTags={availableTags}
-            showMotivoFilter={selectedPipelineData?.name?.toLowerCase().includes('perdidos')}
-            onSquadChange={handleSquadChange}
-            onPlanoChange={handlePlanoChange}
-            onNicheChange={handleNicheChange}
-            onMotivoChange={handleMotivoChange}
-            onFlagChange={handleFlagChange}
-            onTagsChange={handleTagsChange}
-            onClearFilters={handleClearFilters}
-          />
+            <FilterPopover
+              selectedSquad={selectedSquad}
+              selectedPlano={selectedPlano}
+              selectedNiche={selectedNiche}
+              selectedMotivo={selectedMotivo}
+              selectedFlag={selectedFlag}
+              selectedTags={selectedTagsFilter}
+              availableNiches={[...new Set(cards.map(c => c.niche).filter(Boolean))] as string[]}
+              availableMotivos={selectedPipelineData?.name?.toLowerCase().includes('perdidos') 
+                ? [...new Set(cards.map(c => c.motivo_perda).filter(Boolean))] as string[]
+                : []
+              }
+              availableTags={availableTags}
+              showMotivoFilter={selectedPipelineData?.name?.toLowerCase().includes('perdidos')}
+              onSquadChange={handleSquadChange}
+              onPlanoChange={handlePlanoChange}
+              onNicheChange={handleNicheChange}
+              onMotivoChange={handleMotivoChange}
+              onFlagChange={handleFlagChange}
+              onTagsChange={handleTagsChange}
+              onClearFilters={handleClearFilters}
+              inlineStyle
+            />
+          </div>
+
           {(selectedSquad !== 'todos' || selectedPlano !== 'todos' || selectedMotivo !== 'todos' || selectedNiche !== 'todos' || selectedFlag !== 'todos' || selectedTagsFilter.length > 0) && (
-            <ToolbarButton
-              toolbarSize="icon"
-              className="border-border hover:bg-accent"
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9"
               onClick={() => { handleClearFilters(); toast.success('Filtros limpos'); }}
             >
               <Plus className="h-4 w-4 rotate-45" />
-            </ToolbarButton>
+            </Button>
           )}
           
           {/* Botão adicionar cliente - only for admins */}
@@ -1048,59 +1054,6 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
               <UserPlus className="h-4 w-4" />
               <span className="hidden sm:inline">Adicionar cliente</span>
             </ToolbarButton>
-          )}
-
-          {/* Configurações */}
-          {isAdmin && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <ToolbarButton toolbarSize="icon">
-                  <Settings className="h-4 w-4" />
-                </ToolbarButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem onClick={() => setShowStageManager(true)}>
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Editar Etapas
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowPipelineOrderManager(true)}>
-                  <LayoutGrid className="h-4 w-4 mr-2" />
-                  Ordem dos Pipelines
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast.info('Gerenciar etiquetas em breve')}>
-                  <Tag className="h-4 w-4 mr-2" />
-                  Gerenciar Etiquetas
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast.info('Automações em breve')}>
-                  <Zap className="h-4 w-4 mr-2" />
-                  Automações de Funis
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast.info('Configurações de ganho em breve')}>
-                  <Trophy className="h-4 w-4 mr-2" />
-                  Configurações de Ganho
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast.info('Motivos de perda em breve')}>
-                  <ThumbsDown className="h-4 w-4 mr-2" />
-                  Motivos de Perda
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast.info('Ordem dos clientes em breve')}>
-                  <ArrowUpDown className="h-4 w-4 mr-2" />
-                  Ordem dos Clientes
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast.info('Tarefas em breve')}>
-                  <ListChecks className="h-4 w-4 mr-2" />
-                  Tarefas
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast.info('Permissões em breve')}>
-                  <Shield className="h-4 w-4 mr-2" />
-                  Permissões de Exportação
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast.info('Importar clientes em breve')}>
-                  <FileDown className="h-4 w-4 mr-2" />
-                  Importar Clientes
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           )}
 
 
