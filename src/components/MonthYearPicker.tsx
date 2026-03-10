@@ -11,6 +11,8 @@ interface MonthYearPickerProps {
   singleSelect?: boolean;
   minYear?: number;
   minMonth?: number;
+  /** When true, renders as inline ghost button for bordered toolbar containers */
+  inlineStyle?: boolean;
 }
 
 const MONTHS = [
