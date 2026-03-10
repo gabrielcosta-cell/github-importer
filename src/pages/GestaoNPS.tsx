@@ -68,7 +68,7 @@ export default function GestaoNPS() {
   const { toast } = useToast();
   const { profile } = useAuth();
   const navigate = useNavigate();
-  const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
+  
   const [responses, setResponses] = useState<NPSResponse[]>([]);
   const [selectedResponse, setSelectedResponse] = useState<NPSResponse | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
