@@ -250,10 +250,11 @@ export async function setupCRMOpsPipelines(): Promise<{ closerId: string | null;
     const migratedId = await migrateLegacyCloserPipeline();
 
     const closerId = migratedId || await ensurePipelineWithStages(CLOSER_PIPELINE_NAME, CLOSER_STAGES, user.id, 11);
-    const varMidiaId = await ensurePipelineWithStages(VARIAVEL_MIDIA_PIPELINE_NAME, VARIAVEL_STAGES, user.id, 12);
-    const varVendasId = await ensurePipelineWithStages(VARIAVEL_VENDAS_PIPELINE_NAME, VARIAVEL_STAGES, user.id, 13);
+    const crossSellId = await ensurePipelineWithStages(CROSSSELL_PIPELINE_NAME, CLOSER_STAGES, user.id, 12);
+    const varMidiaId = await ensurePipelineWithStages(VARIAVEL_MIDIA_PIPELINE_NAME, VARIAVEL_STAGES, user.id, 13);
+    const varVendasId = await ensurePipelineWithStages(VARIAVEL_VENDAS_PIPELINE_NAME, VARIAVEL_STAGES, user.id, 14);
 
-    return { closerId, varMidiaId, varVendasId };
+    return { closerId, crossSellId, varMidiaId, varVendasId };
   } finally {
     migrationRunning = false;
   }
