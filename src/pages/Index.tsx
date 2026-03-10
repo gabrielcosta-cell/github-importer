@@ -325,9 +325,18 @@ const Index = () => {
           <div className="flex-1 flex h-svh min-h-0 flex-col min-w-0">
             {activeView !== 'csm' && activeView !== 'crm-ops' && <MobileSidebarTrigger />}
             <SidebarInset className="flex-1 min-h-0">
-              <main className={(activeView === 'csm' || activeView === 'crm-ops') ? 'flex h-full min-h-0 flex-col overflow-hidden' : (activeView === 'projetos-clientes' || activeView === 'projetos-operacao' || activeView === 'projetos-metricas') ? 'px-4 md:px-6 py-6 md:py-8 space-y-6 md:space-y-8 w-full' : 'container py-6 md:py-8 space-y-6 md:space-y-8'}>
-                {renderContent()}
-              </main>
+              {/* Always-mounted CSM and CRM for instant switching */}
+              <div className={activeView === 'csm' ? 'flex h-full min-h-0 flex-col overflow-hidden' : 'hidden'}>
+                <CSMKanban openCardId={openCardId} openCardKey={openCardKey} />
+              </div>
+              <div className={activeView === 'crm-ops' ? 'flex h-full min-h-0 flex-col overflow-hidden' : 'hidden'}>
+                <CRMOpsKanban />
+              </div>
+              {activeView !== 'csm' && activeView !== 'crm-ops' && (
+                <main className={(activeView === 'projetos-clientes' || activeView === 'projetos-operacao' || activeView === 'projetos-metricas') ? 'px-4 md:px-6 py-6 md:py-8 space-y-6 md:space-y-8 w-full' : 'container py-6 md:py-8 space-y-6 md:space-y-8'}>
+                  {renderContent()}
+                </main>
+              )}
             </SidebarInset>
           </div>
         </div>
