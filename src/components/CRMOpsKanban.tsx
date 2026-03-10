@@ -118,9 +118,16 @@ export const CRMOpsKanban: React.FC = () => {
     setCards(mappedCards);
   };
 
+  // Persist to session cache whenever key data changes
+  useEffect(() => {
+    if (pipelines.length > 0 && selectedPipeline) {
+      writeCRMOpsKanbanCache({ pipelines, selectedPipeline, stages, cards });
+    }
+  }, [pipelines, selectedPipeline, stages, cards]);
+
   useEffect(() => {
     const init = async () => {
-      setLoading(true);
+      if (!cached) setLoading(true);
       await fetchPipelines();
       setLoading(false);
     };
