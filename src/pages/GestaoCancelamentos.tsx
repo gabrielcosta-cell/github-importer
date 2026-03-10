@@ -15,7 +15,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useAuth } from "@/contexts/AuthContext";
 import { CancellationRequest, CancellationStage, StageNotes } from "@/components/cancellation/CancellationKanbanBoard";
-import { CancellationList } from "@/components/cancellation/CancellationList";
+
 import { LinkCardDialog } from "@/components/cancellation/LinkCardDialog";
 import { LostReasonDialog } from "@/components/kanban/LostReasonDialog";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
