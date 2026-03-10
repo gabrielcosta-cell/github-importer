@@ -326,7 +326,7 @@ const Index = () => {
         onNavigate={handleViewChange}
       />
       <SidebarProvider defaultOpen={true}>
-        <div className={(activeView === 'csm' || activeView === 'crm-ops' || activeView === 'insights') ? 'fixed inset-0 bg-gradient-to-br from-background via-background to-muted/30 flex w-full' : 'min-h-screen bg-gradient-to-br from-background via-background to-muted/30 flex w-full'}>
+        <div className={(activeView === 'csm' || activeView === 'crm-ops' || activeView === 'pipelines' || activeView === 'dashboards') ? 'fixed inset-0 bg-gradient-to-br from-background via-background to-muted/30 flex w-full' : 'min-h-screen bg-gradient-to-br from-background via-background to-muted/30 flex w-full'}>
           <AppSidebar 
             activeView={activeView as any}
             onViewChange={handleViewChange}
