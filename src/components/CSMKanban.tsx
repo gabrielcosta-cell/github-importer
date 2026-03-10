@@ -1128,7 +1128,7 @@ export const CSMKanban: React.FC<CSMKanbanProps> = ({ openCardId, openCardKey })
       {/* Content area */}
       <div className="min-h-0 flex-1 h-full overflow-x-auto overflow-y-auto relative">
         {selectedPipeline && (
-          <div className="animate-in fade-in-0 zoom-in-95 duration-300 h-full">
+          <div className="h-full">
             {isMobile ? (
               <MobileStageSwiper
                 stages={stages}
