@@ -1094,64 +1094,6 @@ export default function GestaoNPS() {
             <ScrollBar orientation="vertical" />
           </ScrollArea>
         )}
-                    const linkedSquad = getSquadFromCardId(response.card_id);
-                    const displaySquad = response.squad || linkedSquad || 'Indefinido';
-                    const squadColor = getSquadColor(displaySquad !== 'Indefinido' ? displaySquad : null);
-                    return (
-                      <TableRow key={response.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleViewDetails(response)}>
-                        <TableCell className="font-medium">{response.empresa}</TableCell>
-                        <TableCell>{response.responsavel}</TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant="outline" 
-                            className="text-xs"
-                            style={squadColor ? { borderColor: squadColor, color: squadColor } : {}}
-                          >
-                            {displaySquad}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{getScoreBadge(response.recomendacao)}</TableCell>
-                        <TableCell className="max-w-[150px] truncate">{response.sentimento_sem_dot}</TableCell>
-                        <TableCell>{formatDateUTC(response.created_at, "dd/MM/yyyy")}</TableCell>
-                        <TableCell>
-                          {response.card_id ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-6 text-xs flex items-center gap-1"
-                              onClick={(e) => handleOpenInCSM(response.card_id!, e)}
-                            >
-                              <Eye className="w-3 h-3" />
-                              Abrir no CSM
-                            </Button>
-                          ) : (
-                            <Badge variant="outline" className="text-xs flex items-center gap-1 w-fit text-muted-foreground">
-                              <Link2Off className="w-3 h-3" />
-                              Não vinculado
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteResponse(response);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </ScrollArea>
-          </Card>
-        )}
       </div>
 
       {/* Dialog de detalhes */}
