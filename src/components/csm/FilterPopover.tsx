@@ -61,6 +61,7 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({
   onFlagChange,
   onTagsChange,
   onClearFilters,
+  inlineStyle = false,
 }) => {
   const activeFiltersCount = [
     selectedSquad !== 'todos',
