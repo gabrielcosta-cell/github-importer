@@ -1186,6 +1186,26 @@ export const CardDetailsDialog: React.FC<CardDetailsDialogProps> = ({
           });
 
         toast.success('Cliente marcado como cancelado (churn)!');
+
+        // Criar cópia do card no pipeline de Churn (cancellation_requests)
+        try {
+          await supabase
+            .from('cancellation_requests')
+            .insert({
+              empresa: card.company_name || card.title,
+              responsavel: card.contact_name || '',
+              email: card.contact_email || '',
+              reason: motivo,
+              observacoes: comentarios || '',
+              stage: 'nova',
+              status: 'pendente',
+              card_id: card.id,
+              squad: card.squad || null,
+              submitted_by: userId || null,
+            });
+        } catch (churnCopyError) {
+          console.error('Erro ao criar cópia no pipeline de Churn:', churnCopyError);
+        }
       } else {
         // Pipelines não-CSM: mover para pipeline de perdidos (lógica original)
         const lostPipelineName = 'Leads Perdidos';

@@ -1,4 +1,4 @@
-import { Users, Settings, User, FolderOpen, FileText, Copy, CheckCircle, BarChart2, TrendingDown, DollarSign, Heart, Activity, Sparkles, ChevronRight, UserCheck, Sliders, AlertCircle, Star, MessageSquare, ClipboardList, Trophy, LogOut, TrendingUp, Shield, Briefcase } from "lucide-react"
+import { Users, Settings, User, FolderOpen, FileText, Copy, CheckCircle, BarChart2, TrendingDown, DollarSign, Heart, Activity, Sparkles, ChevronRight, UserCheck, Sliders, AlertCircle, Star, MessageSquare, ClipboardList, Trophy, LogOut, TrendingUp, Shield, Briefcase, Columns3 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { UserProfilePopover } from "./UserProfilePopover"
 import { useAuth } from "@/contexts/AuthContext"
@@ -32,8 +32,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 
 interface AppSidebarProps {
-  activeView: 'users' | 'profile' | 'gestao-projetos' | 'gestao-contratos' | 'csm' | 'crm-ops' | 'cs' | 'cs-churn' | 'cs-metricas' | 'cs-nps' | 'cs-csat' | 'cs-cancelamento' | 'gestao-cancelamentos' | 'gestao-nps' | 'gestao-csat' | 'copy' | 'aprovacao' | 'analise-bench' | 'projetos-operacao' | 'projetos-clientes' | 'projetos-metricas' | 'performance' | 'preferencias-interface' | 'cases-sucesso' | 'insights'
-  onViewChange: (view: 'users' | 'profile' | 'gestao-projetos' | 'gestao-contratos' | 'csm' | 'crm-ops' | 'cs' | 'cs-churn' | 'cs-metricas' | 'cs-nps' | 'cs-csat' | 'cs-cancelamento' | 'gestao-cancelamentos' | 'gestao-nps' | 'gestao-csat' | 'copy' | 'aprovacao' | 'analise-bench' | 'projetos-operacao' | 'projetos-clientes' | 'projetos-metricas' | 'performance' | 'preferencias-interface' | 'cases-sucesso' | 'insights') => void
+  activeView: 'users' | 'profile' | 'gestao-projetos' | 'gestao-contratos' | 'csm' | 'crm-ops' | 'cs' | 'cs-churn' | 'cs-metricas' | 'cs-nps' | 'cs-csat' | 'cs-cancelamento' | 'gestao-cancelamentos' | 'gestao-nps' | 'gestao-csat' | 'copy' | 'aprovacao' | 'analise-bench' | 'projetos-operacao' | 'projetos-clientes' | 'projetos-metricas' | 'performance' | 'preferencias-interface' | 'cases-sucesso' | 'pipelines' | 'dashboards'
+  onViewChange: (view: 'users' | 'profile' | 'gestao-projetos' | 'gestao-contratos' | 'csm' | 'crm-ops' | 'cs' | 'cs-churn' | 'cs-metricas' | 'cs-nps' | 'cs-csat' | 'cs-cancelamento' | 'gestao-cancelamentos' | 'gestao-nps' | 'gestao-csat' | 'copy' | 'aprovacao' | 'analise-bench' | 'projetos-operacao' | 'projetos-clientes' | 'projetos-metricas' | 'performance' | 'preferencias-interface' | 'cases-sucesso' | 'pipelines' | 'dashboards') => void
 }
 
 export function AppSidebar({ activeView, onViewChange }: AppSidebarProps) {
@@ -542,16 +542,51 @@ export function AppSidebar({ activeView, onViewChange }: AppSidebarProps) {
             {/* Label oculta temporariamente */}
             <SidebarGroupContent>
               <SidebarMenu>
-                {/* Insights - acesso direto ao CSAT e NPS */}
+                {/* Pipelines - Churn/CSAT/NPS pipelines */}
                 {(!permissionsLoading && checkModulePermission('cs', 'view')) && (() => {
-                  const isActive = activeView === 'insights'
+                  const isActive = activeView === 'pipelines'
                   return (
-                    <SidebarMenuItem key="insights">
+                    <SidebarMenuItem key="pipelines">
                       {!shouldShowText ? (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <SidebarMenuButton
-                              onClick={() => onViewChange('insights')}
+                              onClick={() => onViewChange('pipelines')}
+                              isActive={isActive}
+                              className="w-full transition-all duration-200 justify-center"
+                              style={isActive ? { backgroundColor: '#ec4a55', color: 'white' } : {}}
+                            >
+                              <Columns3 className="h-4 w-4 flex-shrink-0" />
+                            </SidebarMenuButton>
+                          </TooltipTrigger>
+                          <TooltipContent side="right">
+                            <p>Pipelines</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <SidebarMenuButton
+                          onClick={() => onViewChange('pipelines')}
+                          isActive={isActive}
+                          className="w-full transition-all duration-200 justify-start"
+                          style={isActive ? { backgroundColor: '#ec4a55', color: 'white' } : {}}
+                        >
+                          <Columns3 className="h-4 w-4 flex-shrink-0" />
+                          <span className="text-xs">Pipelines</span>
+                        </SidebarMenuButton>
+                      )}
+                    </SidebarMenuItem>
+                  )
+                })()}
+                {/* Dashboards - Churn/NPS/CSAT dashboards */}
+                {(!permissionsLoading && checkModulePermission('cs', 'view')) && (() => {
+                  const isActive = activeView === 'dashboards'
+                  return (
+                    <SidebarMenuItem key="dashboards">
+                      {!shouldShowText ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <SidebarMenuButton
+                              onClick={() => onViewChange('dashboards')}
                               isActive={isActive}
                               className="w-full transition-all duration-200 justify-center"
                               style={isActive ? { backgroundColor: '#ec4a55', color: 'white' } : {}}
@@ -560,18 +595,18 @@ export function AppSidebar({ activeView, onViewChange }: AppSidebarProps) {
                             </SidebarMenuButton>
                           </TooltipTrigger>
                           <TooltipContent side="right">
-                            <p>Insights</p>
+                            <p>Dashboards</p>
                           </TooltipContent>
                         </Tooltip>
                       ) : (
                         <SidebarMenuButton
-                          onClick={() => onViewChange('insights')}
+                          onClick={() => onViewChange('dashboards')}
                           isActive={isActive}
                           className="w-full transition-all duration-200 justify-start"
                           style={isActive ? { backgroundColor: '#ec4a55', color: 'white' } : {}}
                         >
                           <BarChart2 className="h-4 w-4 flex-shrink-0" />
-                          <span className="text-xs">Insights</span>
+                          <span className="text-xs">Dashboards</span>
                         </SidebarMenuButton>
                       )}
                     </SidebarMenuItem>
