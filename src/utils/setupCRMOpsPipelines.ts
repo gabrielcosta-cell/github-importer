@@ -99,7 +99,7 @@ async function migrateLegacyCloserPipeline(): Promise<string | null> {
   const { data: legacyPipelines } = await supabase
     .from('csm_pipelines')
     .select('id, name')
-    .in('name', [CLOSER_PIPELINE_LEGACY_NAME, CLOSER_PIPELINE_NAME])
+    .in('name', [CLOSER_PIPELINE_LEGACY_NAME, UPSELL_CROSSSELL_LEGACY_NAME, CLOSER_PIPELINE_NAME])
     .order('created_at', { ascending: true });
 
   if (!legacyPipelines || legacyPipelines.length === 0) return null;
