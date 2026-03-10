@@ -186,6 +186,9 @@ async function ensurePipelineWithStages(
     const existingId = await deduplicatePipelines(pipelineName);
 
     if (existingId) {
+      // Ensure correct position order
+      await supabase.from('csm_pipelines').update({ position }).eq('id', existingId);
+
       const { count } = await supabase
         .from('csm_stages')
         .select('id', { count: 'exact', head: true })
