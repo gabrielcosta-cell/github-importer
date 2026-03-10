@@ -67,7 +67,7 @@ export default function GestaoCSAT() {
   const { toast } = useToast();
   const { profile } = useAuth();
   const navigate = useNavigate();
-  const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
+  
   const [responses, setResponses] = useState<CSATResponse[]>([]);
   const [selectedResponse, setSelectedResponse] = useState<CSATResponse | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
