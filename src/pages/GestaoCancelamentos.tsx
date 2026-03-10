@@ -9,13 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, FileText, CheckCircle, XCircle, Clock, Trash2, LayoutGrid, List, ArrowUpDown, Filter, Link2, Link2Off, ExternalLink, ChevronDown, Users, Eye } from "lucide-react";
+import { Search, FileText, CheckCircle, XCircle, Clock, Trash2, ArrowUpDown, Filter, Link2, Link2Off, ExternalLink, ChevronDown, Users, Eye } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useAuth } from "@/contexts/AuthContext";
 import { CancellationRequest, CancellationStage, StageNotes } from "@/components/cancellation/CancellationKanbanBoard";
-import { CancellationList } from "@/components/cancellation/CancellationList";
+
 import { LinkCardDialog } from "@/components/cancellation/LinkCardDialog";
 import { LostReasonDialog } from "@/components/kanban/LostReasonDialog";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -43,7 +43,7 @@ export default function GestaoCancelamentos() {
   const { toast } = useToast();
   const { profile } = useAuth();
   const navigate = useNavigate();
-  const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
+  
   const [requests, setRequests] = useState<CancellationRequest[]>([]);
   const [attachments, setAttachments] = useState<Record<string, any[]>>({});
   const [selectedRequest, setSelectedRequest] = useState<CancellationRequest | null>(null);
@@ -1157,29 +1157,8 @@ export default function GestaoCancelamentos() {
             />
           </div>
           
-          {/* Linha 2: View toggle + contador + ações */}
+          {/* Linha 2: contador + ações */}
           <div className="flex items-center justify-between gap-2">
-            {/* View toggle compacto */}
-            <div className="flex gap-1 border rounded-lg p-0.5">
-              <Button
-                variant={viewMode === 'kanban' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('kanban')}
-                className="h-8 px-2 transition-all duration-200"
-                style={viewMode === 'kanban' ? { backgroundColor: '#ec4a55', color: 'white' } : {}}
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('list')}
-                className="h-8 px-2 transition-all duration-200"
-                style={viewMode === 'list' ? { backgroundColor: '#ec4a55', color: 'white' } : {}}
-              >
-                <List className="h-4 w-4" />
-              </Button>
-            </div>
             
             {/* Contador */}
             <div className="flex items-center gap-1 px-2 py-1 bg-muted/50 rounded-md">
@@ -1319,28 +1298,6 @@ export default function GestaoCancelamentos() {
         {/* Desktop: Layout horizontal original */}
         <div className="hidden md:flex items-center justify-between gap-4">
           {/* Botões de visualização à esquerda */}
-          <div className="flex gap-1 border rounded-lg p-1">
-            <Button
-              variant={viewMode === 'kanban' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('kanban')}
-              className="h-8 transition-all duration-200"
-              style={viewMode === 'kanban' ? { backgroundColor: '#ec4a55', color: 'white' } : {}}
-            >
-              <LayoutGrid className="h-4 w-4 mr-2 transition-transform duration-200" />
-              Kanban
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('list')}
-              className="h-8 transition-all duration-200"
-              style={viewMode === 'list' ? { backgroundColor: '#ec4a55', color: 'white' } : {}}
-            >
-              <List className="h-4 w-4 mr-2 transition-transform duration-200" />
-              Lista
-            </Button>
-          </div>
 
           {/* Campo de pesquisa centralizado */}
           <div className="flex-1 flex justify-center">
@@ -1516,7 +1473,7 @@ export default function GestaoCancelamentos() {
           <div className="flex items-center justify-center h-64">
             <p className="text-muted-foreground">Carregando...</p>
           </div>
-        ) : viewMode === 'kanban' ? (
+        ) : (
           <DndContext
             sensors={sensors}
             collisionDetection={rectIntersection}
@@ -1556,13 +1513,6 @@ export default function GestaoCancelamentos() {
               )}
             </DragOverlay>
           </DndContext>
-        ) : (
-          <CancellationList
-            requests={filteredRequestsData.requests}
-            onViewDetails={handleViewDetails}
-            onDeleteRequest={handleDeleteRequest}
-            isAdmin={canDelete}
-          />
         )}
       </div>
 

@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, LayoutGrid, List, ArrowUpDown, Filter, Link2, Link2Off, ExternalLink, Heart, Frown, Meh, Smile, Trash2, Users, Eye, ChevronDown, BarChart3 } from "lucide-react";
+import { Search, ArrowUpDown, Filter, Link2, Link2Off, ExternalLink, Heart, Frown, Meh, Smile, Trash2, Users, Eye, ChevronDown, BarChart3 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
@@ -15,7 +15,7 @@ import { ptBR } from "date-fns/locale";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
 import { MonthYearPicker } from "@/components/MonthYearPicker";
 
 interface NPSResponse {
@@ -68,7 +68,7 @@ export default function GestaoNPS() {
   const { toast } = useToast();
   const { profile } = useAuth();
   const navigate = useNavigate();
-  const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
+  
   const [responses, setResponses] = useState<NPSResponse[]>([]);
   const [selectedResponse, setSelectedResponse] = useState<NPSResponse | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -690,29 +690,8 @@ export default function GestaoNPS() {
             />
           </div>
           
-          {/* Linha 2: View toggle + contador + ações */}
+          {/* Linha 2: contador + ações */}
           <div className="flex items-center justify-between gap-2">
-            {/* View toggle compacto */}
-            <div className="flex gap-1 border rounded-lg p-0.5">
-              <Button
-                variant={viewMode === 'kanban' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('kanban')}
-                className="h-8 px-2 transition-all duration-200"
-                style={viewMode === 'kanban' ? { backgroundColor: '#ec4a55', color: 'white' } : {}}
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('list')}
-                className="h-8 px-2 transition-all duration-200"
-                style={viewMode === 'list' ? { backgroundColor: '#ec4a55', color: 'white' } : {}}
-              >
-                <List className="h-4 w-4" />
-              </Button>
-            </div>
             
             {/* Contador */}
             <div className="flex items-center gap-1 px-2 py-1 bg-muted/50 rounded-md">
@@ -871,28 +850,6 @@ export default function GestaoNPS() {
         {/* Desktop: Layout horizontal original */}
         <div className="hidden md:flex items-center justify-between gap-4">
           {/* Botões de visualização à esquerda */}
-          <div className="flex gap-1 border rounded-lg p-1">
-            <Button
-              variant={viewMode === 'kanban' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('kanban')}
-              className="h-8 transition-all duration-200"
-              style={viewMode === 'kanban' ? { backgroundColor: '#ec4a55', color: 'white' } : {}}
-            >
-              <LayoutGrid className="h-4 w-4 mr-2 transition-transform duration-200" />
-              Kanban
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('list')}
-              className="h-8 transition-all duration-200"
-              style={viewMode === 'list' ? { backgroundColor: '#ec4a55', color: 'white' } : {}}
-            >
-              <List className="h-4 w-4 mr-2 transition-transform duration-200" />
-              Lista
-            </Button>
-          </div>
 
           {/* Campo de pesquisa centralizado */}
           <div className="flex-1 flex justify-center">
@@ -1092,7 +1049,7 @@ export default function GestaoNPS() {
           <div className="flex items-center justify-center h-64">
             <p className="text-muted-foreground">Carregando...</p>
           </div>
-        ) : viewMode === 'kanban' ? (
+        ) : (
           <ScrollArea className="w-full h-full">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-4 h-full w-full" style={{ minHeight: 'calc(100vh - 180px)' }}>
               {NPS_STAGES.map((stage) => {
@@ -1136,81 +1093,6 @@ export default function GestaoNPS() {
             <ScrollBar orientation="horizontal" />
             <ScrollBar orientation="vertical" />
           </ScrollArea>
-        ) : (
-          <Card>
-            <ScrollArea className="h-[calc(100vh-200px)]">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Empresa</TableHead>
-                    <TableHead>Responsável</TableHead>
-                    <TableHead>Squad</TableHead>
-                    <TableHead>Nota</TableHead>
-                    <TableHead>Sentimento</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Vínculo CSM</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredResponsesData.responses.map((response) => {
-                    const linkedSquad = getSquadFromCardId(response.card_id);
-                    const displaySquad = response.squad || linkedSquad || 'Indefinido';
-                    const squadColor = getSquadColor(displaySquad !== 'Indefinido' ? displaySquad : null);
-                    return (
-                      <TableRow key={response.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleViewDetails(response)}>
-                        <TableCell className="font-medium">{response.empresa}</TableCell>
-                        <TableCell>{response.responsavel}</TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant="outline" 
-                            className="text-xs"
-                            style={squadColor ? { borderColor: squadColor, color: squadColor } : {}}
-                          >
-                            {displaySquad}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{getScoreBadge(response.recomendacao)}</TableCell>
-                        <TableCell className="max-w-[150px] truncate">{response.sentimento_sem_dot}</TableCell>
-                        <TableCell>{formatDateUTC(response.created_at, "dd/MM/yyyy")}</TableCell>
-                        <TableCell>
-                          {response.card_id ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-6 text-xs flex items-center gap-1"
-                              onClick={(e) => handleOpenInCSM(response.card_id!, e)}
-                            >
-                              <Eye className="w-3 h-3" />
-                              Abrir no CSM
-                            </Button>
-                          ) : (
-                            <Badge variant="outline" className="text-xs flex items-center gap-1 w-fit text-muted-foreground">
-                              <Link2Off className="w-3 h-3" />
-                              Não vinculado
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteResponse(response);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </ScrollArea>
-          </Card>
         )}
       </div>
 

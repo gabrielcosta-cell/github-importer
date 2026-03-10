@@ -496,52 +496,6 @@ export function AppSidebar({ activeView, onViewChange }: AppSidebarProps) {
                     </SidebarMenuItem>
                   )
                 })()}
-                {/* Projetos - botão único */}
-                {projetosItem.available && (() => {
-                  const isActive = ['projetos-clientes', 'projetos-metricas', 'projetos-operacao'].includes(activeView)
-                  return (
-                    <SidebarMenuItem key="projetos">
-                      {!shouldShowText ? (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <SidebarMenuButton
-                              onClick={() => onViewChange(projetosItem.view)}
-                              isActive={isActive}
-                              className="w-full transition-all duration-200 justify-center"
-                              style={isActive ? { backgroundColor: '#ec4a55', color: 'white' } : {}}
-                            >
-                              <projetosItem.icon className="h-4 w-4 flex-shrink-0" />
-                            </SidebarMenuButton>
-                          </TooltipTrigger>
-                          <TooltipContent side="right">
-                            <p>{projetosItem.title}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      ) : (
-                        <SidebarMenuButton
-                          onClick={() => onViewChange(projetosItem.view)}
-                          isActive={isActive}
-                          className="w-full transition-all duration-200 justify-start"
-                          style={isActive ? { backgroundColor: '#ec4a55', color: 'white' } : {}}
-                        >
-                          <projetosItem.icon className="h-4 w-4 flex-shrink-0" />
-                          <span className="text-xs">{projetosItem.title}</span>
-                        </SidebarMenuButton>
-                      )}
-                    </SidebarMenuItem>
-                  )
-                })()}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
-        {/* Seção Customer Experience */}
-        {(csItems.some(item => item.available) || (!permissionsLoading && checkModulePermission('cs', 'view'))) && (
-          <SidebarGroup className="py-0">
-            {/* Label oculta temporariamente */}
-            <SidebarGroupContent>
-              <SidebarMenu>
                 {/* Pipelines - Churn/CSAT/NPS pipelines */}
                 {(!permissionsLoading && checkModulePermission('cs', 'view')) && (() => {
                   const isActive = activeView === 'pipelines'
@@ -612,6 +566,52 @@ export function AppSidebar({ activeView, onViewChange }: AppSidebarProps) {
                     </SidebarMenuItem>
                   )
                 })()}
+                {/* Projetos - botão único */}
+                {projetosItem.available && (() => {
+                  const isActive = ['projetos-clientes', 'projetos-metricas', 'projetos-operacao'].includes(activeView)
+                  return (
+                    <SidebarMenuItem key="projetos">
+                      {!shouldShowText ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <SidebarMenuButton
+                              onClick={() => onViewChange(projetosItem.view)}
+                              isActive={isActive}
+                              className="w-full transition-all duration-200 justify-center"
+                              style={isActive ? { backgroundColor: '#ec4a55', color: 'white' } : {}}
+                            >
+                              <projetosItem.icon className="h-4 w-4 flex-shrink-0" />
+                            </SidebarMenuButton>
+                          </TooltipTrigger>
+                          <TooltipContent side="right">
+                            <p>{projetosItem.title}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <SidebarMenuButton
+                          onClick={() => onViewChange(projetosItem.view)}
+                          isActive={isActive}
+                          className="w-full transition-all duration-200 justify-start"
+                          style={isActive ? { backgroundColor: '#ec4a55', color: 'white' } : {}}
+                        >
+                          <projetosItem.icon className="h-4 w-4 flex-shrink-0" />
+                          <span className="text-xs">{projetosItem.title}</span>
+                        </SidebarMenuButton>
+                      )}
+                    </SidebarMenuItem>
+                  )
+                })()}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* Seção Customer Experience */}
+        {(csItems.some(item => item.available) || (!permissionsLoading && checkModulePermission('cs', 'view'))) && (
+          <SidebarGroup className="py-0">
+            {/* Label oculta temporariamente */}
+            <SidebarGroupContent>
+              <SidebarMenu>
                 {csItems.map((item) => {
                   if (!item.available) return null
                   
