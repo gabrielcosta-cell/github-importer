@@ -14,13 +14,11 @@ const PIPELINES: { id: PipelineTab; name: string; icon: React.ReactNode }[] = [
   { id: "nps", name: "NPS", icon: <Heart className="h-3.5 w-3.5" /> },
 ];
 
-export default function Pipelines() {
-  const [activeTab, setActiveTab] = useState<PipelineTab>("churn");
+const PipelineSelectorButton = ({ activeTab, onTabChange }: { activeTab: PipelineTab; onTabChange: (tab: PipelineTab) => void }) => {
   const [open, setOpen] = useState(false);
-
   const activePipeline = PIPELINES.find(p => p.id === activeTab)!;
 
-  const pipelineSelector = (
+  return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="sm" className="gap-2 rounded-none h-9 px-3 border-r">
@@ -38,7 +36,7 @@ export default function Pipelines() {
               size="sm"
               className="w-full justify-start gap-2"
               onClick={() => {
-                setActiveTab(pipeline.id);
+                onTabChange(pipeline.id);
                 setOpen(false);
               }}
             >
@@ -50,6 +48,12 @@ export default function Pipelines() {
       </PopoverContent>
     </Popover>
   );
+};
+
+export default function Pipelines() {
+  const [activeTab, setActiveTab] = useState<PipelineTab>("churn");
+
+  const pipelineSelector = <PipelineSelectorButton activeTab={activeTab} onTabChange={setActiveTab} />;
 
   return (
     <div className="flex flex-col h-full min-h-0 overflow-hidden">
