@@ -160,7 +160,7 @@ export const CRMOpsKanban: React.FC = () => {
       if (sortBy === 'mrr') return (b.monthly_revenue || 0) - (a.monthly_revenue || 0);
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
-  }, [cards, searchTerm, dateStart, dateEnd, sortBy]);
+  }, [cards, searchTerm, selectedPeriods, sortBy]);
 
   const refreshCards = useCallback(() => {
     if (selectedPipeline) fetchCards(selectedPipeline);
