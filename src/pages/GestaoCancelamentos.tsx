@@ -1473,7 +1473,7 @@ export default function GestaoCancelamentos() {
           <div className="flex items-center justify-center h-64">
             <p className="text-muted-foreground">Carregando...</p>
           </div>
-        ) : viewMode === 'kanban' ? (
+        ) : (
           <DndContext
             sensors={sensors}
             collisionDetection={rectIntersection}
@@ -1513,13 +1513,6 @@ export default function GestaoCancelamentos() {
               )}
             </DragOverlay>
           </DndContext>
-        ) : (
-          <CancellationList
-            requests={filteredRequestsData.requests}
-            onViewDetails={handleViewDetails}
-            onDeleteRequest={handleDeleteRequest}
-            isAdmin={canDelete}
-          />
         )}
       </div>
 
