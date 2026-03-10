@@ -1,4 +1,4 @@
-import { Users, Settings, User, FolderOpen, FileText, Copy, CheckCircle, BarChart2, TrendingDown, DollarSign, Heart, Activity, Sparkles, ChevronRight, UserCheck, Sliders, AlertCircle, Star, MessageSquare, ClipboardList, Trophy, LogOut, TrendingUp, Shield, Briefcase } from "lucide-react"
+import { Users, Settings, User, FolderOpen, FileText, Copy, CheckCircle, BarChart2, TrendingDown, DollarSign, Heart, Activity, Sparkles, ChevronRight, UserCheck, Sliders, AlertCircle, Star, MessageSquare, ClipboardList, Trophy, LogOut, TrendingUp, Shield, Briefcase, Columns3 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { UserProfilePopover } from "./UserProfilePopover"
 import { useAuth } from "@/contexts/AuthContext"
