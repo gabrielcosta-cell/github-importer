@@ -83,6 +83,7 @@ export const useProjetosData = (selectedPeriod: { month: number; year: number })
       setRawCsmRows(csmRows)
       setRawCrmRows(crmOpsRows)
       setLoading(false)
+      writeProjetosCache({ rawCsmRows: csmRows, rawCrmRows: crmOpsRows, stagesList: [] })
     }
     fetchData()
   }, [])
