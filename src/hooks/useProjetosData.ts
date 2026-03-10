@@ -3,13 +3,16 @@ import { supabase } from '@/integrations/supabase/client'
 import { parseISO } from 'date-fns'
 import { CRM_OPS_PIPELINE_NAMES } from '@/utils/setupCRMOpsPipelines'
 import type { ProjetoRow } from '@/components/GestaoProjetosOperacao'
+import { readProjetosCache, writeProjetosCache } from '@/utils/projetosSessionCache'
 
 const PIPELINE_CLIENTES_ATIVOS = '749ccdc2-5127-41a1-997b-3dcb47979555'
+const CACHE_MAX_AGE = 60 * 60 * 1000 // 1h
 
 export const useProjetosData = (selectedPeriod: { month: number; year: number }) => {
-  const [rawCsmRows, setRawCsmRows] = useState<ProjetoRow[]>([])
-  const [rawCrmRows, setRawCrmRows] = useState<ProjetoRow[]>([])
-  const [loading, setLoading] = useState(true)
+  const cached = useMemo(() => readProjetosCache(CACHE_MAX_AGE), [])
+  const [rawCsmRows, setRawCsmRows] = useState<ProjetoRow[]>(cached?.rawCsmRows || [])
+  const [rawCrmRows, setRawCrmRows] = useState<ProjetoRow[]>(cached?.rawCrmRows || [])
+  const [loading, setLoading] = useState(!cached)
   const [snapshotsMap, setSnapshotsMap] = useState<Map<string, number>>(new Map())
   const [squadSnapshotsMap, setSquadSnapshotsMap] = useState<Map<string, string>>(new Map())
 
@@ -80,6 +83,7 @@ export const useProjetosData = (selectedPeriod: { month: number; year: number })
       setRawCsmRows(csmRows)
       setRawCrmRows(crmOpsRows)
       setLoading(false)
+      writeProjetosCache({ rawCsmRows: csmRows, rawCrmRows: crmOpsRows, stagesList: [] })
     }
     fetchData()
   }, [])
@@ -199,7 +203,7 @@ export const useProjetosData = (selectedPeriod: { month: number; year: number })
   }, [fetchSnapshots])
 
   // Expose stages list for dialogs
-  const [stagesList, setStagesList] = useState<Array<{ id: string; name: string }>>([])
+  const [stagesList, setStagesList] = useState<Array<{ id: string; name: string }>>(cached?.stagesList || [])
   useEffect(() => {
     supabase
       .from('csm_stages')
@@ -208,7 +212,13 @@ export const useProjetosData = (selectedPeriod: { month: number; year: number })
       .eq('is_active', true)
       .order('position')
       .then(({ data }) => {
-        setStagesList((data || []).map(s => ({ id: s.id, name: s.name })))
+        const list = (data || []).map(s => ({ id: s.id, name: s.name }))
+        setStagesList(list)
+        // Update cache with stages
+        const currentCache = readProjetosCache(CACHE_MAX_AGE)
+        if (currentCache) {
+          writeProjetosCache({ ...currentCache, stagesList: list })
+        }
       })
   }, [])
 

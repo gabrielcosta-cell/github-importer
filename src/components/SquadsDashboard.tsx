@@ -206,7 +206,16 @@ export const SquadsDashboard = ({ liveData, loading, selectedPeriod, onPeriodCha
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="py-20 text-center text-muted-foreground">Carregando...</div>
+            <div className="space-y-3 py-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex gap-3 items-center">
+                  <div className="h-5 w-20 rounded-full bg-muted animate-pulse" />
+                  {Array.from({ length: 6 }).map((_, j) => (
+                    <div key={j} className="h-4 w-20 rounded bg-muted animate-pulse" />
+                  ))}
+                </div>
+              ))}
+            </div>
           ) : squadMetrics.length === 0 ? (
             <div className="py-20 text-center text-muted-foreground">Nenhuma squad encontrada.</div>
           ) : (
