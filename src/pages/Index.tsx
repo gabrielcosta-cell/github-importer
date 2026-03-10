@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useLocation, useSearchParams, useNavigate } from "react-router-dom";
 import { CommandPalette } from "@/components/CommandPalette";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
@@ -29,9 +29,11 @@ import { ChurnMetrics } from "@/components/ChurnMetrics";
 import { InterfacePreferences } from "@/components/InterfacePreferences";
 import "@/utils/updateCategorias";
 
-type ActiveViewType = 'users' | 'profile' | 'gestao-projetos' | 'gestao-contratos' | 'csm' | 'crm-ops' | 'cs' | 'cs-churn' | 'cs-metricas' | 'cs-nps' | 'cs-csat' | 'copy' | 'aprovacao' | 'analise-bench' | 'projetos-operacao' | 'projetos-clientes' | 'projetos-metricas' | 'performance' | 'preferencias-interface' | 'gestao-nps' | 'gestao-csat' | 'cs-cancelamento' | 'gestao-cancelamentos';
+const Insights = lazy(() => import("@/pages/Insights"));
 
-const VALID_VIEWS: ActiveViewType[] = ['users', 'profile', 'gestao-projetos', 'gestao-contratos', 'csm', 'crm-ops', 'cs', 'cs-churn', 'cs-metricas', 'cs-nps', 'cs-csat', 'copy', 'aprovacao', 'analise-bench', 'projetos-operacao', 'projetos-clientes', 'projetos-metricas', 'performance', 'preferencias-interface', 'gestao-nps', 'gestao-csat', 'cs-cancelamento', 'gestao-cancelamentos'];
+type ActiveViewType = 'users' | 'profile' | 'gestao-projetos' | 'gestao-contratos' | 'csm' | 'crm-ops' | 'cs' | 'cs-churn' | 'cs-metricas' | 'cs-nps' | 'cs-csat' | 'copy' | 'aprovacao' | 'analise-bench' | 'projetos-operacao' | 'projetos-clientes' | 'projetos-metricas' | 'performance' | 'preferencias-interface' | 'gestao-nps' | 'gestao-csat' | 'cs-cancelamento' | 'gestao-cancelamentos' | 'insights';
+
+const VALID_VIEWS: ActiveViewType[] = ['users', 'profile', 'gestao-projetos', 'gestao-contratos', 'csm', 'crm-ops', 'cs', 'cs-churn', 'cs-metricas', 'cs-nps', 'cs-csat', 'copy', 'aprovacao', 'analise-bench', 'projetos-operacao', 'projetos-clientes', 'projetos-metricas', 'performance', 'preferencias-interface', 'gestao-nps', 'gestao-csat', 'cs-cancelamento', 'gestao-cancelamentos', 'insights'];
 
 const Index = () => {
   const { profile, signOut } = useAuth();
@@ -170,6 +172,7 @@ const Index = () => {
       'projetos-metricas': 'projetos',
       'performance': 'performance',
       'preferencias-interface': 'profile',
+      'insights': 'cs',
     } as const;
     
     const moduleName = moduleMap[newView as keyof typeof moduleMap];
@@ -211,6 +214,7 @@ const Index = () => {
       'projetos-metricas': 'projetos',
       'performance': 'performance',
       'preferencias-interface': 'preferencias-interface',
+      'insights': 'cs',
     };
     
     const currentModule = moduleMap[activeView as keyof typeof moduleMap];
@@ -270,7 +274,8 @@ const Index = () => {
     switch (activeView) {
       case 'csm':
       case 'crm-ops':
-        return null; // Handled by always-mounted instances below
+      case 'insights':
+        return null; // Handled by always-mounted or dedicated instances below
       case 'gestao-projetos':
         return <ProjetosView initialTab="clientes" />
       case 'gestao-contratos':
@@ -304,6 +309,12 @@ const Index = () => {
         return <UserProfile />
       case 'preferencias-interface':
         return <InterfacePreferences />
+      case 'insights':
+        return (
+          <Suspense fallback={<div className="flex items-center justify-center min-h-[300px]"><div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>}>
+            <Insights />
+          </Suspense>
+        );
       default:
         return null;
     }
@@ -317,13 +328,13 @@ const Index = () => {
         onNavigate={handleViewChange}
       />
       <SidebarProvider defaultOpen={true}>
-        <div className={(activeView === 'csm' || activeView === 'crm-ops') ? 'fixed inset-0 bg-gradient-to-br from-background via-background to-muted/30 flex w-full' : 'min-h-screen bg-gradient-to-br from-background via-background to-muted/30 flex w-full'}>
+        <div className={(activeView === 'csm' || activeView === 'crm-ops' || activeView === 'insights') ? 'fixed inset-0 bg-gradient-to-br from-background via-background to-muted/30 flex w-full' : 'min-h-screen bg-gradient-to-br from-background via-background to-muted/30 flex w-full'}>
           <AppSidebar 
             activeView={activeView as any}
             onViewChange={handleViewChange}
           />
           <div className="flex-1 flex h-svh min-h-0 flex-col min-w-0">
-            {activeView !== 'csm' && activeView !== 'crm-ops' && <MobileSidebarTrigger />}
+            {activeView !== 'csm' && activeView !== 'crm-ops' && activeView !== 'insights' && <MobileSidebarTrigger />}
             <SidebarInset className="flex-1 min-h-0">
               {/* Always-mounted CSM and CRM for instant switching */}
               <div className={activeView === 'csm' ? 'flex h-full min-h-0 flex-col overflow-hidden' : 'hidden'}>
@@ -332,7 +343,14 @@ const Index = () => {
               <div className={activeView === 'crm-ops' ? 'flex h-full min-h-0 flex-col overflow-hidden' : 'hidden'}>
                 <CRMOpsKanban />
               </div>
-              {activeView !== 'csm' && activeView !== 'crm-ops' && (
+              {activeView === 'insights' && (
+                <div className="flex h-full min-h-0 flex-col overflow-hidden">
+                  <Suspense fallback={<div className="flex items-center justify-center min-h-[300px]"><div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>}>
+                    <Insights />
+                  </Suspense>
+                </div>
+              )}
+              {activeView !== 'csm' && activeView !== 'crm-ops' && activeView !== 'insights' && (
                 <main className={(activeView === 'projetos-clientes' || activeView === 'projetos-operacao' || activeView === 'projetos-metricas') ? 'px-4 md:px-6 py-6 md:py-8 space-y-6 md:space-y-8 w-full' : 'container py-6 md:py-8 space-y-6 md:space-y-8'}>
                   {renderContent()}
                 </main>

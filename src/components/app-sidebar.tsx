@@ -32,8 +32,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 
 interface AppSidebarProps {
-  activeView: 'users' | 'profile' | 'gestao-projetos' | 'gestao-contratos' | 'csm' | 'crm-ops' | 'cs' | 'cs-churn' | 'cs-metricas' | 'cs-nps' | 'cs-csat' | 'cs-cancelamento' | 'gestao-cancelamentos' | 'gestao-nps' | 'gestao-csat' | 'copy' | 'aprovacao' | 'analise-bench' | 'projetos-operacao' | 'projetos-clientes' | 'projetos-metricas' | 'performance' | 'preferencias-interface' | 'cases-sucesso'
-  onViewChange: (view: 'users' | 'profile' | 'gestao-projetos' | 'gestao-contratos' | 'csm' | 'crm-ops' | 'cs' | 'cs-churn' | 'cs-metricas' | 'cs-nps' | 'cs-csat' | 'cs-cancelamento' | 'gestao-cancelamentos' | 'gestao-nps' | 'gestao-csat' | 'copy' | 'aprovacao' | 'analise-bench' | 'projetos-operacao' | 'projetos-clientes' | 'projetos-metricas' | 'performance' | 'preferencias-interface' | 'cases-sucesso') => void
+  activeView: 'users' | 'profile' | 'gestao-projetos' | 'gestao-contratos' | 'csm' | 'crm-ops' | 'cs' | 'cs-churn' | 'cs-metricas' | 'cs-nps' | 'cs-csat' | 'cs-cancelamento' | 'gestao-cancelamentos' | 'gestao-nps' | 'gestao-csat' | 'copy' | 'aprovacao' | 'analise-bench' | 'projetos-operacao' | 'projetos-clientes' | 'projetos-metricas' | 'performance' | 'preferencias-interface' | 'cases-sucesso' | 'insights'
+  onViewChange: (view: 'users' | 'profile' | 'gestao-projetos' | 'gestao-contratos' | 'csm' | 'crm-ops' | 'cs' | 'cs-churn' | 'cs-metricas' | 'cs-nps' | 'cs-csat' | 'cs-cancelamento' | 'gestao-cancelamentos' | 'gestao-nps' | 'gestao-csat' | 'copy' | 'aprovacao' | 'analise-bench' | 'projetos-operacao' | 'projetos-clientes' | 'projetos-metricas' | 'performance' | 'preferencias-interface' | 'cases-sucesso' | 'insights') => void
 }
 
 export function AppSidebar({ activeView, onViewChange }: AppSidebarProps) {
@@ -537,11 +537,46 @@ export function AppSidebar({ activeView, onViewChange }: AppSidebarProps) {
         )}
 
         {/* Seção Customer Experience */}
-        {csItems.some(item => item.available) && (
+        {(csItems.some(item => item.available) || (!permissionsLoading && checkModulePermission('cs', 'view'))) && (
           <SidebarGroup className="py-0">
             {/* Label oculta temporariamente */}
             <SidebarGroupContent>
               <SidebarMenu>
+                {/* Insights - acesso direto ao CSAT e NPS */}
+                {(!permissionsLoading && checkModulePermission('cs', 'view')) && (() => {
+                  const isActive = activeView === 'insights'
+                  return (
+                    <SidebarMenuItem key="insights">
+                      {!shouldShowText ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <SidebarMenuButton
+                              onClick={() => onViewChange('insights')}
+                              isActive={isActive}
+                              className="w-full transition-all duration-200 justify-center"
+                              style={isActive ? { backgroundColor: '#ec4a55', color: 'white' } : {}}
+                            >
+                              <BarChart2 className="h-4 w-4 flex-shrink-0" />
+                            </SidebarMenuButton>
+                          </TooltipTrigger>
+                          <TooltipContent side="right">
+                            <p>Insights</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <SidebarMenuButton
+                          onClick={() => onViewChange('insights')}
+                          isActive={isActive}
+                          className="w-full transition-all duration-200 justify-start"
+                          style={isActive ? { backgroundColor: '#ec4a55', color: 'white' } : {}}
+                        >
+                          <BarChart2 className="h-4 w-4 flex-shrink-0" />
+                          <span className="text-xs">Insights</span>
+                        </SidebarMenuButton>
+                      )}
+                    </SidebarMenuItem>
+                  )
+                })()}
                 {csItems.map((item) => {
                   if (!item.available) return null
                   
