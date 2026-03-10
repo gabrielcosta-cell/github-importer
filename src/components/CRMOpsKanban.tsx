@@ -262,10 +262,36 @@ export const CRMOpsKanban: React.FC = () => {
 
         {/* Right side: Controls */}
         <div className="flex flex-nowrap gap-2 items-center justify-end flex-shrink-0">
-          {/* 1. Contagem + MRR */}
-          <span className="text-sm font-semibold text-foreground whitespace-nowrap">
-            {filteredCards.length} {filteredCards.length === 1 ? 'lead' : 'leads'} • {formatCurrency(totalMRR)}
-          </span>
+          {/* 1. Contagem + MRR (click to reveal) */}
+          <div className="flex items-center gap-1">
+            <span className="text-sm font-semibold text-foreground whitespace-nowrap">
+              {filteredCards.length} {filteredCards.length === 1 ? 'lead' : 'leads'}
+            </span>
+            <TooltipProvider>
+              <Tooltip>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <TooltipTrigger asChild>
+                      <button className="hover:opacity-70 transition-opacity cursor-pointer p-1">
+                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                      </button>
+                    </TooltipTrigger>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-3" align="end">
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">MRR Total</p>
+                      <p className="text-lg font-bold">
+                        {formatCurrency(totalMRR)}
+                      </p>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <TooltipContent side="bottom">
+                  <p>Mostrar valor total de MRR</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
 
           {/* 2. Ordenar */}
           <Popover>
