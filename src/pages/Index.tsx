@@ -332,7 +332,7 @@ const Index = () => {
             onViewChange={handleViewChange}
           />
           <div className="flex-1 flex h-svh min-h-0 flex-col min-w-0">
-            {activeView !== 'csm' && activeView !== 'crm-ops' && activeView !== 'insights' && <MobileSidebarTrigger />}
+            {activeView !== 'csm' && activeView !== 'crm-ops' && activeView !== 'pipelines' && activeView !== 'dashboards' && <MobileSidebarTrigger />}
             <SidebarInset className="flex-1 min-h-0">
               {/* Always-mounted CSM and CRM for instant switching */}
               <div className={activeView === 'csm' ? 'flex h-full min-h-0 flex-col overflow-hidden' : 'hidden'}>
