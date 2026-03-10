@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import { KanbanBoard } from './kanban/KanbanBoard';
 import { DesktopGlobalSearch } from './kanban/MobileGlobalSearch';
 import { CardDetailsDialog } from './kanban/CardDetailsDialog';
-import { CRMOpsDateFilter } from './crm-ops/CRMOpsDateFilter';
+import { MonthYearPicker } from './MonthYearPicker';
 import { CRMOpsCardForm } from './crm-ops/CRMOpsCardForm';
 import { StageManager } from './kanban/StageManager';
 import { CSMPipeline, CSMStage, CSMCard } from '@/types/kanban';
@@ -20,7 +20,7 @@ import { setupCRMOpsPipelines, CRM_OPS_PIPELINE_NAMES } from '@/utils/setupCRMOp
 import { DotLogo } from '@/components/DotLogo';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/contexts/AuthContext';
-import { startOfDay, endOfDay } from 'date-fns';
+
 
 export const CRMOpsKanban: React.FC = () => {
   const isMobile = useIsMobile();
@@ -38,10 +38,10 @@ export const CRMOpsKanban: React.FC = () => {
   const [showCardForm, setShowCardForm] = useState(false);
   const [showStageManager, setShowStageManager] = useState(false);
 
-  // Date filter
-  const [dateStart, setDateStart] = useState<Date | undefined>();
-  const [dateEnd, setDateEnd] = useState<Date | undefined>();
-  const [dateField, setDateField] = useState<'created_at' | 'data_ganho'>('created_at');
+  // Date filter - month/year picker
+  const [selectedPeriods, setSelectedPeriods] = useState<{ month: number; year: number }[]>([
+    { month: new Date().getMonth(), year: new Date().getFullYear() }
+  ]);
 
   // Sort
   const [sortBy, setSortBy] = useState<'title' | 'created' | 'mrr'>('created');
@@ -144,12 +144,11 @@ export const CRMOpsKanban: React.FC = () => {
         if (!matchesSearch) return false;
       }
 
-      if (dateStart || dateEnd) {
-        const dateValue = dateField === 'data_ganho' && (card as any).data_ganho
-          ? new Date((card as any).data_ganho)
-          : new Date(card.created_at);
-        if (dateStart && dateValue < startOfDay(dateStart)) return false;
-        if (dateEnd && dateValue > endOfDay(dateEnd)) return false;
+      if (selectedPeriods.length > 0) {
+        const d = new Date(card.created_at);
+        const cardMonth = d.getMonth();
+        const cardYear = d.getFullYear();
+        if (!selectedPeriods.some(p => p.month === cardMonth && p.year === cardYear)) return false;
       }
 
       return true;
@@ -161,7 +160,7 @@ export const CRMOpsKanban: React.FC = () => {
       if (sortBy === 'mrr') return (b.monthly_revenue || 0) - (a.monthly_revenue || 0);
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
-  }, [cards, searchTerm, dateStart, dateEnd, sortBy]);
+  }, [cards, searchTerm, selectedPeriods, sortBy]);
 
   const refreshCards = useCallback(() => {
     if (selectedPipeline) fetchCards(selectedPipeline);
@@ -188,15 +187,6 @@ export const CRMOpsKanban: React.FC = () => {
     setShowCardForm(true);
   };
 
-  const handleDateApply = (start: Date | undefined, end: Date | undefined) => {
-    setDateStart(start);
-    setDateEnd(end);
-  };
-
-  const handleDateClear = () => {
-    setDateStart(undefined);
-    setDateEnd(undefined);
-  };
 
   const handleStagesUpdate = () => {
     if (selectedPipeline) {
@@ -290,21 +280,10 @@ export const CRMOpsKanban: React.FC = () => {
             </PopoverContent>
           </Popover>
 
-          {/* Filtros (Date Filter) */}
-          <Select value={dateField} onValueChange={(v) => setDateField(v as 'created_at' | 'data_ganho')}>
-            <SelectTrigger className="h-9 w-auto min-w-[130px] text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="created_at">Data de criação</SelectItem>
-              <SelectItem value="data_ganho">Data de ganho</SelectItem>
-            </SelectContent>
-          </Select>
-          <CRMOpsDateFilter
-            startDate={dateStart}
-            endDate={dateEnd}
-            onApply={handleDateApply}
-            onClear={handleDateClear}
+          {/* Filtro por mês/ano */}
+          <MonthYearPicker
+            selectedPeriods={selectedPeriods}
+            onPeriodsChange={setSelectedPeriods}
           />
 
           {/* Adicionar lead */}

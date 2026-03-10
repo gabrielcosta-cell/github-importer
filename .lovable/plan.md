@@ -1,28 +1,56 @@
 
 
-## Substituir filtro de data do CRM por MonthYearPicker (igual ao CSM)
+## Renomear funil Closer e ajustar etapas + renomear coluna Receita CRM
 
-### O que muda
-- Remover o `Select` de "Data de criação" / "Data de ganho" (linhas 293-302)
-- Substituir o `CRMOpsDateFilter` (date range picker) pelo `MonthYearPicker` (seleção por mês/ano, já usado no CSM)
-- Filtrar cards por mês/ano usando `created_at` (campo padrão)
+### Abordagem
 
-### Alterações em `src/components/CRMOpsKanban.tsx`
+A renomeação precisa acontecer tanto no código (constantes) quanto no banco de dados (pipeline e stages existentes). Os cards existentes não serão alterados — apenas o nome do pipeline e os nomes das etapas mudam.
 
-1. **Remover** imports: `CRMOpsDateFilter`, `startOfDay`, `endOfDay`
-2. **Remover** states: `dateStart`, `dateEnd`, `dateField`, `handleDateApply`, `handleDateClear`
-3. **Adicionar** import do `MonthYearPicker` e state `selectedPeriods` (iniciar com mês atual)
-4. **Substituir** lógica de filtro de data (linhas 147-153) por verificação de mês/ano do `created_at` contra `selectedPeriods`
-5. **No JSX** (linhas 293-308): remover Select de dateField + CRMOpsDateFilter, colocar `MonthYearPicker`
-6. Atualizar `useMemo` dependencies
+### Alterações
 
-### Lógica de filtro simplificada
-```typescript
-if (selectedPeriods.length > 0) {
-  const d = new Date(card.created_at);
-  const cardMonth = d.getMonth();
-  const cardYear = d.getFullYear();
-  if (!selectedPeriods.some(p => p.month === cardMonth && p.year === cardYear)) return false;
-}
+**1. `src/utils/setupCRMOpsPipelines.ts`**
+- Renomear constante: `CLOSER_PIPELINE_NAME = 'Upsell | CrossSell'`
+- Adicionar constante legacy: `const CLOSER_PIPELINE_LEGACY_NAME = 'Closer | Principal'` para migração
+- Atualizar `CLOSER_STAGES` para as novas etapas:
+  - Oportunidades (position 0), Orçamento (1), Apresentação (2), Negociação (3), Em assinatura (4)
+- Adicionar função de migração no `setupCRMOpsPipelines()`:
+  - Buscar pipeline com nome `'Closer | Principal'`
+  - Se encontrar, renomear para `'Upsell | CrossSell'` via UPDATE
+  - Renomear/recriar as etapas existentes: mapear as 7 etapas antigas para as 5 novas, mantendo os cards nas etapas mais próximas (cards de R1/R1 Delay → Oportunidades, R2/R2 Delay → Orçamento, R3 → Apresentação, Follow Up → Negociação, Em assinatura → Em assinatura)
+- Atualizar `CRM_OPS_PIPELINE_NAMES` para incluir o novo nome
+
+**2. `src/utils/importCloserWonFeb.ts`**
+- Atualizar referência de `'Closer | Principal'` para `'Upsell | CrossSell'`
+- Manter referência a `'Em assinatura'` (etapa continua existindo)
+
+**3. `src/components/GestaoProjetosOperacao.tsx`**
+- Renomear label `"Receita CRM"` para `"Vendas CRM"` em:
+  - Header da tabela (SortableHeader label, linha 581)
+  - CSV export headers (linha 471)
+  - Qualquer outro ponto que exiba esse texto (totalizadores no header)
+
+### Migração de etapas (lógica no setupCRMOpsPipelines)
+
+Os cards existentes precisam ser movidos para as novas etapas. A estratégia:
+1. Buscar todas as etapas atuais do pipeline
+2. Criar as novas etapas
+3. Mover cards das etapas antigas para as novas (mapeamento por posição/nome)
+4. Desativar ou excluir etapas antigas sem cards
+
+Mapeamento:
+```text
+Antiga          → Nova
+R1              → Oportunidades
+R1 Delay        → Oportunidades
+R2              → Orçamento
+R2 Delay        → Orçamento
+R3              → Apresentação
+Follow Up       → Negociação
+Em assinatura   → Em assinatura
 ```
+
+### O que NÃO muda
+- Nenhuma lógica de soma de valores ou cálculo de receita
+- Nenhuma integração existente além da atualização de nomes
+- Cards existentes mantêm todos os dados (valor, datas, etc.)
 
