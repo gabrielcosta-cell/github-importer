@@ -1201,7 +1201,7 @@ export default function GestaoCSAT() {
           <div className="flex items-center justify-center h-64">
             <p className="text-muted-foreground">Carregando...</p>
           </div>
-        ) : viewMode === 'kanban' ? (
+        ) : (
           <ScrollArea className="w-full h-full">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-4 h-full w-full" style={{ minHeight: 'calc(100vh - 180px)' }}>
               {CSAT_STAGES.map((stage) => {
