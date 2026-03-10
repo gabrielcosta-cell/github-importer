@@ -30,6 +30,8 @@ interface FilterPopoverProps {
   onFlagChange?: (value: string) => void;
   onTagsChange: (tagIds: string[]) => void;
   onClearFilters: () => void;
+  /** When true, renders as inline ghost button (for bordered toolbar containers) */
+  inlineStyle?: boolean;
 }
 
 const squads = [
