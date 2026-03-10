@@ -274,7 +274,8 @@ const Index = () => {
     switch (activeView) {
       case 'csm':
       case 'crm-ops':
-        return null; // Handled by always-mounted instances below
+      case 'insights':
+        return null; // Handled by always-mounted or dedicated instances below
       case 'gestao-projetos':
         return <ProjetosView initialTab="clientes" />
       case 'gestao-contratos':
