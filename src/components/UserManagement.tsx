@@ -48,10 +48,26 @@ export const UserManagement = () => {
     password: '',
     role: 'user' as 'admin' | 'user',
     phone: '',
-    avatar_url: ''
+    avatar_url: '',
+    userType: 'dot' as 'dot' | 'external',
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+  // Auto-detect user type based on email domain
+  const isDotEmail = formData.email.trim().toLowerCase().endsWith('@dotconceito.com');
+  const effectiveUserType = isDotEmail ? 'dot' : formData.userType;
+
+  const generateRandomPassword = () => {
+    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$';
+    let pwd = '';
+    for (let i = 0; i < 14; i++) {
+      pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setFormData(prev => ({ ...prev, password: pwd }));
+    setShowPassword(true);
+  };
 
   const isGlobalAdmin = profile?.is_global_admin || false;
   const isAdmin = profile?.role === 'admin' || isGlobalAdmin;
