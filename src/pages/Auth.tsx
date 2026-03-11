@@ -116,6 +116,13 @@ export default function Auth() {
     setIsLoggingIn(true);
 
     try {
+      // Bloquear login por senha para domínio @dotconceito.com
+      if (email.trim().toLowerCase().endsWith('@dotconceito.com')) {
+        toast.error('Usuários @dotconceito.com devem entrar com Google');
+        setIsLoggingIn(false);
+        return;
+      }
+
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,

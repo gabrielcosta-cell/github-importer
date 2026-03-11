@@ -1,55 +1,56 @@
 
 
-## Plan: Auto-link profiles on Google login for @dotconceito.com users
+## Renomear funil Closer e ajustar etapas + renomear coluna Receita CRM
 
-### Problem
-When an admin creates a user (e.g. `jordantorma@dotconceito.com`), the edge function creates a Supabase Auth user (UUID-A) + profile linked to UUID-A. But when that user logs in via Google, Supabase creates a **different** Auth identity (UUID-B). The profile lookup by `user_id = UUID-B` fails, and the user gets signed out.
+### Abordagem
 
-Additionally, `@dotconceito.com` users should **only** be able to log in via Google (not email/password).
+A renomeação precisa acontecer tanto no código (constantes) quanto no banco de dados (pipeline e stages existentes). Os cards existentes não serão alterados — apenas o nome do pipeline e os nomes das etapas mudam.
 
-### Changes
+### Alterações
 
-**1. `src/contexts/AuthContext.tsx` — Add email-based profile linking fallback**
+**1. `src/utils/setupCRMOpsPipelines.ts`**
+- Renomear constante: `CLOSER_PIPELINE_NAME = 'Upsell | CrossSell'`
+- Adicionar constante legacy: `const CLOSER_PIPELINE_LEGACY_NAME = 'Closer | Principal'` para migração
+- Atualizar `CLOSER_STAGES` para as novas etapas:
+  - Oportunidades (position 0), Orçamento (1), Apresentação (2), Negociação (3), Em assinatura (4)
+- Adicionar função de migração no `setupCRMOpsPipelines()`:
+  - Buscar pipeline com nome `'Closer | Principal'`
+  - Se encontrar, renomear para `'Upsell | CrossSell'` via UPDATE
+  - Renomear/recriar as etapas existentes: mapear as 7 etapas antigas para as 5 novas, mantendo os cards nas etapas mais próximas (cards de R1/R1 Delay → Oportunidades, R2/R2 Delay → Orçamento, R3 → Apresentação, Follow Up → Negociação, Em assinatura → Em assinatura)
+- Atualizar `CRM_OPS_PIPELINE_NAMES` para incluir o novo nome
 
-In `loadProfileForUser`, when profile lookup by `user_id` returns PGRST116 (not found):
-- Query `profiles` table by email instead
-- If found and active, update the profile's `user_id` to the current Auth user's UUID (auto-link)
-- Continue with that profile
-- If not found by email either, sign out as before
+**2. `src/utils/importCloserWonFeb.ts`**
+- Atualizar referência de `'Closer | Principal'` para `'Upsell | CrossSell'`
+- Manter referência a `'Em assinatura'` (etapa continua existindo)
 
-**2. `src/pages/Auth.tsx` — Block email/password login for @dotconceito.com**
+**3. `src/components/GestaoProjetosOperacao.tsx`**
+- Renomear label `"Receita CRM"` para `"Vendas CRM"` em:
+  - Header da tabela (SortableHeader label, linha 581)
+  - CSV export headers (linha 471)
+  - Qualquer outro ponto que exiba esse texto (totalizadores no header)
 
-In `handleLocalLogin`:
-- Before calling `signInWithPassword`, check if the email ends with `@dotconceito.com`
-- If so, show a toast error: "Usuários @dotconceito.com devem entrar com Google" and abort
-- Non-dotconceito emails continue with password login normally
+### Migração de etapas (lógica no setupCRMOpsPipelines)
 
-**3. `supabase/functions/create-user/index.ts` — Skip Auth user creation for @dotconceito.com**
+Os cards existentes precisam ser movidos para as novas etapas. A estratégia:
+1. Buscar todas as etapas atuais do pipeline
+2. Criar as novas etapas
+3. Mover cards das etapas antigas para as novas (mapeamento por posição/nome)
+4. Desativar ou excluir etapas antigas sem cards
 
-For `@dotconceito.com` emails:
-- Do NOT create a Supabase Auth user (they'll authenticate via Google)
-- Only insert the profile row with a placeholder `user_id` (use `gen_random_uuid()` or a deterministic placeholder)
-- The profile will be auto-linked on first Google login via the fallback in step 1
-
-For other emails:
-- Keep current behavior (create Auth user + profile)
-
-### Technical detail
-
+Mapeamento:
+```text
+Antiga          → Nova
+R1              → Oportunidades
+R1 Delay        → Oportunidades
+R2              → Orçamento
+R2 Delay        → Orçamento
+R3              → Apresentação
+Follow Up       → Negociação
+Em assinatura   → Em assinatura
 ```
-Admin creates jordantorma@dotconceito.com
-  → Edge function: only INSERT into profiles (no Auth user)
-  → profile.user_id = random placeholder UUID
 
-Jordan opens login page
-  → Email/password blocked for @dotconceito.com
-  → Clicks "Entrar com Google"
-  → Supabase creates Google Auth user (UUID-G)
-
-AuthContext.loadProfileForUser(UUID-G)
-  → profiles.user_id = UUID-G? NO (PGRST116)
-  → profiles.email = jordantorma@dotconceito.com? YES
-  → UPDATE profiles SET user_id = UUID-G
-  → Login succeeds
-```
+### O que NÃO muda
+- Nenhuma lógica de soma de valores ou cálculo de receita
+- Nenhuma integração existente além da atualização de nomes
+- Cards existentes mantêm todos os dados (valor, datas, etc.)
 

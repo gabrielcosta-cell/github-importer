@@ -77,10 +77,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (cancelled) return;
 
         if (error && (error as any).code === 'PGRST116') {
-          // Perfil não existe - usuário não foi pré-cadastrado por um admin
-          console.warn('Usuário sem perfil pré-cadastrado tentou acessar:', u.email);
-          await supabase.auth.signOut();
-          clearAuthState();
+          // Perfil não encontrado por user_id — tentar vincular por email (auto-link Google OAuth)
+          console.warn('Perfil não encontrado por user_id, tentando por email:', u.email);
+
+          const { data: profileByEmail, error: emailError } = await supabase
+            .from('profiles')
+            .select('*, custom_roles(base_role, display_name)')
+            .eq('email', u.email)
+            .eq('is_active', true)
+            .single();
+
+          if (emailError || !profileByEmail) {
+            console.warn('Usuário sem perfil pré-cadastrado tentou acessar:', u.email);
+            await supabase.auth.signOut();
+            clearAuthState();
+            return;
+          }
+
+          // Auto-link: atualizar user_id do perfil para o UUID do Auth atual
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ user_id: u.id })
+            .eq('id', profileByEmail.id);
+
+          if (updateError) {
+            console.error('Erro ao vincular perfil por email:', updateError);
+            await supabase.auth.signOut();
+            clearAuthState();
+            return;
+          }
+
+          console.log('Perfil vinculado com sucesso por email:', u.email);
+
+          // Continuar com o perfil encontrado (agora vinculado)
+          const isGlobalAdmin = profileByEmail.is_global_admin || false;
+          const effectiveRole = isGlobalAdmin ? 'admin' : profileByEmail.role;
+          const userProfile: Profile = {
+            ...profileByEmail,
+            user_id: u.id,
+            role: profileByEmail.role as 'admin' | 'user',
+            is_global_admin: isGlobalAdmin,
+            project_scope: profileByEmail.project_scope as 'csm' | 'cs' | 'both',
+            effectiveRole,
+            customRoleDisplayName: profileByEmail.custom_roles?.display_name,
+          };
+
+          if (!cancelled) setProfile(userProfile);
+
+          if (effectiveRole === 'admin' || isGlobalAdmin) {
+            void refreshProfiles();
+          }
           return;
         }
 
