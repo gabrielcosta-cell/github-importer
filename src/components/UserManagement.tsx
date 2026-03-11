@@ -197,7 +197,6 @@ export const UserManagement = () => {
         name: formData.name,
         email: formData.email,
         role: role,
-        department: formData.department,
         phone: formData.phone,
         avatar_url: formData.avatar_url || null
       })
