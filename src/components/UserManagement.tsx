@@ -366,10 +366,6 @@ export const UserManagement = () => {
                   <Label>Telefone</Label>
                   <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
                 </div>
-                <div>
-                  <Label>Departamento</Label>
-                  <Input value={formData.department} onChange={(e) => setFormData({ ...formData, department: e.target.value })} />
-                </div>
                 {/* Role select - apenas Global Admin pode alterar para Admin */}
                 {isGlobalAdmin && (
                   <div>
