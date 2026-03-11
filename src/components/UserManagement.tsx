@@ -129,8 +129,8 @@ export const UserManagement = () => {
   };
 
   const handleAddUser = async () => {
-    if (!formData.name || !formData.email || !formData.password) {
-      toast({ title: "Erro", description: "Nome, email e senha são obrigatórios", variant: "destructive" });
+    if (!formData.name || !formData.email) {
+      toast({ title: "Erro", description: "Nome e email são obrigatórios", variant: "destructive" });
       return;
     }
 
