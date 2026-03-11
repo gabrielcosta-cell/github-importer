@@ -94,9 +94,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const isDotConceitoDomain = email.trim().toLowerCase().endsWith("@dotconceito.com");
-
-    if (isDotConceitoDomain) {
+    // Domain check already done above
       // Para @dotconceito.com: NÃO criar Auth user (login será via Google OAuth)
       // Apenas inserir perfil com placeholder user_id
       const placeholderUserId = crypto.randomUUID();

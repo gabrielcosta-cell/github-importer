@@ -201,7 +201,8 @@ export const UserManagement = () => {
         password: '',
         role: user.role as 'admin' | 'user',
         phone: user.phone || '',
-        avatar_url: (user as any).avatar_url || ''
+        avatar_url: (user as any).avatar_url || '',
+        userType: user.email?.endsWith('@dotconceito.com') ? 'dot' : 'external',
       });
       setAvatarPreview((user as any).avatar_url || null);
       setEditingUser(userId);
