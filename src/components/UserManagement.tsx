@@ -206,7 +206,7 @@ export const UserManagement = () => {
       .eq('user_id', editingUser);
 
     if (!error) {
-      setFormData({ name: '', email: '', password: '', role: 'user', department: '', phone: '', avatar_url: '' });
+      setFormData({ name: '', email: '', password: '', role: 'user', phone: '', avatar_url: '' });
       setAvatarPreview(null);
       setEditingUser(null);
       refreshProfiles();
