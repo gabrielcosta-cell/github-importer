@@ -46,7 +46,6 @@ export const UserManagement = () => {
     email: '',
     password: '',
     role: 'user' as 'admin' | 'user',
-    department: '',
     phone: '',
     avatar_url: ''
   });
@@ -129,8 +128,8 @@ export const UserManagement = () => {
   };
 
   const handleAddUser = async () => {
-    if (!formData.name || !formData.email || !formData.password) {
-      toast({ title: "Erro", description: "Nome, email e senha são obrigatórios", variant: "destructive" });
+    if (!formData.name || !formData.email) {
+      toast({ title: "Erro", description: "Nome e email são obrigatórios", variant: "destructive" });
       return;
     }
 
@@ -144,7 +143,7 @@ export const UserManagement = () => {
     const result = await addUser({ ...formData, role });
     
     if (result.success) {
-      setFormData({ name: '', email: '', password: '', role: 'user', department: '', phone: '', avatar_url: '' });
+      setFormData({ name: '', email: '', password: '', role: 'user', phone: '', avatar_url: '' });
       setAvatarPreview(null);
       setIsAddDialogOpen(false);
       toast({ title: "Sucesso", description: `${formData.name} foi adicionado ao sistema.` });
@@ -161,7 +160,6 @@ export const UserManagement = () => {
         email: user.email,
         password: '',
         role: user.role as 'admin' | 'user',
-        department: user.department || '',
         phone: user.phone || '',
         avatar_url: (user as any).avatar_url || ''
       });
@@ -199,14 +197,13 @@ export const UserManagement = () => {
         name: formData.name,
         email: formData.email,
         role: role,
-        department: formData.department,
         phone: formData.phone,
         avatar_url: formData.avatar_url || null
       })
       .eq('user_id', editingUser);
 
     if (!error) {
-      setFormData({ name: '', email: '', password: '', role: 'user', department: '', phone: '', avatar_url: '' });
+      setFormData({ name: '', email: '', password: '', role: 'user', phone: '', avatar_url: '' });
       setAvatarPreview(null);
       setEditingUser(null);
       refreshProfiles();
@@ -369,10 +366,6 @@ export const UserManagement = () => {
                   <Label>Telefone</Label>
                   <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
                 </div>
-                <div>
-                  <Label>Departamento</Label>
-                  <Input value={formData.department} onChange={(e) => setFormData({ ...formData, department: e.target.value })} />
-                </div>
                 {/* Role select - apenas Global Admin pode alterar para Admin */}
                 {isGlobalAdmin && (
                   <div>
@@ -506,16 +499,8 @@ export const UserManagement = () => {
                       <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="email@exemplo.com" />
                     </div>
                     <div>
-                      <Label>Senha *</Label>
-                      <Input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="Senha" minLength={6} />
-                    </div>
-                    <div>
                       <Label>Telefone</Label>
                       <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="(11) 99999-9999" />
-                    </div>
-                    <div>
-                      <Label>Departamento</Label>
-                      <Input value={formData.department} onChange={(e) => setFormData({ ...formData, department: e.target.value })} placeholder="Ex: Vendas" />
                     </div>
                     {/* Role select - apenas Global Admin pode criar Admin */}
                     <div>
