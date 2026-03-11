@@ -543,6 +543,73 @@ export const UserManagement = () => {
                       <Label>Telefone</Label>
                       <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="(11) 99999-9999" />
                     </div>
+
+                    {/* Tipo de Usuário */}
+                    <div className="space-y-2">
+                      <Label>Tipo de Usuário *</Label>
+                      <div className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30">
+                        <span className={`text-sm font-medium ${effectiveUserType === 'dot' ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          DOT (Google)
+                        </span>
+                        <Switch
+                          checked={effectiveUserType === 'external'}
+                          onCheckedChange={(checked) => setFormData({ ...formData, userType: checked ? 'external' : 'dot', password: '' })}
+                          disabled={isDotEmail}
+                        />
+                        <span className={`text-sm font-medium ${effectiveUserType === 'external' ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          Externo
+                        </span>
+                      </div>
+                      {isDotEmail && (
+                        <p className="text-xs text-muted-foreground">Emails @dotconceito.com usam login via Google automaticamente.</p>
+                      )}
+                    </div>
+
+                    {/* Senha - apenas para externos */}
+                    {effectiveUserType === 'external' && (
+                      <div className="space-y-2">
+                        <Label>Senha *</Label>
+                        <div className="flex gap-2">
+                          <div className="relative flex-1">
+                            <Input
+                              type={showPassword ? 'text' : 'password'}
+                              value={formData.password}
+                              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                              placeholder="Senha do usuário"
+                              className="pr-10"
+                            />
+                            <button
+                              type="button"
+                              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                              onClick={() => setShowPassword(!showPassword)}
+                            >
+                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
+                          <Button type="button" variant="outline" size="icon" onClick={generateRandomPassword} title="Gerar senha aleatória">
+                            <RefreshCw className="h-4 w-4" />
+                          </Button>
+                          {formData.password && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              onClick={() => {
+                                navigator.clipboard.writeText(formData.password);
+                                toast({ title: "Copiado!", description: "Senha copiada para a área de transferência" });
+                              }}
+                              title="Copiar senha"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          O usuário será solicitado a alterar a senha no primeiro login.
+                        </p>
+                      </div>
+                    )}
+
                     {/* Role select - apenas Global Admin pode criar Admin */}
                     <div>
                       <Label>Nível de Acesso *</Label>
