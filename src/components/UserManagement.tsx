@@ -46,7 +46,6 @@ export const UserManagement = () => {
     email: '',
     password: '',
     role: 'user' as 'admin' | 'user',
-    department: '',
     phone: '',
     avatar_url: ''
   });
