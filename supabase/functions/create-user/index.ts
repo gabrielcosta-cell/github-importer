@@ -94,9 +94,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Domain check already done above
+    if (isDotConceitoDomain) {
       // Para @dotconceito.com: NÃO criar Auth user (login será via Google OAuth)
-      // Apenas inserir perfil com placeholder user_id
       const placeholderUserId = crypto.randomUUID();
 
       const { error: profileError } = await supabaseAdmin.from("profiles").insert({
@@ -129,11 +128,17 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Para outros domínios: fluxo original (criar Auth user + perfil)
+    // Para outros domínios: criar Auth user + perfil
+    const userMetadata: Record<string, any> = {};
+    if (require_password_change) {
+      userMetadata.require_password_change = true;
+    }
+
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
+      user_metadata: Object.keys(userMetadata).length > 0 ? userMetadata : undefined,
     });
 
     if (createError) {
