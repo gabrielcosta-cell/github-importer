@@ -506,16 +506,8 @@ export const UserManagement = () => {
                       <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="email@exemplo.com" />
                     </div>
                     <div>
-                      <Label>Senha *</Label>
-                      <Input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="Senha" minLength={6} />
-                    </div>
-                    <div>
                       <Label>Telefone</Label>
                       <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="(11) 99999-9999" />
-                    </div>
-                    <div>
-                      <Label>Departamento</Label>
-                      <Input value={formData.department} onChange={(e) => setFormData({ ...formData, department: e.target.value })} placeholder="Ex: Vendas" />
                     </div>
                     {/* Role select - apenas Global Admin pode criar Admin */}
                     <div>
