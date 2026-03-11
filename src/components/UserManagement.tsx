@@ -144,7 +144,7 @@ export const UserManagement = () => {
     const result = await addUser({ ...formData, role });
     
     if (result.success) {
-      setFormData({ name: '', email: '', password: '', role: 'user', department: '', phone: '', avatar_url: '' });
+      setFormData({ name: '', email: '', password: '', role: 'user', phone: '', avatar_url: '' });
       setAvatarPreview(null);
       setIsAddDialogOpen(false);
       toast({ title: "Sucesso", description: `${formData.name} foi adicionado ao sistema.` });
