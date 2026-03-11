@@ -243,8 +243,9 @@ export const UserManagement = () => {
       .eq('user_id', editingUser);
 
     if (!error) {
-      setFormData({ name: '', email: '', password: '', role: 'user', phone: '', avatar_url: '' });
+      setFormData({ name: '', email: '', password: '', role: 'user', phone: '', avatar_url: '', userType: 'dot' });
       setAvatarPreview(null);
+      setShowPassword(false);
       setEditingUser(null);
       refreshProfiles();
       toast({ title: "Sucesso", description: "Usuário atualizado" });
