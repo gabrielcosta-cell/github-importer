@@ -1,56 +1,51 @@
 
 
-## Renomear funil Closer e ajustar etapas + renomear coluna Receita CRM
+## Plan: Add "User Type" toggle (DOT vs External) to user creation form
 
-### Abordagem
+### What changes
 
-A renomeação precisa acontecer tanto no código (constantes) quanto no banco de dados (pipeline e stages existentes). Os cards existentes não serão alterados — apenas o nome do pipeline e os nomes das etapas mudam.
+**1. `src/components/UserManagement.tsx`** — UI form changes:
+- Add `userType` field to `formData` state: `'dot' | 'external'` (default `'dot'`)
+- Add a toggle/select in the creation dialog asking "Tipo de Usuário": **DOT** or **Externo**
+- When `dot`: password field stays hidden (current behavior)
+- When `external`: show password field with two options — type a password manually or click "Gerar senha aleatória" button
+- Add `requirePasswordChange` boolean to formData (default `true` for external users)
+- Pass `userType` and `requirePasswordChange` to the edge function
+- Validation: require password when `userType === 'external'`
+- Auto-detect: when email ends with `@dotconceito.com`, auto-set to `dot` and disable the toggle
 
-### Alterações
+**2. `supabase/functions/create-user/index.ts`** — Backend changes:
+- Update validation: password required only when NOT a `@dotconceito.com` domain
+- Accept optional `require_password_change` flag in the request body
+- For external users: create Auth user with `email_confirm: true` and set user metadata `{ require_password_change: true }` so the app can detect first login and prompt password reset
+- Edge function already handles the domain split; just need to relax the `!password` validation for DOT users
 
-**1. `src/utils/setupCRMOpsPipelines.ts`**
-- Renomear constante: `CLOSER_PIPELINE_NAME = 'Upsell | CrossSell'`
-- Adicionar constante legacy: `const CLOSER_PIPELINE_LEGACY_NAME = 'Closer | Principal'` para migração
-- Atualizar `CLOSER_STAGES` para as novas etapas:
-  - Oportunidades (position 0), Orçamento (1), Apresentação (2), Negociação (3), Em assinatura (4)
-- Adicionar função de migração no `setupCRMOpsPipelines()`:
-  - Buscar pipeline com nome `'Closer | Principal'`
-  - Se encontrar, renomear para `'Upsell | CrossSell'` via UPDATE
-  - Renomear/recriar as etapas existentes: mapear as 7 etapas antigas para as 5 novas, mantendo os cards nas etapas mais próximas (cards de R1/R1 Delay → Oportunidades, R2/R2 Delay → Orçamento, R3 → Apresentação, Follow Up → Negociação, Em assinatura → Em assinatura)
-- Atualizar `CRM_OPS_PIPELINE_NAMES` para incluir o novo nome
+**3. `src/pages/Auth.tsx`** — After login for external users:
+- Check `user.user_metadata.require_password_change`
+- If `true`, redirect to `/set-password` page (already exists) to force a new password
 
-**2. `src/utils/importCloserWonFeb.ts`**
-- Atualizar referência de `'Closer | Principal'` para `'Upsell | CrossSell'`
-- Manter referência a `'Em assinatura'` (etapa continua existindo)
+### Form layout (creation dialog)
 
-**3. `src/components/GestaoProjetosOperacao.tsx`**
-- Renomear label `"Receita CRM"` para `"Vendas CRM"` em:
-  - Header da tabela (SortableHeader label, linha 581)
-  - CSV export headers (linha 471)
-  - Qualquer outro ponto que exiba esse texto (totalizadores no header)
-
-### Migração de etapas (lógica no setupCRMOpsPipelines)
-
-Os cards existentes precisam ser movidos para as novas etapas. A estratégia:
-1. Buscar todas as etapas atuais do pipeline
-2. Criar as novas etapas
-3. Mover cards das etapas antigas para as novas (mapeamento por posição/nome)
-4. Desativar ou excluir etapas antigas sem cards
-
-Mapeamento:
 ```text
-Antiga          → Nova
-R1              → Oportunidades
-R1 Delay        → Oportunidades
-R2              → Orçamento
-R2 Delay        → Orçamento
-R3              → Apresentação
-Follow Up       → Negociação
-Em assinatura   → Em assinatura
+┌─────────────────────────────┐
+│ Nome *                      │
+│ Email *                     │
+│ Telefone                    │
+│ Tipo de Usuário *           │
+│  ○ DOT (Google)  ○ Externo  │
+│                             │
+│ [If external:]              │
+│ Senha *  [Gerar aleatória]  │
+│                             │
+│ Nível de Acesso *           │
+│       [Cancelar] [Adicionar]│
+└─────────────────────────────┘
 ```
 
-### O que NÃO muda
-- Nenhuma lógica de soma de valores ou cálculo de receita
-- Nenhuma integração existente além da atualização de nomes
-- Cards existentes mantêm todos os dados (valor, datas, etc.)
+### Technical details
+
+- Random password generation: `crypto.randomUUID().slice(0, 12)` (simple, strong enough for temp password)
+- The `require_password_change` metadata is set server-side via `auth.admin.createUser({ user_metadata: { require_password_change: true } })`
+- On Auth page, after successful password login, check metadata and redirect to `/set-password` if flag is true
+- After password change on `/set-password`, update metadata to clear the flag
 
