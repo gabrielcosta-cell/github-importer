@@ -84,7 +84,44 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 4. Criar usuário no Auth
+    const isDotConceitoDomain = email.trim().toLowerCase().endsWith("@dotconceito.com");
+
+    if (isDotConceitoDomain) {
+      // Para @dotconceito.com: NÃO criar Auth user (login será via Google OAuth)
+      // Apenas inserir perfil com placeholder user_id
+      const placeholderUserId = crypto.randomUUID();
+
+      const { error: profileError } = await supabaseAdmin.from("profiles").insert({
+        user_id: placeholderUserId,
+        name: profile.name,
+        email: email.trim().toLowerCase(),
+        role: profile.role || "user",
+        department: profile.department || null,
+        phone: profile.phone || null,
+        is_active: true,
+        is_global_admin: false,
+        project_scope: profile.project_scope || "csm",
+      });
+
+      if (profileError) {
+        console.error("Erro ao criar perfil:", profileError);
+        return new Response(
+          JSON.stringify({ error: "PROFILE_ERROR", message: "Erro ao criar perfil: " + profileError.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          user_id: placeholderUserId,
+          message: "Perfil criado com sucesso. O usuário deve fazer login via Google.",
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Para outros domínios: fluxo original (criar Auth user + perfil)
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -107,7 +144,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 5. Criar perfil na tabela profiles
     const { error: profileError } = await supabaseAdmin.from("profiles").insert({
       user_id: newUser.user.id,
       name: profile.name,
@@ -122,7 +158,6 @@ Deno.serve(async (req) => {
 
     if (profileError) {
       console.error("Erro ao criar perfil:", profileError);
-      // Tentar limpar o usuário criado no Auth
       await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
 
       return new Response(
