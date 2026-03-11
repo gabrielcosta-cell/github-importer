@@ -131,9 +131,15 @@ export default function Auth() {
       if (error) {
         toast.error('Erro ao fazer login: ' + error.message);
       } else {
-        toast.success('Login realizado com sucesso!');
         const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user?.id) {
+        if (session?.user) {
+          // Check if external user needs to change password on first login
+          if (session.user.user_metadata?.require_password_change) {
+            toast.success('Login realizado! Defina uma nova senha.');
+            navigate('/set-password', { replace: true });
+            return;
+          }
+          toast.success('Login realizado com sucesso!');
           redirectAfterLogin();
         } else {
           navigate(nextUrl);
