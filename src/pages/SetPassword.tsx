@@ -53,7 +53,8 @@ export default function SetPassword() {
     
     try {
       const { error } = await supabase.auth.updateUser({
-        password: password
+        password: password,
+        data: { require_password_change: false }
       });
 
       if (error) {

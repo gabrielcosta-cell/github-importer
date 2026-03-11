@@ -12,8 +12,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { UserPermissions } from '@/components/UserPermissions';
-import { UserPlus, Trash2, Edit, Shield, User, UserCheck, ChevronDown, ChevronRight, Settings, Users, Camera, Crown } from 'lucide-react';
+import { UserPlus, Trash2, Edit, Shield, User, UserCheck, ChevronDown, ChevronRight, Settings, Users, Camera, Crown, RefreshCw, Eye, EyeOff, Copy } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -47,10 +48,26 @@ export const UserManagement = () => {
     password: '',
     role: 'user' as 'admin' | 'user',
     phone: '',
-    avatar_url: ''
+    avatar_url: '',
+    userType: 'dot' as 'dot' | 'external',
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+  // Auto-detect user type based on email domain
+  const isDotEmail = formData.email.trim().toLowerCase().endsWith('@dotconceito.com');
+  const effectiveUserType = isDotEmail ? 'dot' : formData.userType;
+
+  const generateRandomPassword = () => {
+    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$';
+    let pwd = '';
+    for (let i = 0; i < 14; i++) {
+      pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setFormData(prev => ({ ...prev, password: pwd }));
+    setShowPassword(true);
+  };
 
   const isGlobalAdmin = profile?.is_global_admin || false;
   const isAdmin = profile?.role === 'admin' || isGlobalAdmin;
@@ -133,6 +150,12 @@ export const UserManagement = () => {
       return;
     }
 
+    // External users require password
+    if (effectiveUserType === 'external' && !formData.password) {
+      toast({ title: "Erro", description: "Senha é obrigatória para usuários externos", variant: "destructive" });
+      return;
+    }
+
     // Admin normal só pode criar usuário comum
     let role = formData.role;
     if (!isGlobalAdmin && role === 'admin') {
@@ -140,13 +163,30 @@ export const UserManagement = () => {
       return;
     }
 
-    const result = await addUser({ ...formData, role });
+    const payload = {
+      ...formData,
+      role,
+      password: effectiveUserType === 'external' ? formData.password : '',
+      require_password_change: effectiveUserType === 'external',
+    };
+
+    const result = await addUser(payload);
     
     if (result.success) {
-      setFormData({ name: '', email: '', password: '', role: 'user', phone: '', avatar_url: '' });
+      // If external user, show the generated/typed password so admin can share it
+      if (effectiveUserType === 'external' && formData.password) {
+        toast({ 
+          title: "Usuário externo criado", 
+          description: `Senha temporária: ${formData.password} — O usuário deverá alterá-la no primeiro login.`,
+          duration: 15000,
+        });
+      } else {
+        toast({ title: "Sucesso", description: `${formData.name} foi adicionado ao sistema.` });
+      }
+      setFormData({ name: '', email: '', password: '', role: 'user', phone: '', avatar_url: '', userType: 'dot' });
       setAvatarPreview(null);
+      setShowPassword(false);
       setIsAddDialogOpen(false);
-      toast({ title: "Sucesso", description: `${formData.name} foi adicionado ao sistema.` });
     } else {
       toast({ title: "Erro", description: result.message || "Erro ao criar usuário", variant: "destructive" });
     }
@@ -161,7 +201,8 @@ export const UserManagement = () => {
         password: '',
         role: user.role as 'admin' | 'user',
         phone: user.phone || '',
-        avatar_url: (user as any).avatar_url || ''
+        avatar_url: (user as any).avatar_url || '',
+        userType: user.email?.endsWith('@dotconceito.com') ? 'dot' : 'external',
       });
       setAvatarPreview((user as any).avatar_url || null);
       setEditingUser(userId);
@@ -203,8 +244,9 @@ export const UserManagement = () => {
       .eq('user_id', editingUser);
 
     if (!error) {
-      setFormData({ name: '', email: '', password: '', role: 'user', phone: '', avatar_url: '' });
+      setFormData({ name: '', email: '', password: '', role: 'user', phone: '', avatar_url: '', userType: 'dot' });
       setAvatarPreview(null);
+      setShowPassword(false);
       setEditingUser(null);
       refreshProfiles();
       toast({ title: "Sucesso", description: "Usuário atualizado" });
@@ -502,6 +544,73 @@ export const UserManagement = () => {
                       <Label>Telefone</Label>
                       <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="(11) 99999-9999" />
                     </div>
+
+                    {/* Tipo de Usuário */}
+                    <div className="space-y-2">
+                      <Label>Tipo de Usuário *</Label>
+                      <div className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30">
+                        <span className={`text-sm font-medium ${effectiveUserType === 'dot' ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          DOT (Google)
+                        </span>
+                        <Switch
+                          checked={effectiveUserType === 'external'}
+                          onCheckedChange={(checked) => setFormData({ ...formData, userType: checked ? 'external' : 'dot', password: '' })}
+                          disabled={isDotEmail}
+                        />
+                        <span className={`text-sm font-medium ${effectiveUserType === 'external' ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          Externo
+                        </span>
+                      </div>
+                      {isDotEmail && (
+                        <p className="text-xs text-muted-foreground">Emails @dotconceito.com usam login via Google automaticamente.</p>
+                      )}
+                    </div>
+
+                    {/* Senha - apenas para externos */}
+                    {effectiveUserType === 'external' && (
+                      <div className="space-y-2">
+                        <Label>Senha *</Label>
+                        <div className="flex gap-2">
+                          <div className="relative flex-1">
+                            <Input
+                              type={showPassword ? 'text' : 'password'}
+                              value={formData.password}
+                              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                              placeholder="Senha do usuário"
+                              className="pr-10"
+                            />
+                            <button
+                              type="button"
+                              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                              onClick={() => setShowPassword(!showPassword)}
+                            >
+                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
+                          <Button type="button" variant="outline" size="icon" onClick={generateRandomPassword} title="Gerar senha aleatória">
+                            <RefreshCw className="h-4 w-4" />
+                          </Button>
+                          {formData.password && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              onClick={() => {
+                                navigator.clipboard.writeText(formData.password);
+                                toast({ title: "Copiado!", description: "Senha copiada para a área de transferência" });
+                              }}
+                              title="Copiar senha"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          O usuário será solicitado a alterar a senha no primeiro login.
+                        </p>
+                      </div>
+                    )}
+
                     {/* Role select - apenas Global Admin pode criar Admin */}
                     <div>
                       <Label>Nível de Acesso *</Label>

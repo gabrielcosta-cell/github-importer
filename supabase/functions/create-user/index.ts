@@ -67,11 +67,21 @@ Deno.serve(async (req) => {
     }
 
     // 3. Ler body da requisição
-    const { email, password, profile } = await req.json();
+    const { email, password, profile, require_password_change } = await req.json();
 
-    if (!email || !password || !profile?.name) {
+    if (!email || !profile?.name) {
       return new Response(
-        JSON.stringify({ error: "VALIDATION_ERROR", message: "Email, senha e nome são obrigatórios" }),
+        JSON.stringify({ error: "VALIDATION_ERROR", message: "Email e nome são obrigatórios" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const isDotConceitoDomain = email.trim().toLowerCase().endsWith("@dotconceito.com");
+
+    // Password required only for non-DOT users
+    if (!isDotConceitoDomain && !password) {
+      return new Response(
+        JSON.stringify({ error: "VALIDATION_ERROR", message: "Senha é obrigatória para usuários externos" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -84,11 +94,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    const isDotConceitoDomain = email.trim().toLowerCase().endsWith("@dotconceito.com");
-
     if (isDotConceitoDomain) {
       // Para @dotconceito.com: NÃO criar Auth user (login será via Google OAuth)
-      // Apenas inserir perfil com placeholder user_id
       const placeholderUserId = crypto.randomUUID();
 
       const { error: profileError } = await supabaseAdmin.from("profiles").insert({
@@ -121,11 +128,17 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Para outros domínios: fluxo original (criar Auth user + perfil)
+    // Para outros domínios: criar Auth user + perfil
+    const userMetadata: Record<string, any> = {};
+    if (require_password_change) {
+      userMetadata.require_password_change = true;
+    }
+
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
+      user_metadata: Object.keys(userMetadata).length > 0 ? userMetadata : undefined,
     });
 
     if (createError) {
