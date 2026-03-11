@@ -160,7 +160,6 @@ export const UserManagement = () => {
         email: user.email,
         password: '',
         role: user.role as 'admin' | 'user',
-        department: user.department || '',
         phone: user.phone || '',
         avatar_url: (user as any).avatar_url || ''
       });
