@@ -150,6 +150,12 @@ export const UserManagement = () => {
       return;
     }
 
+    // External users require password
+    if (effectiveUserType === 'external' && !formData.password) {
+      toast({ title: "Erro", description: "Senha é obrigatória para usuários externos", variant: "destructive" });
+      return;
+    }
+
     // Admin normal só pode criar usuário comum
     let role = formData.role;
     if (!isGlobalAdmin && role === 'admin') {
@@ -157,13 +163,30 @@ export const UserManagement = () => {
       return;
     }
 
-    const result = await addUser({ ...formData, role });
+    const payload = {
+      ...formData,
+      role,
+      password: effectiveUserType === 'external' ? formData.password : '',
+      require_password_change: effectiveUserType === 'external',
+    };
+
+    const result = await addUser(payload);
     
     if (result.success) {
-      setFormData({ name: '', email: '', password: '', role: 'user', phone: '', avatar_url: '' });
+      // If external user, show the generated/typed password so admin can share it
+      if (effectiveUserType === 'external' && formData.password) {
+        toast({ 
+          title: "Usuário externo criado", 
+          description: `Senha temporária: ${formData.password} — O usuário deverá alterá-la no primeiro login.`,
+          duration: 15000,
+        });
+      } else {
+        toast({ title: "Sucesso", description: `${formData.name} foi adicionado ao sistema.` });
+      }
+      setFormData({ name: '', email: '', password: '', role: 'user', phone: '', avatar_url: '', userType: 'dot' });
       setAvatarPreview(null);
+      setShowPassword(false);
       setIsAddDialogOpen(false);
-      toast({ title: "Sucesso", description: `${formData.name} foi adicionado ao sistema.` });
     } else {
       toast({ title: "Erro", description: result.message || "Erro ao criar usuário", variant: "destructive" });
     }
