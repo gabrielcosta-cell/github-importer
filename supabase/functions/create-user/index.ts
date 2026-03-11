@@ -67,11 +67,21 @@ Deno.serve(async (req) => {
     }
 
     // 3. Ler body da requisição
-    const { email, password, profile } = await req.json();
+    const { email, password, profile, require_password_change } = await req.json();
 
-    if (!email || !password || !profile?.name) {
+    if (!email || !profile?.name) {
       return new Response(
-        JSON.stringify({ error: "VALIDATION_ERROR", message: "Email, senha e nome são obrigatórios" }),
+        JSON.stringify({ error: "VALIDATION_ERROR", message: "Email e nome são obrigatórios" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const isDotConceitoDomain = email.trim().toLowerCase().endsWith("@dotconceito.com");
+
+    // Password required only for non-DOT users
+    if (!isDotConceitoDomain && !password) {
+      return new Response(
+        JSON.stringify({ error: "VALIDATION_ERROR", message: "Senha é obrigatória para usuários externos" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
