@@ -536,10 +536,6 @@ export const UserManagement = () => {
                       <Label>Email *</Label>
                       <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="email@exemplo.com" />
                     </div>
-                    <div>
-                      <Label>Telefone</Label>
-                      <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="(11) 99999-9999" />
-                    </div>
 
                     {/* Tipo de Usuário */}
                     <div className="space-y-2">
