@@ -12,18 +12,23 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
 
+  const isProductionDomain = window.location.host.includes('dotconceito.com');
+  const isPreviewEnvironment = !isProductionDomain && (
+    window.self !== window.top ||
+    window.location.host.includes('id-preview--') ||
+    window.location.host.includes('lovable.app')
+  );
+
   useEffect(() => {
+    if (isPreviewEnvironment) return;
+
     if (!loading) {
       if (!user) {
-
-        // Preservar a rota original para retornar após login
         const currentPath = window.location.pathname + window.location.search;
-
         navigate(`/auth?next=${encodeURIComponent(currentPath)}`);
         return;
       }
 
-      // CRÍTICO: Verificar se usuário está ativo
       if (profile && !profile.is_active) {
         console.warn('Usuário desativado tentou acessar:', profile.email);
         navigate('/auth');
@@ -39,7 +44,12 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
         }
       }
     }
-  }, [user, profile, loading, navigate, requireAdmin]);
+  }, [user, profile, loading, navigate, requireAdmin, isPreviewEnvironment]);
+
+  // In preview environment, skip all auth checks
+  if (isPreviewEnvironment) {
+    return <>{children}</>;
+  }
 
   if (loading) {
     return (
@@ -52,21 +62,13 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
     );
   }
 
-  if (!user) {
-    return null;
-  }
-
-  // CRÍTICO: Bloquear acesso se usuário está desativado
-  if (profile && !profile.is_active) {
-    return null;
-  }
+  if (!user) return null;
+  if (profile && !profile.is_active) return null;
 
   if (requireAdmin) {
     const isGlobalAdmin = profile?.is_global_admin || false;
     const effectiveRole = profile?.role;
-    if (!isGlobalAdmin && effectiveRole !== 'admin') {
-      return null;
-    }
+    if (!isGlobalAdmin && effectiveRole !== 'admin') return null;
   }
 
   return <>{children}</>;
