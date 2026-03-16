@@ -285,13 +285,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const addUser = async (userData: { name: string; email: string; password: string; role: 'admin' | 'user'; department?: string; phone?: string }): Promise<{ success: boolean; error?: string; message?: string }> => {
+  const addUser = async (userData: { name: string; email: string; password: string; role: 'admin' | 'user'; department?: string; phone?: string; require_password_change?: boolean }): Promise<{ success: boolean; error?: string; message?: string }> => {
     try {
       console.log('=== INICIANDO CRIAÇÃO DE USUÁRIO ===');
       
       const requestBody = {
         email: userData.email,
-        password: userData.password,
+        password: userData.password || undefined,
+        require_password_change: userData.require_password_change ?? false,
         profile: {
           name: userData.name,
           email: userData.email,
@@ -303,6 +304,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           project_scope: 'csm'
         }
       };
+
+      console.log('Request body:', JSON.stringify(requestBody, null, 2));
       
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: requestBody,
@@ -311,9 +314,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('Erro ao chamar função create-user:', error);
-        const status = (error as any)?.status;
-        const message = (error as any)?.message || 'Falha ao comunicar com o servidor';
-        return { success: false, error: `HTTP_${status ?? 'ERROR'}`, message };
+        // Try to extract the real error message from the response context
+        let detailedMessage = 'Falha ao comunicar com o servidor';
+        try {
+          const ctx = (error as any)?.context;
+          if (ctx && typeof ctx.json === 'function') {
+            const body = await ctx.json();
+            detailedMessage = body?.message || detailedMessage;
+          }
+        } catch { /* ignore parse errors */ }
+        return { success: false, error: 'FUNCTION_ERROR', message: detailedMessage };
       }
 
       if (data?.error) {
