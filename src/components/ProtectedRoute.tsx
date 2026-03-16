@@ -9,6 +9,9 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
+  const { user, profile, loading } = useAuth();
+  const navigate = useNavigate();
+
   const isProductionDomain = window.location.host.includes('dotconceito.com');
   const isPreviewEnvironment = !isProductionDomain && (
     window.self !== window.top ||
@@ -16,15 +19,9 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
     window.location.host.includes('lovable.app')
   );
 
-  // In preview environment, skip all auth checks
-  if (isPreviewEnvironment) {
-    return <>{children}</>;
-  }
-
-  const { user, profile, loading } = useAuth();
-  const navigate = useNavigate();
-
   useEffect(() => {
+    if (isPreviewEnvironment) return;
+
     if (!loading) {
       if (!user) {
         const currentPath = window.location.pathname + window.location.search;
@@ -47,7 +44,12 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
         }
       }
     }
-  }, [user, profile, loading, navigate, requireAdmin]);
+  }, [user, profile, loading, navigate, requireAdmin, isPreviewEnvironment]);
+
+  // In preview environment, skip all auth checks
+  if (isPreviewEnvironment) {
+    return <>{children}</>;
+  }
 
   if (loading) {
     return (
