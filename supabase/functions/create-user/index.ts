@@ -70,15 +70,17 @@ Deno.serve(async (req) => {
 
     // 3. Ler body da requisição
     const { email, password, profile, require_password_change } = await req.json();
+    const normalizedEmail = email?.trim().toLowerCase();
+    const normalizedName = profile?.name?.trim();
 
-    if (!email || !profile?.name) {
+    if (!normalizedEmail || !normalizedName) {
       return new Response(
         JSON.stringify({ error: "VALIDATION_ERROR", message: "Email e nome são obrigatórios" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const isDotConceitoDomain = email.trim().toLowerCase().endsWith("@dotconceito.com");
+    const isDotConceitoDomain = normalizedEmail.endsWith("@dotconceito.com");
 
     // Password required only for non-DOT users
     if (!isDotConceitoDomain && !password) {
