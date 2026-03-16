@@ -79,8 +79,11 @@ export default function Auth() {
 
     if (!user) {
       if (isPreviewEnvironment) {
-        setStatus('Ambiente de preview detectado');
-        setShowLocalLogin(true);
+        // Auto-redirect to dashboard in preview without login
+        setStatus('Ambiente de preview — entrando sem login...');
+        setIsRedirecting(true);
+        navigate('/dashboard?view=csm', { replace: true });
+        return;
       } else {
         setStatus('Faça login para continuar');
         setShowLocalLogin(true);
