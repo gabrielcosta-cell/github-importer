@@ -104,8 +104,8 @@ Deno.serve(async (req) => {
 
       const { error: profileError } = await supabaseAdmin.from("profiles").insert({
         user_id: placeholderUserId,
-        name: profile.name,
-        email: email.trim().toLowerCase(),
+        name: normalizedName,
+        email: normalizedEmail,
         role: profile.role || "user",
         department: profile.department || null,
         phone: profile.phone || null,
