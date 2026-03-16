@@ -3,12 +3,14 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "authorization, x-client-info, apikey, content-type, x-supabase-api-version, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Max-Age": "86400",
 };
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
@@ -31,16 +33,16 @@ Deno.serve(async (req) => {
     });
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getUser(token);
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
 
-    if (claimsError || !claimsData?.user) {
+    if (claimsError || !claimsData?.claims?.sub) {
       return new Response(
         JSON.stringify({ error: "UNAUTHORIZED", message: "Token inválido" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const callerId = claimsData.user.id;
+    const callerId = claimsData.claims.sub;
 
     // 2. Verificar se o chamador é admin
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
@@ -68,15 +70,17 @@ Deno.serve(async (req) => {
 
     // 3. Ler body da requisição
     const { email, password, profile, require_password_change } = await req.json();
+    const normalizedEmail = email?.trim().toLowerCase();
+    const normalizedName = profile?.name?.trim();
 
-    if (!email || !profile?.name) {
+    if (!normalizedEmail || !normalizedName) {
       return new Response(
         JSON.stringify({ error: "VALIDATION_ERROR", message: "Email e nome são obrigatórios" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const isDotConceitoDomain = email.trim().toLowerCase().endsWith("@dotconceito.com");
+    const isDotConceitoDomain = normalizedEmail.endsWith("@dotconceito.com");
 
     // Password required only for non-DOT users
     if (!isDotConceitoDomain && !password) {
@@ -100,8 +104,8 @@ Deno.serve(async (req) => {
 
       const { error: profileError } = await supabaseAdmin.from("profiles").insert({
         user_id: placeholderUserId,
-        name: profile.name,
-        email: email.trim().toLowerCase(),
+        name: normalizedName,
+        email: normalizedEmail,
         role: profile.role || "user",
         department: profile.department || null,
         phone: profile.phone || null,
@@ -135,7 +139,7 @@ Deno.serve(async (req) => {
     }
 
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email,
+      email: normalizedEmail,
       password,
       email_confirm: true,
       user_metadata: Object.keys(userMetadata).length > 0 ? userMetadata : undefined,
@@ -159,8 +163,8 @@ Deno.serve(async (req) => {
 
     const { error: profileError } = await supabaseAdmin.from("profiles").insert({
       user_id: newUser.user.id,
-      name: profile.name,
-      email: email,
+      name: normalizedName,
+      email: normalizedEmail,
       role: profile.role || "user",
       department: profile.department || null,
       phone: profile.phone || null,
