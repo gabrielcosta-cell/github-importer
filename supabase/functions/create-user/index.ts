@@ -33,16 +33,16 @@ Deno.serve(async (req) => {
     });
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getUser(token);
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
 
-    if (claimsError || !claimsData?.user) {
+    if (claimsError || !claimsData?.claims?.sub) {
       return new Response(
         JSON.stringify({ error: "UNAUTHORIZED", message: "Token inválido" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const callerId = claimsData.user.id;
+    const callerId = claimsData.claims.sub;
 
     // 2. Verificar se o chamador é admin
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
